@@ -1,0 +1,47 @@
+# ai-memory.net — Mnemosyne OS
+# Updated 2026-09-24
+#
+# The landing page and the documentation exist to be found and read. The two
+# paths below are excluded because neither is a crawl target: /stats/ is a
+# password-protected dashboard and /api/ answers POSTs, not GETs.
+# Machine-readable summary of the project: https://ai-memory.net/llms.txt
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /stats/
+Disallow: /admin/
+Disallow: /auth/
+
+# AI crawlers are named explicitly so the position is on the record rather
+# than inferred from a wildcard. The site is MIT-licensed and the repository
+# is public; the marketing pages and documentation are fair game for
+# retrieval and training. The hosted console is not — same exclusions apply.
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-Web
+User-agent: PerplexityBot
+User-agent: CCBot
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: meta-externalagent
+User-agent: Bytespider
+Allow: /
+Disallow: /api/
+Disallow: /stats/
+Disallow: /admin/
+Disallow: /auth/
+
+# Social preview fetchers must be allowed to reach the page, or every shared
+# link renders as a bare URL instead of a card.
+User-agent: Twitterbot
+User-agent: facebookexternalhit
+User-agent: Slackbot
+User-agent: TelegramBot
+User-agent: WhatsApp
+User-agent: LinkedInBot
+Allow: /
+
+Sitemap: https://ai-memory.net/sitemap.xml

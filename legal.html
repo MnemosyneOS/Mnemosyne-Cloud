@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Privacy, terms and cookies — Mnemosyne OS</title>
+<meta name="description" content="How ai-memory.net handles personal data: what is logged, for how long, which cookies exist, and the terms that govern the site and the hosted console. English and Chinese." />
+<meta name="robots" content="index, follow" />
+<link rel="canonical" href="https://ai-memory.net/legal.html" />
+<meta property="og:title" content="Privacy, terms and cookies — Mnemosyne OS" />
+<meta property="og:description" content="What ai-memory.net logs, for how long, which cookies exist, and the terms that govern the site." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://ai-memory.net/legal.html" />
+<meta property="og:image" content="https://ai-memory.net/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://ai-memory.net/og-image.png" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+<!--
+  Standalone on purpose. The product site is a single-page app whose inner
+  routes live in the URL fragment, so "#/legal" would be invisible to a
+  crawler, to GitHub's OAuth app review and to anyone who needs to cite a
+  privacy policy by URL. A real page at a real path solves all three.
+
+  No webfonts, no CDN, no analytics: this file must render identically with
+  the network cut, which is also the promise the policy below makes.
+-->
+<style>
+  :root{
+    --canvas:#FCFCFC; --surface:#FFFFFF; --surface-2:#F7F7FA;
+    --fg:#020202; --fg2:#565553; --fg3:#A1A1AA;
+    --accent:#CBB2FF; --accent-ink:#5B47B8;
+    --hair:rgba(24,24,24,.10); --hair-hi:rgba(24,24,24,.22);
+    --note-bg:rgba(203,178,255,.16); --note-line:rgba(203,178,255,.55);
+    --code-bg:#F4F4F5; --code-fg:#18181B;
+  }
+  html[data-theme="dark"]{
+    --canvas:#0A0A0C; --surface:#121214; --surface-2:#1A1A1D;
+    --fg:#F3F2FA; --fg2:#A1A1AA; --fg3:#71717A;
+    --accent:#C4B5FD; --accent-ink:#DDD6FE;
+    --hair:rgba(255,255,255,.08); --hair-hi:rgba(255,255,255,.20);
+    --note-bg:rgba(203,178,255,.10); --note-line:rgba(203,178,255,.30);
+    --code-bg:#100E1A; --code-fg:#E4E2F2;
+  }
+  *{ box-sizing:border-box; }
+  html{ -webkit-text-size-adjust:100%; }
+  body{
+    margin:0; background:var(--canvas); color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",
+                "PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:15px; line-height:1.72; letter-spacing:-.003em;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:820px; margin:0 auto; padding:0 22px; }
+
+  header.top{
+    border-bottom:1px solid var(--hair); background:var(--canvas);
+    position:sticky; top:0; z-index:10; backdrop-filter:saturate(140%) blur(8px);
+  }
+  .top .bar{ display:flex; align-items:center; gap:12px; height:56px; }
+  .brand{
+    display:inline-flex; align-items:center; gap:9px; text-decoration:none;
+    color:var(--fg); font-weight:620; font-size:14.5px; letter-spacing:-.01em;
+  }
+  .brand svg{ width:22px; height:22px; display:block; }
+  .brand .os{ color:var(--fg3); font-weight:500; margin-left:2px; }
+  .spacer{ margin-left:auto; }
+  .ctrl{
+    appearance:none; border:1px solid var(--hair); background:var(--surface);
+    color:var(--fg2); border-radius:8px; height:32px; padding:0 11px;
+    font:inherit; font-size:12.5px; font-weight:560; cursor:pointer;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .ctrl:hover{ border-color:var(--hair-hi); color:var(--fg); }
+  .ctrl svg{ width:14px; height:14px; }
+
+  main{ padding:52px 0 72px; }
+  .eyebrow{
+    font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;
+    font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--fg3); margin:0 0 14px;
+  }
+  h1{ font-size:34px; line-height:1.2; letter-spacing:-.024em; margin:0 0 16px; font-weight:640; }
+  .lede{ font-size:16.5px; color:var(--fg2); margin:0 0 10px; }
+  .stamp{ font-size:12.5px; color:var(--fg3); margin:0 0 34px; }
+
+  .callout{
+    background:var(--note-bg); border:1px solid var(--note-line);
+    border-radius:12px; padding:15px 17px; margin:0 0 34px;
+  }
+  .callout ul{ margin:0; padding-left:19px; }
+  .callout li{ margin:4px 0; }
+  .callout b{ color:var(--fg); }
+
+  nav.toc{ border-top:1px solid var(--hair); border-bottom:1px solid var(--hair); padding:14px 0; margin:0 0 40px; }
+  nav.toc ol{ margin:0; padding:0; list-style:none; display:flex; flex-wrap:wrap; gap:6px 20px; }
+  nav.toc a{ color:var(--fg2); text-decoration:none; font-size:13.5px; }
+  nav.toc a:hover{ color:var(--fg); text-decoration:underline; text-underline-offset:3px; }
+  nav.toc .n{ color:var(--fg3); font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:11.5px; margin-right:5px; }
+
+  article h2{
+    font-size:19.5px; letter-spacing:-.012em; margin:44px 0 12px; font-weight:620;
+    scroll-margin-top:76px;
+  }
+  article h2:first-of-type{ margin-top:0; }
+  article h3{ font-size:15.5px; margin:24px 0 8px; font-weight:600; }
+  article p{ margin:0 0 13px; }
+  article ul{ margin:0 0 15px; padding-left:20px; }
+  article li{ margin:5px 0; }
+  article b, article strong{ font-weight:620; }
+  article code{
+    font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;
+    font-size:.86em; background:var(--code-bg); color:var(--code-fg);
+    padding:1.5px 5px; border-radius:5px; border:1px solid var(--hair);
+  }
+  article a{ color:var(--accent-ink); text-underline-offset:3px; }
+  article a:hover{ color:var(--fg); }
+  .rule{ height:1px; background:var(--hair); margin:40px 0; border:0; }
+  .fine{ font-size:13px; color:var(--fg3); }
+
+  footer.bot{ border-top:1px solid var(--hair); padding:26px 0 46px; }
+  footer.bot .row{ display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center; font-size:12.5px; color:var(--fg3); }
+  footer.bot a{ color:var(--fg3); text-decoration:none; }
+  footer.bot a:hover{ color:var(--fg); }
+
+  /* Language: both articles ship in the HTML so the page is complete with
+     JavaScript disabled. The inactive one is hidden by attribute selector. */
+  html[data-lang="en"] article[data-lang="zh"],
+  html[data-lang="zh"] article[data-lang="en"]{ display:none; }
+
+  @media print{
+    header.top, nav.toc, .ctrl{ display:none !important; }
+    main{ padding:0; } body{ font-size:11pt; }
+    article[data-lang="zh"]{ display:none !important; }
+  }
+  @media (max-width:560px){
+    h1{ font-size:27px; } main{ padding:34px 0 56px; } .lede{ font-size:15.5px; }
+  }
+</style>
+<script>
+/* Runs before first paint: same storage keys as index.html, so the choice the
+   visitor made on the landing page carries over instead of resetting. */
+(function () {
+  var root = document.documentElement, theme = 'light', lang = 'en';
+  try {
+    theme = localStorage.getItem('mn-theme') || 'light';
+    var stored = localStorage.getItem('mn-lang');
+    if (stored) { lang = stored; }
+    else if (navigator.language && /^zh/i.test(navigator.language)) { lang = 'zh'; }
+  } catch (e) {}
+  var dark = (theme === 'dark');
+  if (theme === 'system' && window.matchMedia) {
+    dark = !window.matchMedia('(prefers-color-scheme: light)').matches;
+  }
+  root.setAttribute('data-theme', dark ? 'dark' : 'light');
+  root.setAttribute('data-lang', lang);
+  root.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+})();
+</script>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap bar">
+    <a class="brand" href="/">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <rect width="64" height="64" rx="14" fill="#0A0A0C"/>
+        <g stroke="#A1A1AA" stroke-width="1.3" stroke-opacity="0.53">
+          <line x1="32" y1="32" x2="47.4" y2="32"/><line x1="32" y1="32" x2="39.7" y2="45.34"/>
+          <line x1="32" y1="32" x2="24.3" y2="45.34"/><line x1="32" y1="32" x2="16.6" y2="32"/>
+          <line x1="32" y1="32" x2="24.3" y2="18.66"/><line x1="32" y1="32" x2="39.7" y2="18.66"/>
+        </g>
+        <g fill="#71717A">
+          <circle cx="47.4" cy="32" r="3.9"/><circle cx="39.7" cy="45.34" r="3.9"/>
+          <circle cx="24.3" cy="45.34" r="3.9"/><circle cx="16.6" cy="32" r="3.9"/>
+          <circle cx="24.3" cy="18.66" r="3.9"/><circle cx="39.7" cy="18.66" r="3.9"/>
+        </g>
+        <circle cx="32" cy="32" r="6.2" fill="#FAFAFA"/>
+      </svg>
+      <span>mnemosyne<span class="os">OS</span></span>
+    </a>
+    <span class="spacer"></span>
+    <button class="ctrl" id="lang-btn" type="button" aria-live="polite">中文</button>
+    <button class="ctrl" id="theme-btn" type="button" aria-label="Switch appearance">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="wrap">
+
+<p class="eyebrow" data-i="eyebrow">Legal</p>
+<h1 data-i="h1">Privacy, terms and cookies</h1>
+<p class="lede" data-i="lede">The short version: this site sets no advertising or tracking cookies, runs no third-party analytics, and sells nothing about you to anyone. The longer version is below, written to be read rather than scrolled past.</p>
+<p class="stamp" data-i="stamp">Last updated: 24 September 2026 · Applies to ai-memory.net and its subdomains.</p>
+
+<div class="callout">
+  <ul>
+    <li data-i="c1"><b>No tracking cookies.</b> None. Not analytics, not advertising, not a pixel.</li>
+    <li data-i="c2"><b>No third-party analytics service.</b> Visitor counts come from our own server logs, read by us.</li>
+    <li data-i="c3"><b>No data broker, no profiling, no resale.</b> Ever.</li>
+    <li data-i="c4"><b>You can leave without a trace</b> — the landing page needs no account and sets nothing in your browser.</li>
+  </ul>
+</div>
+
+<nav class="toc" aria-label="Contents">
+  <ol>
+    <li><a href="#privacy"><span class="n">01</span><span data-i="t1">Privacy policy</span></a></li>
+    <li><a href="#retention"><span class="n">02</span><span data-i="t2">Logs and retention</span></a></li>
+    <li><a href="#cookies"><span class="n">03</span><span data-i="t3">Cookies and storage</span></a></li>
+    <li><a href="#rights"><span class="n">04</span><span data-i="t4">Your rights</span></a></li>
+    <li><a href="#terms"><span class="n">05</span><span data-i="t5">Terms of service</span></a></li>
+    <li><a href="#use"><span class="n">06</span><span data-i="t6">Acceptable use</span></a></li>
+    <li><a href="#changes"><span class="n">07</span><span data-i="t7">Changes and contact</span></a></li>
+  </ol>
+</nav>
+
+<!-- ═══════════════════════════════════════════════ English ═══════════════ -->
+<article data-lang="en">
+
+  <h2 id="privacy" data-anchor="privacy">01 · Privacy policy</h2>
+
+  <p><b>Who is responsible.</b> ai-memory.net is the product site for Mnemosyne OS, operated by
+  Guangdong Xinshiming Industrial Co., Ltd. (广东鑫室铭实业有限公司). For any question, request or
+  complaint about this policy, use the <a href="/#/contact">contact page</a> — it reaches the
+  maintainer directly, which is a shorter path than any form letter.</p>
+
+  <p>This site has two halves, and they handle data differently. It is worth being precise about
+  which half you are using.</p>
+  <ul>
+    <li><b>The landing page and the documentation are static.</b> Reading them creates no account,
+    sets no cookie, and stores nothing in your browser beyond your theme and language choice.
+    Nothing is submitted to us.</li>
+    <li><b>The hosted console needs an account.</b> If you sign in — with GitHub or with an emailed
+    one-time code — we store the email address you authenticate with, a password hash if you set a
+    password, an avatar if you upload one, the API keys you create, and the memories you choose to
+    save. That is the whole list.</li>
+    <li><b>Passwords are never stored in a recoverable form.</b> They are hashed with
+    PBKDF2-SHA256, 200,000 rounds, with a random per-account salt. We cannot read your password,
+    and neither can anyone who takes a copy of the database.</li>
+  </ul>
+
+  <h3>Third-party components and where they run</h3>
+  <ul>
+    <li><b>GitHub OAuth</b> — the optional sign-in path. If you use it, GitHub authenticates you and
+    tells us your GitHub identity; GitHub's own privacy statement governs that step.</li>
+    <li><b>WorkBuddy Cloud SDK</b> — an optional managed backend used for end-user authentication
+    and managed Postgres. It is only functional on its registered release domain
+    (<code>mnemosyne-os.app.workbuddy.host</code>). On ai-memory.net the SDK is present in the page
+    but cannot establish a session; the UI says so rather than pretending otherwise.</li>
+    <li><b>Google Fonts and other CDNs are deliberately absent.</b> Fonts are self-hosted so that
+    loading this site does not leak your IP address to a font host — which is also why the page
+    still renders correctly on networks where those hosts are unreachable.</li>
+  </ul>
+
+  <h3>Where the data physically is</h3>
+  <p>The web server is hosted in a Google Cloud region in the United States. If you are in the
+  European Union, the United Kingdom, or mainland China, using the hosted console therefore
+  involves a cross-border transfer of the data you put into it. The engine itself is local-first —
+  it writes to a SQLite file on your own machine and transfers nothing — so the usual answer is to
+  run it yourself and keep the data local. That is not a workaround; it is the intended design.</p>
+
+  <h3>Children</h3>
+  <p>This site is a developer tool and is not directed at children. We do not knowingly hold
+  personal data from anyone under 16. If you believe we do, write to us and we will delete it.</p>
+
+  <h2 id="retention" data-anchor="retention">02 · What the server records, and for how long</h2>
+
+  <p>Caddy writes a JSON access log for this domain. It is the only record of your visit, and it is
+  the reason we can describe it here precisely instead of with adjectives.</p>
+  <ul>
+    <li><b>Fields recorded:</b> timestamp, IP address, request line, HTTP status code, response size,
+    response duration, <code>User-Agent</code>, and — when your browser sends one — the
+    <code>Referer</code>.</li>
+    <li><b>Retention:</b> the log rotates at 10 MiB, keeps five files, and nothing older than
+    30 days is retained. When the oldest file ages out it is gone.</li>
+    <li><b>Purpose:</b> two things only — aggregate visitor figures on the password-protected
+    dashboard at <code>/stats/</code>, and security work: spotting scanners, breaking up
+    brute-force attempts and rate-limiting abuse.</li>
+    <li><b>Never written to the log:</b> <code>Authorization</code> headers, <code>Cookie</code> and
+    <code>Set-Cookie</code> headers, and request bodies. Session tokens and passwords cannot appear
+    in the log because they are never written to it.</li>
+    <li><b>Not used for:</b> profiling, advertising, cross-site tracking, or training a model.</li>
+  </ul>
+
+  <p>Server-side requests from the machine itself and from private address ranges are excluded from
+  the visitor figures, so the numbers on that dashboard describe other people rather than our own
+  health checks. Where a figure is derived from the log rather than observed directly, we would
+  rather say so than let it read as something it is not.</p>
+
+  <h2 id="cookies" data-anchor="cookies">03 · Cookies and local storage</h2>
+  <ul>
+    <li><b>No tracking cookies.</b> This site sets none — for advertising, analytics, or anything
+    else. There is no cookie banner because there is nothing to consent to.</li>
+    <li><b>One strictly necessary session cookie.</b> If you sign in to the console, a cookie named
+    <code>mn_sid</code> carries your session. It is <code>HttpOnly</code> (unreadable from
+    JavaScript), <code>SameSite=Lax</code>, and <code>Secure</code> over HTTPS. It expires after
+    30 days of inactivity, and signing out clears it immediately.</li>
+    <li><b>HTTP Basic authentication on <code>/stats/</code>.</b> The visitor dashboard is protected
+    with the browser's built-in Basic auth. Your browser may offer to remember those credentials;
+    that is a browser feature, not a cookie we set.</li>
+    <li><b>Local storage, preferences only.</b> Two keys — <code>mn-theme</code> (dark or light) and
+    <code>mn-lang</code> (English or Chinese). They stay in your browser, are never sent to the
+    server, and are not readable across other websites.</li>
+    <li><b>Clearing everything</b> is done from your browser's own settings. No request to us is
+    needed, and nothing breaks if you do it.</li>
+  </ul>
+
+  <h2 id="rights" data-anchor="rights">04 · Your rights over your data</h2>
+  <p>If you hold an account, you can export what the console stores about you from the dashboard,
+  and you can revoke any API key yourself at any time. For a formal request under the GDPR, PIPL or
+  a comparable regime, write through the contact page — we answer the request rather than
+  redirecting you to a form.</p>
+  <ul>
+    <li><b>Access and portability</b> — export from the console, or ask us for a copy.</li>
+    <li><b>Rectification</b> — edit any memory in the console; correct your profile in place.</li>
+    <li><b>Erasure</b> — ask, and the account and its memories are deleted. This is a real deletion:
+    memories live in a single SQLite file, and removing it removes them. Copies held in encrypted
+    backups expire on the normal backup cycle.</li>
+    <li><b>Objection and restriction</b> — name the processing you object to and we stop it.</li>
+    <li><b>Complaint</b> — you may also complain to your local data protection authority. We would
+    rather you told us first, but the right is yours either way.</li>
+  </ul>
+
+  <hr class="rule" />
+
+  <h2 id="terms" data-anchor="terms">05 · Terms of service</h2>
+  <p>By using this site you agree to the following. If you do not agree, the software is still yours
+  under the MIT licence — take the repository and run it yourself.</p>
+  <ul>
+    <li><b>The software is MIT-licensed.</b> The engine is free to use, modify and redistribute
+    under the terms in the repository. That licence, not this page, governs the code.</li>
+    <li><b>This site is provided as is.</b> No warranty of availability, fitness for purpose or
+    accuracy. Features, benchmarks and roadmap items may change without notice.</li>
+    <li><b>Numbers on the site are measurements, not promises.</b> Benchmarks are reproducible from
+    the repository; your latency will differ with your hardware.</li>
+    <li><b>Accounts are personal.</b> Keep your credentials to yourself. You are responsible for
+    what is done with your API keys, so revoke any key you no longer control.</li>
+    <li><b>The hosted console is a courtesy, not a contract.</b> There is no SLA. Rate limits apply
+    and may be tightened to keep the service available to everyone.</li>
+    <li><b>Suspension.</b> Accounts that abuse the service may be limited or closed, with notice
+    where the law requires it.</li>
+    <li><b>Liability</b> is limited to the extent permitted by law. The system is free, and the
+    service is provided without charge; in no event are we liable for indirect or consequential
+    loss.</li>
+    <li><b>Governing law.</b> These terms are governed by the laws of the People's Republic of
+    China. Disputes are subject to the jurisdiction of the courts of Guangdong.</li>
+  </ul>
+
+  <h2 id="use" data-anchor="use">06 · Acceptable use</h2>
+  <ul>
+    <li>Do not attempt to access accounts, data or systems that are not yours.</li>
+    <li>Do not run automated scans, fuzzing or load tests against this site without asking first.
+    Ask, and the answer is often yes — the point is that we would like to be able to tell you when
+    something breaks.</li>
+    <li>Rate limits and the web application firewall exist to keep the service available for
+    everyone. Circumventing them is a breach of these terms, not a challenge.</li>
+    <li>Do not use the memory API to store other people's personal data without a lawful basis to
+    do so.</li>
+    <li>Security research is welcome. Report it privately through
+    <a href="https://github.com/MnemosyneOS/mnemosyne/security/advisories/new" target="_blank" rel="noopener">GitHub security advisories</a>
+    rather than in a public issue, and give us a reasonable window to fix it.</li>
+  </ul>
+
+  <h2 id="changes" data-anchor="changes">07 · Changes and contact</h2>
+  <p>Material changes are dated at the top of this page and noted in the release notes. Continuing
+  to use the site after a change means you accept it; if you do not, stop using the site and delete
+  your account.</p>
+  <p>Security contacts, disclosure policy and scope are published in machine-readable form at
+  <a href="/.well-known/security.txt"><code>/.well-known/security.txt</code></a>.</p>
+  <p class="fine">Nothing on this page is legal advice, and no page can be. If you need a data
+  processing agreement, a self-hosted deployment review, or a compliance mapping for a regulated
+  environment, use the <a href="/#/contact">contact page</a> — the answers exist, they are simply
+  too specific for marketing copy.</p>
+
+</article>
+
+<!-- ═══════════════════════════════════════════════ 中文 ══════════════════ -->
+<article data-lang="zh" lang="zh-CN">
+
+  <h2 data-anchor="privacy">01 · 隐私政策</h2>
+
+  <p><b>责任主体。</b>ai-memory.net 是 Mnemosyne OS 的产品站点，由广东鑫室铭实业有限公司运营。
+  对本政策有任何疑问、请求或投诉，请通过<a href="/#/contact">联系我们</a>页面提出 —— 它会直接
+  送达维护者本人，比任何格式信函都快。</p>
+
+  <p>这个站点有两副面孔，两者处理数据的方式不同，值得说清楚你此刻用的是哪一副。</p>
+  <ul>
+    <li><b>落地页与文档是静态的。</b>阅读它们不会创建账号、不会设置 Cookie，除了你的主题与语言
+    偏好之外什么都没往浏览器里存。也没有任何内容被提交给我们。</li>
+    <li><b>托管控制台需要账号。</b>如果你用 GitHub 或邮箱验证码登录，我们会保存你用于认证的
+    邮箱地址、你设置的密码哈希（如果设置了）、你上传的头像、你创建的 API 密钥，以及你选择保存
+    的记忆。就这些，没有别的。</li>
+    <li><b>密码从不以可还原的形式存储。</b>采用 PBKDF2-SHA256、20 万轮、每账号随机盐。我们读不到
+    你的密码，拿到数据库副本的人也读不到。</li>
+  </ul>
+
+  <h3>第三方组件与它们的运行位置</h3>
+  <ul>
+    <li><b>GitHub OAuth</b> —— 可选的登录方式。你使用它时，由 GitHub 完成身份认证并把你的
+    GitHub 身份告诉我们，这一步适用 GitHub 自己的隐私声明。</li>
+    <li><b>WorkBuddy Cloud SDK</b> —— 用于终端用户认证与托管 Postgres 的可选托管后端，仅在其
+    注册的发布域名（<code>mnemosyne-os.app.workbuddy.host</code>）上生效。在 ai-memory.net 上
+    该 SDK 虽存在于页面中，但无法建立会话；界面会如实说明，而不是伪造一个登录态。</li>
+    <li><b>刻意不引入 Google Fonts 等外部字体与 CDN。</b>字体自托管，因此打开本站不会把你的
+    IP 泄露给字体服务商 —— 这也是该站在这些域名不可达的网络下依然正常渲染的原因。</li>
+  </ul>
+
+  <h3>数据实际存放在哪里</h3>
+  <p>Web 服务器托管在 Google Cloud 美国区域。如果你身处欧盟、英国或中国大陆，使用托管控制台
+  就意味着你所录入的数据会发生跨境传输。引擎本身是本地优先的 —— 它写入你自己机器上的一个
+  SQLite 文件，不传输任何东西 —— 所以通常的答案是：自己跑，把数据留在本地。这不是权宜之计，
+  这正是它的设计意图。</p>
+
+  <h3>未成年人</h3>
+  <p>本站是开发者工具，不面向儿童。我们不会在明知的情况下持有 16 岁以下人士的个人数据。
+  如果你认为存在这种情况，请告知，我们会删除。</p>
+
+  <h2 data-anchor="retention">02 · 服务器记录了什么，保留多久</h2>
+
+  <p>Caddy 会为本域名写一份 JSON 访问日志。它是关于你访问的唯一记录，也正是我们能在这里
+  精确描述、而不必堆砌形容词的原因。</p>
+  <ul>
+    <li><b>记录字段：</b>时间戳、IP 地址、请求行、HTTP 状态码、响应大小、响应耗时、
+    <code>User-Agent</code>，以及浏览器主动发送时的 <code>Referer</code>。</li>
+    <li><b>保留期：</b>日志按 10 MiB 轮转，保留 5 份，超过 30 天的内容一律不留。最旧的一份
+    到期即消失。</li>
+    <li><b>用途：</b>仅两件事 —— <code>/stats/</code> 上密码保护的看板里的汇总访客数据，
+    以及安全工作：识别扫描器、阻断暴力破解、对滥用做限流。</li>
+    <li><b>绝不写入日志：</b><code>Authorization</code> 头、<code>Cookie</code> 与
+    <code>Set-Cookie</code> 头、以及请求体。会话令牌与密码不可能出现在日志里，因为它们
+    根本不会被写进去。</li>
+    <li><b>不用于：</b>用户画像、广告、跨站跟踪、模型训练。</li>
+  </ul>
+
+  <p>来自服务器本机与内网地址段的请求已被排除在访客统计之外，所以看板上的数字描述的是别人，
+  而不是我们自己的健康检查。凡是口径需从日志推导而非直接观测的指标，我们宁可在页面上标注
+  清楚，也不愿让它读起来像别的东西。</p>
+
+  <h2 data-anchor="cookies">03 · Cookie 与本地存储</h2>
+  <ul>
+    <li><b>没有跟踪 Cookie。</b>一个都没有 —— 广告、统计、其他，都没有。也没有 Cookie 弹窗，
+    因为没有需要征得同意的东西。</li>
+    <li><b>一个严格必要的会话 Cookie。</b>你登录控制台后，名为 <code>mn_sid</code> 的 Cookie
+    承载你的会话。它是 <code>HttpOnly</code>（JavaScript 读不到）、<code>SameSite=Lax</code>、
+    HTTPS 下带 <code>Secure</code>。三十天不活动后失效，退出登录会立即清除。</li>
+    <li><b><code>/stats/</code> 使用 HTTP Basic 认证。</b>访客看板由浏览器内置的 Basic 认证
+    保护。你的浏览器可能提出记住该凭据 —— 那是浏览器功能，不是我们设置的 Cookie。</li>
+    <li><b>本地存储只存偏好。</b>两个键：<code>mn-theme</code>（深色或浅色）与
+    <code>mn-lang</code>（中文或英文）。它们留在你的浏览器里，从不发送到服务器，也无法被
+    其他网站读取。</li>
+    <li><b>清除全部内容</b>在你的浏览器设置里完成即可，不需要向我们发起任何请求。清掉也不会
+    导致任何功能失效。</li>
+  </ul>
+
+  <h2 data-anchor="rights">04 · 你对数据的权利</h2>
+  <p>如果你持有账号，可以在控制台内导出其保存的关于你的数据，也可以随时自行撤销任意 API
+  密钥。若需依据 GDPR、PIPL 或同等法规提出正式请求，请通过联系我们页面提出 —— 我们会直接
+  回应，而不是把你转给一张表单。</p>
+  <ul>
+    <li><b>查阅与可携带</b> —— 在控制台导出，或向我们索取副本。</li>
+    <li><b>更正</b> —— 在控制台直接编辑任意记忆；个人资料可就地修改。</li>
+    <li><b>删除</b> —— 提出即删除账号及其记忆。这是真正的删除：记忆存放在单个 SQLite 文件中，
+    删掉文件就删掉了它们。加密备份中的副本会在正常备份周期内到期。</li>
+    <li><b>反对与限制</b> —— 指明你反对的处理行为，我们就停止。</li>
+    <li><b>投诉</b> —— 你也可以向所在地的数据保护机构投诉。我们希望你先告诉我们，但这项
+    权利无论如何属于你。</li>
+  </ul>
+
+  <hr class="rule" />
+
+  <h2 data-anchor="terms">05 · 服务条款</h2>
+  <p>使用本站即表示你同意以下条款。若不同意，软件本身仍依 MIT 许可属于你 —— 把仓库拿走，
+  自己运行即可。</p>
+  <ul>
+    <li><b>软件采用 MIT 许可。</b>引擎可依仓库中的条款自由使用、修改与再分发。管辖代码的是
+    该许可，而不是本页。</li>
+    <li><b>本站按"现状"提供。</b>不提供可用性、适用性或准确性担保。功能、基准数据与路线图
+    可能在不另行通知的情况下变更。</li>
+    <li><b>页面上的数字是实测值，不是承诺。</b>基准可从仓库复现；你的延迟会因硬件而异。</li>
+    <li><b>账号属于个人。</b>请自行保管凭据。API 密钥的用途由你负责，不再掌控的密钥请及时撤销。</li>
+    <li><b>托管控制台是便利，不是合同。</b>没有 SLA。限流策略会执行，并可能为保障整体可用性
+    而收紧。</li>
+    <li><b>停用。</b>滥用服务的账号可能被限制或关闭；法律要求通知时我们会通知。</li>
+    <li><b>责任</b>限于法律允许的范围。系统免费，服务免费提供；我们对间接或后果性损失
+    不承担责任。</li>
+    <li><b>准据法。</b>本条款受中华人民共和国法律管辖，争议由广东的法院管辖。</li>
+  </ul>
+
+  <h2 data-anchor="use">06 · 可接受使用</h2>
+  <ul>
+    <li>不得尝试访问不属于你的账号、数据或系统。</li>
+    <li>未经事先询问，不得对本站进行自动化扫描、模糊测试或压力测试。问一声，答案往往是
+    可以的 —— 重点只是希望在东西坏掉时我们能知道。</li>
+    <li>限流与 Web 应用防火墙是为了让所有人都能用得上。绕过它们属于违反本条款，不是挑战。</li>
+    <li>不得在缺乏合法依据的情况下，用记忆 API 存储他人的个人数据。</li>
+    <li>欢迎安全研究。请通过
+    <a href="https://github.com/MnemosyneOS/mnemosyne/security/advisories/new" target="_blank" rel="noopener">GitHub 安全公告</a>
+    私下报告，而不是开公开 issue，并给我们合理的修复时间。</li>
+  </ul>
+
+  <h2 data-anchor="changes">07 · 变更与联系</h2>
+  <p>实质性变更会在本页顶部标注日期，并记入发行说明。变更后继续使用本站即视为接受；若不接受，
+  请停止使用并删除账号。</p>
+  <p>安全联系方式、披露政策与范围以机器可读形式发布在
+  <a href="/.well-known/security.txt"><code>/.well-known/security.txt</code></a>。</p>
+  <p class="fine">本页不构成法律意见，任何页面都不能构成法律意见。如果你需要数据处理协议、
+  自托管部署评估，或面向受监管环境的合规映射，请通过<a href="/#/contact">联系我们</a>页面
+  提出 —— 这些答案我们都有，只是过于具体，不适合放在宣传文案里。</p>
+
+</article>
+
+</main>
+
+<footer class="bot">
+  <div class="wrap row">
+    <span>© 2026 Mnemosyne OS · MIT License</span>
+    <span class="spacer" style="margin-left:auto"></span>
+    <a href="/">Home</a>
+    <a href="/#/trust">Security model</a>
+    <a href="/#/contact">Contact</a>
+    <a href="/llms.txt">llms.txt</a>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var root = document.documentElement;
+
+  /* ----- language ------------------------------------------------------
+     Both articles are in the DOM. Switching swaps the visible one and hands
+     the plain #privacy / #terms / #cookies anchors to the section that is
+     actually on screen, so a link like /legal.html#terms resolves whatever
+     language the visitor reads. */
+  var ANCHORS = ['privacy', 'retention', 'cookies', 'rights', 'terms', 'use', 'changes'];
+
+  function moveAnchors() {
+    var on = root.getAttribute('data-lang');
+    ANCHORS.forEach(function (k) {
+      var en = document.querySelector('article[data-lang="en"] [data-anchor="' + k + '"]');
+      var zh = document.querySelector('article[data-lang="zh"] [data-anchor="' + k + '"]');
+      if (!en || !zh) return;
+      if (on === 'zh') { en.removeAttribute('id'); zh.id = k; }
+      else { zh.removeAttribute('id'); en.id = k; }
+    });
+  }
+
+  var btn = document.getElementById('lang-btn');
+  function paintLang() {
+    var zh = root.getAttribute('data-lang') === 'zh';
+    btn.textContent = zh ? 'English' : '中文';
+    btn.setAttribute('aria-label', zh ? 'Switch to English' : '切换到中文');
+  }
+  moveAnchors(); paintLang();
+
+  btn.addEventListener('click', function () {
+    var next = root.getAttribute('data-lang') === 'zh' ? 'en' : 'zh';
+    root.setAttribute('data-lang', next);
+    root.setAttribute('lang', next === 'zh' ? 'zh-CN' : 'en');
+    try { localStorage.setItem('mn-lang', next); } catch (e) {}
+    moveAnchors(); paintLang();
+  });
+
+  /* ----- theme --------------------------------------------------------- */
+  var tb = document.getElementById('theme-btn');
+  tb.addEventListener('click', function () {
+    var dark = root.getAttribute('data-theme') === 'dark';
+    var next = dark ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('mn-theme', next); } catch (e) {}
+  });
+
+  /* ----- translate the shell strings ---------------------------------- */
+  var SHELL = {
+    zh: {
+      eyebrow: '法律', h1: '隐私、条款与 Cookie',
+      lede: '简短版本：本站不设置广告或跟踪 Cookie，不接入第三方统计分析，也不把你的任何信息卖给任何人。较长的版本在下面，是拿来读的，不是拿来划过去的。',
+      stamp: '最后更新：2026 年 9 月 24 日 · 适用于 ai-memory.net 及其子域名。',
+      c1: '<b>没有跟踪 Cookie。</b>一个都没有。没有统计、没有广告、没有像素。',
+      c2: '<b>没有第三方统计分析服务。</b>访客数据来自我们自己的服务器日志，由我们自己读取。',
+      c3: '<b>没有数据经纪、没有用户画像、没有转售。</b>永远没有。',
+      c4: '<b>你可以不留痕迹地离开</b> —— 落地页不需要账号，也不会在你的浏览器里留下任何东西。',
+      t1: '隐私政策', t2: '日志与保留', t3: 'Cookie 与存储', t4: '你的权利',
+      t5: '服务条款', t6: '可接受使用', t7: '变更与联系'
+    },
+    en: {
+      eyebrow: 'Legal', h1: 'Privacy, terms and cookies',
+      lede: 'The short version: this site sets no advertising or tracking cookies, runs no third-party analytics, and sells nothing about you to anyone. The longer version is below, written to be read rather than scrolled past.',
+      stamp: 'Last updated: 24 September 2026 · Applies to ai-memory.net and its subdomains.',
+      c1: '<b>No tracking cookies.</b> None. Not analytics, not advertising, not a pixel.',
+      c2: '<b>No third-party analytics service.</b> Visitor counts come from our own server logs, read by us.',
+      c3: '<b>No data broker, no profiling, no resale.</b> Ever.',
+      c4: '<b>You can leave without a trace</b> — the landing page needs no account and sets nothing in your browser.',
+      t1: 'Privacy policy', t2: 'Logs and retention', t3: 'Cookies and storage', t4: 'Your rights',
+      t5: 'Terms of service', t6: 'Acceptable use', t7: 'Changes and contact'
+    }
+  };
+  function paintShell() {
+    var t = SHELL[root.getAttribute('data-lang') === 'zh' ? 'zh' : 'en'];
+    Array.prototype.forEach.call(document.querySelectorAll('[data-i]'), function (el) {
+      var k = el.getAttribute('data-i');
+      if (t[k] != null) el.innerHTML = t[k];
+    });
+    document.title = t.h1 + ' — Mnemosyne OS';
+  }
+  paintShell();
+  btn.addEventListener('click', paintShell);
+})();
+</script>
+</body>
+</html>

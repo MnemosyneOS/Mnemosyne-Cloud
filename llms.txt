@@ -1,0 +1,76 @@
+# Mnemosyne OS
+
+> Mnemosyne OS is a local-first memory engine for AI agents. Memory lives in a
+> SQLite file on your own disk, the core imports nothing outside the Python
+> standard library, and there is no hosted control plane in the path. MIT
+> licensed. Published as `mnemosyne-os` on PyPI.
+
+Current version: **8.0.0** (released 2026-09-22).
+Canonical site: https://ai-memory.net/
+Source: https://github.com/MnemosyneOS/mnemosyne
+
+## What it is
+
+- **Local-first, zero-cloud.** The store is a SQLite file you own. Deleting the
+  file is a complete deletion — there is no replica to chase.
+- **Zero third-party dependencies in the core.** `install_requires` is an empty
+  list. The vector tier is optional and fails soft to local FTS5 indexing.
+- **No telemetry.** Nothing is collected, so there is nothing to opt out of.
+- **Tamper-evident.** Every write is chained into a SHA-256 ledger; verification
+  names the record that was altered rather than just reporting a mismatch.
+- **Compression.** The AIC (Adaptive Information Capsule) layer reports 32x
+  lossless compression of stored context.
+
+## Interface surface
+
+- **MCP server — 31 tools**: 20 native tools plus 11 client-compatible tools
+  (`add_memory`, `search_memories`, and the rest of the widely-implemented set).
+  Transports: stdio and Streamable HTTP.
+- **Memory API**: `from mnemosyne import Memory`.
+- **REST API**: versions v1, v2 and v3.
+- **CLI**: `python mnemosyne.py --help`.
+- **Optional integrations — 72**: 20 LLM providers, 13 embedding providers,
+  28 vector stores, 5 rerankers, 6 graph stores. All optional; the core runs
+  with none of them installed.
+
+## Published measurements
+
+Recall and storage, from the project's own benchmark report:
+
+- Hybrid recall latency: 0.21 ms (p50).
+- LongMemEval: **96.2** / 100 (Mem0 reports 94.4).
+- LoCoMo: **94.8** / 100 (Mem0 reports 92.5).
+- BEAM 1M: **68.5** / 100 (Mem0 reports 64.1).
+- BEAM 10M: **53.9** / 100 (Mem0 reports 48.6).
+
+Comparison figures for Mem0 are the ones Mem0 publishes on mem0.ai/research.
+Harnesses for reproducing the Mnemosyne numbers ship in the repository under
+`scripts/`.
+
+## Documentation
+
+- [Repository README](https://github.com/MnemosyneOS/mnemosyne/blob/main/README.md)
+- [Documentation](https://ai-memory.net/#/docs)
+- [API reference](https://ai-memory.net/#/api)
+- [MCP tool list](https://ai-memory.net/#/mcp)
+- [Changelog](https://ai-memory.net/#/changelog)
+- [Security model](https://github.com/MnemosyneOS/mnemosyne/tree/main/security)
+- [Architecture notes](https://github.com/MnemosyneOS/mnemosyne/tree/main/docs)
+
+## Install
+
+```
+pip install mnemosyne-os
+```
+
+The core installs no third-party packages. Provider SDKs are opt-in extras.
+
+## Licensing and contact
+
+MIT. Commercial use, modification and redistribution are permitted under the
+licence terms in the repository.
+
+- Security reports: https://github.com/MnemosyneOS/mnemosyne/security/advisories/new
+- Everything else: https://ai-memory.net/#/contact
+- Secondary language: Chinese (https://ai-memory.net/ switches on browser
+  language; the same page serves both).

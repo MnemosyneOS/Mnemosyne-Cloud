@@ -1,0 +1,27 @@
+# ai-memory.net — security contact (RFC 9116)
+# Updated 2026-09-24
+
+# Security reports for the site itself and for Mnemosyne OS are handled in the
+# same place. Do not open a public issue for anything exploitable.
+Contact: https://github.com/MnemosyneOS/mnemosyne/security/advisories/new
+Contact: https://ai-memory.net/#/contact
+
+# Written disclosure policy and scope.
+Policy: https://github.com/MnemosyneOS/mnemosyne/security
+Policy: https://ai-memory.net/#/trust
+
+Canonical: https://ai-memory.net/.well-known/security.txt
+
+# Re-fetch after this date rather than trusting a stale copy.
+Expires: 2027-09-24T00:00:00.000Z
+
+Preferred-Languages: en, zh
+
+# Scope
+#   in scope   — ai-memory.net (Caddy config, server.py, stats tooling),
+#                anything in github.com/MnemosyneOS/mnemosyne
+#   out of scope — volumetric DoS, reports produced only by an automated
+#                scanner with no demonstrated impact, and social engineering
+#                of maintainers
+# We ask for a reasonable window to fix before public disclosure.
+Acknowledgments: https://github.com/MnemosyneOS/mnemosyne/security

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ai-memory.net sitemap.
+
+  The product site is a single-page application whose inner routes live in the
+  URL fragment (#/docs, #/trust, #/pricing …). Fragments are never sent to the
+  server, so they are not separate crawlable URLs and must not be listed here.
+  Only the two real documents are declared.
+
+  /stats/ is deliberately absent: it sits behind HTTP Basic authentication.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://ai-memory.net/</loc>
+    <lastmod>2026-09-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://ai-memory.net/legal.html</loc>
+    <lastmod>2026-09-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+</urlset>
