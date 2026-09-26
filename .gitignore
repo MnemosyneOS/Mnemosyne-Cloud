@@ -44,3 +44,10 @@ __pycache__/
 buddy-app/
 runbook-*.md
 验收报告-*.html
+
+# 本地部署工作区（Fly 构建上下文；入口是 fly/，不能出现在 Pages 上）
+fly/
+auth/
+*.b64
+验收报告-*.md
+report-*.md
