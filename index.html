@@ -7346,7 +7346,7 @@ var DX = {
   page: '',
   data: {},
   ui: { copilot: [], ask: '', busy: false, banner: true, memPage: 1, memQ: '', memKind: '',
-        entTab: '', entQ: '', reqQ: '', keyNew: '', exportNote: '' }
+        entTab: '', entQ: '', reqQ: '', keyNew: '', exportNote: '', range: 'all' }
 };
 
 function dz(zh, en) { return lang === 'zh' ? zh : en; }
@@ -7360,7 +7360,7 @@ var DX_NAV = [
   [{ g: 'agent' },
    { id: 'copilot', z: '副驾驶',   e: 'Copilot',  ic: 'sparkles', badge: 'NEW' }],
   [{ g: 'data' },
-   { id: 'overview', z: '仪表板',   e: 'Dashboard', ic: 'layout-grid' },
+   { id: 'overview', z: '仪表盘',   e: 'Dashboard', ic: 'layout-grid' },
    { id: 'requests', z: '请求',     e: 'Requests',  ic: 'list' },
    { id: 'entities', z: '实体',     e: 'Entities',  ic: 'boxes' },
    { id: 'memories', z: '回忆',     e: 'Memories',  ic: 'brain' },
@@ -7407,8 +7407,10 @@ var DX_GRP = { agent: ['代理', 'Agent'], data: ['数据', 'Data'],
 
 function dxGet(page) {
   if (DX.data[page]) return Promise.resolve(DX.data[page]);
+  /* 仪表盘的时间范围是查询参数而不是客户端过滤：逐日明细只有服务端拿得到
+     （记忆条目的 day、facets 的 last、请求日志的 at）。页签一换就重新取数。 */
   var url = {
-    overview: '/api/dash/overview',
+    overview: '/api/dash/overview?range=' + encodeURIComponent(DX.ui.range || 'all'),
     requests: '/api/dash/requests',
     entities: '/api/dash/entities',
     memories: '/api/dash/memories?limit=1000',
@@ -7591,7 +7593,7 @@ function renderDash(path) {
   if (!view) return;
   var rest = path.split('/')[1] || 'overview';
   /* keys / webhooks / settings 已经迁进「站点管理」，不再算控制台的页面 ——
-     老书签会被兜回仪表板，而不是渲染一个已经没有入口的页。 */
+     老书签会被兜回仪表盘，而不是渲染一个已经没有入口的页。 */
   var known = ['install', 'highlights', 'copilot', 'overview', 'requests', 'entities',
                'memories', 'dream', 'graph', 'exports', 'billing',
                'docs', 'mcp', 'changelog'];
@@ -7655,7 +7657,7 @@ function dxMemberEmpty(el, p) {
       '<div class="ic"></div>' +
       '<h3>' + esc(dz('这里还没有数据', 'Nothing here yet')) + '</h3>' +
       '<p>' + esc(dz('本站目前运行在单一记忆库上，管理员的记忆不会展示给你。'
-                     + '等你的空间开通后，仪表板、回忆、图谱都会出现在这里。',
+                     + '等你的空间开通后，仪表盘、回忆、图谱都会出现在这里。',
                      'This site currently runs a single memory store, and the owner\u2019s memories '
                      + 'are never shown to you. Once your space is provisioned the dashboard, '
                      + 'memories and graph will appear here.')) + '</p>' +
@@ -8652,7 +8654,7 @@ function dxPageOverview(el) {
   dxReload('overview').then(function (ov) {
     if (DX.page !== __p) return;
     if (!ov.gateway || !ov.gateway.online) {
-      el.innerHTML = dxHead(dz('仪表板', 'Dashboard'), '') +
+      el.innerHTML = dxHead(dz('仪表盘', 'Dashboard'), '') +
         '<div class="dx-note"><i data-lucide="alert-triangle" style="width:14px;height:14px;flex:none;margin-top:2px"></i>' +
         '<span>' + esc(dz('记忆网关不可达，指标留空而不是编造数字。', 'The memory gateway is unreachable, so these figures stay blank rather than invented.')) + '</span></div>' +
         '<div class="dx-grid dx-k4">' + ['记忆存储|Memory', '回忆涌上心头|Recalls', '已保存的令牌|Tokens saved', '最深的回忆|Oldest']
@@ -8662,32 +8664,99 @@ function dxPageOverview(el) {
     }
     var k = ov.kpi || {};
     var kinds = ov.kinds || [];
+    var days = ov.days || [];
+    var ents = ov.entities || [];
+    var reqs = ov.requests || [];
+    var sc = ov.statusCounts || {};
     var maxK = Math.max.apply(null, kinds.map(function (x) { return x.pct || 0; }).concat([1]));
+    var maxD = Math.max.apply(null, days.map(function (x) { return x.count || 0; }).concat([1]));
     var utilPct = Math.round(k.llmFeedPct || 0);
-    el.innerHTML = dxHead(dz('仪表板', 'Dashboard'), '',
+    /* 互补百分比按实际值算。原来是写死的「其余 83%」，无论用多少都对不上，
+       这正是「数据显示不对」里最刺眼的一条。 */
+    var cutPct = Math.max(0, 100 - utilPct);
+    /* 召回/令牌/延迟只有「今日」和「累计」两档口径，其他范围回落到累计，
+       所以卡片上必须标出来，不能让人以为 7 天的数字就是 7 天窗口的。 */
+    var winBadge = ov.kpiWindow === 'today' ? dz('今日', 'today')
+                 : (ov.range && ov.range !== 'all' ? dz('累计', 'all time') : '');
+
+    var reqTable = reqs.length
+      ? '<table class="dx-tbl"><thead><tr>' +
+          ['时间|Time', '方法|Method', '路径|Path', '状态|Status'].map(function (h) {
+            var p = h.split('|'); return '<th>' + esc(lang === 'zh' ? p[0] : p[1]) + '</th>'; }).join('') +
+        '</tr></thead><tbody>' + reqs.slice(0, 6).map(function (r) {
+          var cls = r.status >= 500 ? 'color:#F87171' : (r.status >= 400 ? 'color:#FBBF24' : 'color:#4ADE80');
+          return '<tr><td class="mono">' + esc(fmtWhen(r.at)) + '</td>' +
+            '<td class="mono">' + esc(r.method) + '</td>' +
+            '<td class="mono ell">' + esc(r.path) + '</td>' +
+            '<td class="mono" style="' + cls + '">' + esc(r.status) + '</td></tr>';
+        }).join('') + '</tbody></table>'
+      : '<div class="dx-empty" style="padding:34px 12px"><div class="ic"></div><h3>' +
+        esc(dz('此范围内没有请求活动。', 'No request activity in this range.')) + '</h3><p>' +
+        esc(dz('控制台自己的接口调用会记在这里，换一个时间范围再看看。',
+               'Calls against the console API are logged here — try another time range.')) + '</p></div>';
+
+    var entList = ents.length
+      ? '<div>' + ents.slice(0, 8).map(function (x) {
+          return '<div style="display:flex;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06)">' +
+            '<span class="ell" style="flex:1;font-size:12.5px">' + esc(x.name) + '</span>' +
+            '<span class="dx-tag">' + esc(x.type) + '</span>' +
+            '<span class="mono" style="font-size:12px;color:#C9C6DA;min-width:42px;text-align:right">' + (x.count || 0) + '</span>' +
+            '</div>';
+        }).join('') + '</div>'
+      : '<div class="dx-empty" style="padding:34px 12px"><div class="ic"></div><h3>' +
+        esc(dz('此范围内没有实体活动。', 'No entity activity in this range.')) + '</h3><p>' +
+        esc(dz('记忆的来源、模型、技能与标签会出现在这里。',
+               'Sources, models, skills and tags of your memories show up here.')) + '</p></div>';
+
+    var depthBody = days.length
+      ? '<div class="dx-bars">' + days.slice(-14).map(function (x) {
+          return '<div class="dx-bar"><div class="rw"><span>' + esc(x.key) + '</span><b>' + (x.count || 0) + '</b></div>' +
+            '<div class="tk"><i style="width:' + Math.max(3, (x.count || 0) / maxD * 100) + '%"></i></div></div>';
+        }).join('') + '</div>' +
+        '<div style="margin-top:10px;font-size:11.5px;color:#6E6B80">' +
+        esc(dz('最早一条距今 ', 'oldest ') + (k.oldestDays || 0) + dz(' 天 · 共 ', ' d · ') +
+            days.length + dz(' 天有写入', ' writing days')) + '</div>'
+      : '<div class="dx-empty" style="padding:20px 12px">' +
+        '<h3>' + esc(dz('此范围内没有写入记忆。', 'No memories written in this range.')) + '</h3><p>' +
+        esc(dz('换一个时间范围，或先写入一条记忆。', 'Try another range, or write a memory first.')) + '</p></div>';
+
+    el.innerHTML = dxHead(dz('仪表盘', 'Dashboard'), '',
         '<a class="dx-btn gh" href="#/dashboard/memories">' + esc(dz('查看记忆', 'View memories')) + '</a>') +
       '<div class="dx-tools"><div class="dx-tabs" data-dx-tabs="range">' +
         [['all', '所有时间', 'All time'], ['24h', '24小时', '24h'], ['7d', '7天', '7d'], ['30d', '30天', '30d'], ['90d', '90天', '90d']]
-          .map(function (r, i) { return '<button type="button" class="' + (i === 0 ? 'on' : '') + '">' + esc(lang === 'zh' ? r[1] : r[2]) + '</button>'; }).join('') +
+          .map(function (r) {
+            return '<button type="button" data-v="' + r[0] + '" class="' +
+              ((DX.ui.range || 'all') === r[0] ? 'on' : '') + '">' +
+              esc(lang === 'zh' ? r[1] : r[2]) + '</button>';
+          }).join('') +
         '</div><span class="sp" style="flex:1"></span>' +
         '<span class="dx-tag">' + esc(dz('网关 v', 'gateway v') + (ov.gateway.version || '')) + '</span>' +
         '<span class="dx-tag">' + esc(dz('已运行 ', 'up ') + fmtAgo(ov.gateway.uptimeSeconds)) + '</span>' +
         '<button class="dx-btn gh sm" type="button" data-dx="refresh">' + esc(dz('刷新', 'Refresh')) + '</button></div>' +
 
       '<div class="dx-grid dx-k4">' +
-        kpi('database', dz('记忆存储', 'Memories'), fmtNum(k.memories), dz('今天 +', '+') + (k.retainToday || 0) + dz(' 条', ' today')) +
-        kpi('brain', dz('回忆涌上心头', 'Recalls'), fmtNum(k.recallTotal), dz('命中率 ', 'hit rate ') + Math.round((k.hitRate || 0) * 100) + '%') +
-        kpi('zap', dz('已保存的令牌', 'Tokens saved'), fmtTokens(k.savedTokens), dz('平均延迟 ', 'avg ') + (k.latencyMs || 0) + ' ms') +
-        kpi('calendar', dz('最深的回忆', 'Oldest memory'), (k.oldestDays || 0) + dz(' 天前', ' d ago'), dz('活跃 ', 'active ') + (k.activeDays || 0) + dz(' 天', ' days')) +
+        kpi('database', dz('记忆存储', 'Memories'), fmtNum(k.memories),
+            dz('今天 +', '+') + (k.retainToday || 0) + dz(' 条', ' today'),
+            ov.range && ov.range !== 'all' ? dz('本范围', 'in range') : '') +
+        kpi('brain', dz('回忆涌上心头', 'Recalls'), fmtNum(k.recallTotal),
+            dz('命中率 ', 'hit rate ') + Math.round((k.hitRate || 0) * 100) + '%', winBadge) +
+        kpi('zap', dz('已保存的令牌', 'Tokens saved'), fmtTokens(k.savedTokens),
+            dz('平均延迟 ', 'avg ') + (k.latencyMs || 0) + ' ms', winBadge) +
+        kpi('calendar', dz('最深的回忆', 'Oldest memory'), (k.oldestDays || 0) + dz(' 天前', ' d ago'),
+            dz('活跃 ', 'active ') + (k.activeDays || 0) + dz(' 天', ' days')) +
       '</div>' +
 
       '<div class="dx-grid dx-k2" style="margin-top:12px">' +
-        '<div class="dx-card"><div class="dx-chd"><h3>' + esc(dz('请求', 'Requests')) + '</h3><span class="sp"></span>' +
+        '<div class="dx-card"><div class="dx-chd"><h3>' + esc(dz('请求', 'Requests')) + '</h3><span class="sp" style="flex:1"></span>' +
+          '<span class="dx-tag">2xx ' + ((sc['200'] || 0) + (sc['201'] || 0)) + '</span>' +
+          '<span class="dx-tag">4xx ' + ((sc['400'] || 0) + (sc['401'] || 0) + (sc['403'] || 0) + (sc['404'] || 0) + (sc['429'] || 0)) + '</span>' +
+          '<span class="dx-tag">5xx ' + ((sc['500'] || 0) + (sc['502'] || 0) + (sc['503'] || 0)) + '</span>' +
           '<a class="mo" href="#/dashboard/requests">' + esc(dz('查看使用情况 →', 'See usage →')) + '</a></div>' +
-          '<div class="dx-empty" style="padding:34px 12px"><div class="ic"></div><h3>' + esc(dz('此范围内没有请求活动。', 'No request activity in this range.')) + '</h3></div></div>' +
-        '<div class="dx-card"><div class="dx-chd"><h3>' + esc(dz('实体', 'Entities')) + '</h3><span class="sp"></span>' +
+          reqTable + '</div>' +
+        '<div class="dx-card"><div class="dx-chd"><h3>' + esc(dz('实体', 'Entities')) + '</h3><span class="sp" style="flex:1"></span>' +
+          '<span class="mo">' + ents.length + dz(' 个实体', ' entities') + '</span>' +
           '<a class="mo" href="#/dashboard/entities">' + esc(dz('查看实体 →', 'See entities →')) + '</a></div>' +
-          '<div class="dx-empty" style="padding:34px 12px"><div class="ic"></div><h3>' + esc(dz('此时间内无实体活动。', 'No entity activity in this range.')) + '</h3></div></div>' +
+          entList + '</div>' +
       '</div>' +
 
       '<div class="dx-grid dx-k2" style="margin-top:12px">' +
@@ -8696,37 +8765,38 @@ function dxPageOverview(el) {
           '<div class="dx-bars">' + (kinds.length ? kinds.map(function (x) {
             return '<div class="dx-bar"><div class="rw"><span>' + esc(x.key) + '</span><b>' + (x.pct || 0) + '%</b></div>' +
               '<div class="tk"><i style="width:' + Math.max(3, (x.pct || 0) / maxK * 100) + '%"></i></div></div>';
-          }).join('') : '<div style="color:#6E6B80;font-size:12px">—</div>') + '</div></div>' +
+          }).join('') : '<div style="color:#6E6B80;font-size:12px">' + esc(dz('此范围内没有记忆。', 'No memories in this range.')) + '</div>') + '</div></div>' +
 
-        '<div class="dx-card"><div class="dx-chd"><h3>' + esc(dz('回忆深度', 'Memory depth')) + '</h3></div>' +
-          '<div class="dx-empty" style="padding:20px 12px">' +
-            '<h3>' + esc(dz('本范围无召回活动。', 'No recalls in this range.')) + '</h3>' +
-            '<p style="font-size:22px;color:#F2F1F8;margin:12px 0 6px">' + (k.oldestDays || 0) + dz(' 天前', ' days ago') + '</p>' +
-            '<p>' + esc(dz('最早一条记忆距今的时间。', 'How long ago the oldest memory was written.')) + '</p></div></div>' +
+        '<div class="dx-card"><div class="dx-chd"><h3>' + esc(dz('回忆深度', 'Memory depth')) + '</h3><span class="sp"></span>' +
+          '<span class="mo">' + esc(dz('每日写入', 'written per day')) + '</span></div>' +
+          depthBody + '</div>' +
       '</div>' +
 
       '<div class="dx-grid dx-k2" style="margin-top:12px">' +
         '<div class="dx-card"><div class="dx-chd"><h3>' + esc(dz('内容利用率', 'Context utilisation')) + '</h3></div>' +
           '<div class="dx-empty" style="padding:20px 12px">' +
             '<p style="font-size:24px;color:#F2F1F8;margin:0 0 8px">' + utilPct + '%</p>' +
-            '<p>' + esc(dz('真正送进模型的 token 只占潜在需要的 ', 'Only ') + utilPct + dz('%，其余 83% 被压掉了。', '% of the potential context reaches the model.')) + '</p>' +
+            '<p>' + esc(dz('真正送进模型的 token 只占潜在需要的 ', 'Only ') + utilPct + dz('%，其余 ' + cutPct + '% 被压掉了。', '% of the potential context reaches the model.')) + '</p>' +
             '<div style="margin-top:12px;font-size:11.5px;color:#6E6B80">' +
-              esc(dz('已用 ', 'used ') + fmtTokens(k.sentToLlmTokens) + ' / ' + esc(dz('潜在 ', 'potential ')) + fmtTokens(k.potentialTokens)) + '</div>' +
+              esc(dz('已用 ', 'used ') + fmtTokens(k.sentToLlmTokens) + ' / ' + esc(dz('潜在 ', 'potential ')) + fmtTokens(k.potentialTokens)) +
+              (winBadge ? ' · ' + esc(winBadge) : '') + '</div>' +
           '</div></div>' +
         '<div class="dx-card"><div class="dx-chd"><h3>' + esc(dz('回忆得分', 'Recall score')) + '</h3></div>' +
           '<div class="dx-empty" style="padding:20px 12px">' +
             '<p style="font-size:24px;color:#F2F1F8;margin:0 0 8px">' + (k.hitRate || 0).toFixed(3) + '</p>' +
             '<p>' + esc(dz('召回命中率（0 至 1）。', 'Recall hit rate, between 0 and 1.')) + '</p>' +
             '<div style="margin-top:12px;font-size:11.5px;color:#6E6B80">' +
-              esc(dz('累计召回 ', 'recalls ') + (k.recallTotal || 0) + ' · ' + dz('写入 ', 'writes ') + (k.retainTotal || 0) + ' · ' + dz('工具 ', 'tools ') + (k.toolCount || 0)) + '</div>' +
+              esc(dz('累计召回 ', 'recalls ') + (k.recallAll || 0) + ' · ' + dz('写入 ', 'writes ') + (k.retainAll || 0) + ' · ' + dz('工具 ', 'tools ') + (k.toolCount || 0)) + '</div>' +
           '</div></div>' +
       '</div>';
     icons();
   });
 }
 
-function kpi(ic, label, value, foot) {
-  return '<div class="dx-card dx-kpi"><div class="lb"><i data-lucide="' + ic + '"></i>' + esc(label) + '</div>' +
+function kpi(ic, label, value, foot, badge) {
+  return '<div class="dx-card dx-kpi"><div class="lb"><i data-lucide="' + ic + '"></i>' + esc(label) +
+    (badge ? '<span class="dx-tag" style="margin-left:6px">' + esc(badge) + '</span>' : '') +
+    '</div>' +
     '<div class="vl">' + esc(value) + '</div><div class="ft">' + esc(foot) + '</div></div>';
 }
 
@@ -8756,6 +8826,12 @@ document.addEventListener('click', function (e) {
   if (tab) {
     var grp = tab.closest('[data-dx-tabs]').getAttribute('data-dx-tabs');
     if (grp === 'ent') { DX.ui.entTab = tab.getAttribute('data-v') || ''; dxPaintBody(); }
+    else if (grp === 'range') {
+      /* 换范围必须**重新取数**：逐日明细在服务端，客户端过滤不出来。
+         缓存是按页名存的，所以先丢弃 overview 再取。 */
+      DX.ui.range = tab.getAttribute('data-v') || 'all';
+      dxReload('overview').then(function () { dxPaintBody(); });
+    }
     return;
   }
 
@@ -8810,7 +8886,7 @@ document.addEventListener('click', function (e) {
       if (!r || !r.ok) { toast(apiErr(r, dz('保存失败。', 'Could not save.'))); return; }
       DX.ui.onboarded = true;
       delete DX.data.overview;
-      toast(dz('已保存，正在打开仪表板…', 'Saved — opening the dashboard…'));
+      toast(dz('已保存，正在打开仪表盘…', 'Saved — opening the dashboard…'));
       location.hash = '#/dashboard/overview';
       setTimeout(function () { route(); }, 60);
     });
