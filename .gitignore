@@ -1,0 +1,46 @@
+# ── 只在本地/部署上下文使用，绝不发布到 GitHub Pages ──────────────────────
+# Pages 会把仓库根目录原样公开（https://ai-memory.net/<path>），
+# 因此凡是含凭据、服务端代码、部署脚本、内部设计稿的内容都必须排除在外。
+# 2026-09-26 实测事故：oauth.config.json 里的 GitHub client secret
+# 曾可从 https://ai-memory.net/oauth.config.json 直接下载，因此新增本文件。
+
+# 凭据（绝不可公开）
+oauth.config.json
+oauth.json
+.gh_token.txt
+.gh_device_state.json
+
+# 服务端代码（真身在 fly/ 与容器内，仓库根这份只是历史副本）
+server.py
+server.py.prev-*
+server.js
+package.json
+mcp_http.py
+mcp_http_*.b64
+server_py.b64
+
+# 部署与运维
+deploy/
+Dockerfile
+Dockerfile.*
+.dockerignore
+fly.toml
+fly.mcp.toml
+worker/
+.github/
+
+# 内部设计文档与截图（站点里的 docs/ 链接指向 GitHub，不指向本地路径）
+docs/
+
+# 站点访问统计与埋点（法律页声明 /stats/ 受 Basic 认证保护，Pages 无法提供该保护）
+stats/
+analytics/
+
+# 历史副本与构建垃圾
+*.prev-*
+backup/
+__pycache__/
+*.pyc
+buddy-app/
+runbook-*.md
+验收报告-*.html
