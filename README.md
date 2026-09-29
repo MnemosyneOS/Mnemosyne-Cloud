@@ -29,11 +29,6 @@ python deploy/deploy.py
 python deploy/deploy.py --page-only
 ```
 
-### 查看访问数据
-
-打开 <https://ai-memory.net/stats/>
-
-凭据在服务器 `/root/.ai-memory-net-stats.txt`（sudo 查看）。
 
 ## 关键地址
 
@@ -41,7 +36,6 @@ python deploy/deploy.py --page-only
 |---|---|
 | 仓库 | `github.com/MnemosyneOS/Mnemosyne-Cloud` |
 | 站点 | `https://ai-memory.net` |
-| 看板 | `https://ai-memory.net/stats/` |
 | DNS | Cloudflare（代理） |
 
 ## 注意事项
