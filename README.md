@@ -1,18 +1,15 @@
 # Mnemosyne Cloud
 
-**Mnemosyne OS** 官网与访问统计看板，托管于 GitHub Pages。
+**Mnemosyne OS** 官网，托管于 GitHub Pages。
 
 - 官网：<https://ai-memory.net>
-- 统计：<https://ai-memory.net/stats/>
 
 ## 仓库结构
 
 ```
 ├── index.html          ★ 站点首页（含内联 CSS/JS）
 ├── CNAME               自定义域名
-├── stats/              访问统计看板
-│   ├── index.html
-│   └── stats-gen.py
+
 ├── deploy/             部署脚本
 │   ├── deploy.py
 │   ├── localize_assets.py
