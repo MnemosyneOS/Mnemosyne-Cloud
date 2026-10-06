@@ -5676,7 +5676,7 @@ body.docs #view{ display:block !important; }
       codeSentHint: 'Code sent — it stays valid for about 10 minutes. Enter it above, then submit.',
       sendFirst: 'Tap “Send code” first — the code goes to the address above.',
       pwChanged: 'Your password has been updated. Signing you in…',
-      pwRule: 'At least 8 characters, including a letter and a number.',
+      pwRule: 'At least 8 characters, including an uppercase letter, a lowercase letter and a number.',
       resetSent: 'If that address has an account, a code is on its way. Check the inbox and the spam folder.',
       newPass: 'Choose a new password', applyPass: 'Save the new password',
       ssoOr: 'Or continue with',
@@ -5690,7 +5690,7 @@ body.docs #view{ display:block !important; }
       domainNote: 'Sign-in works only on the published domain, because the server validates the request origin.',
       backHome: 'Back to the site',
       needEmail: 'Enter your email address.', needPass: 'Enter your password.',
-      mismatch: 'The two passwords do not match.', weak: 'Use at least 8 characters with a letter and a number.',
+      mismatch: 'The two passwords do not match.', weak: 'Use at least 8 characters with an uppercase letter, a lowercase letter and a number.',
       needCode: 'Enter the code from the email.',
       working: 'Working…', signedInAs: 'Signed in as',
       signedInShort: 'Signed in',
@@ -5721,7 +5721,7 @@ body.docs #view{ display:block !important; }
       codeSentHint: '验证码已发送，有效期约 10 分钟。填入上方输入框后提交即可。',
       sendFirst: '请先点右侧「获取验证码」—— 验证码会发到上面的邮箱。',
       pwChanged: '密码已更新，正在为你登录…',
-      pwRule: '至少 8 位，需包含字母和数字。',
+      pwRule: '至少 8 位，需包含大写字母、小写字母和数字。',
       resetSent: '如果该邮箱已注册，验证码已发出。请检查收件箱与垃圾邮件。',
       newPass: '设置新密码', applyPass: '保存新密码',
       ssoOr: '或使用第三方账号',
@@ -5735,7 +5735,7 @@ body.docs #view{ display:block !important; }
       domainNote: '登录仅在正式发布域名上生效，因为服务端会校验请求来源。',
       backHome: '返回首页',
       needEmail: '请输入邮箱地址。', needPass: '请输入密码。',
-      mismatch: '两次输入的密码不一致。', weak: '密码至少 8 位，且需包含字母和数字。',
+      mismatch: '两次输入的密码不一致。', weak: '密码至少 8 位，且需包含大写字母、小写字母和数字。',
       needCode: '请输入邮箱收到的验证码。',
       working: '处理中…', signedInAs: '已登录',
       signedInShort: '已登录',
@@ -5779,7 +5779,7 @@ body.docs #view{ display:block !important; }
   }
 
   function emailOk(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
-  function passOk(v) { return typeof v === 'string' && v.length >= 8 && /[A-Za-z]/.test(v) && /\d/.test(v); }
+  function passOk(v) { return typeof v === 'string' && v.length >= 8 && /[A-Z]/.test(v) && /[a-z]/.test(v) && /\d/.test(v); }
 
   /* error.kind is the stable signal; message text is not part of the contract */
   function authError(err) {
@@ -5843,7 +5843,7 @@ body.docs #view{ display:block !important; }
   function codeFieldHTML() {
     return '<div class="field"><label for="ac-code">' + esc(A('code')) + '</label>' +
       '<div class="fieldrow">' +
-        '<input id="ac-code" name="code" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" />' +
+        '<input id="ac-code" name="code" inputmode="numeric" autocomplete="one-time-code" />' +
         '<button type="button" class="ghostbtn" data-act="send-code" data-keep="1">' +
           esc(codeSent ? A('resend') : A('getCode')) +
         '</button>' +
@@ -5867,7 +5867,7 @@ body.docs #view{ display:block !important; }
     if (wantCode) {
       f += '<div class="field"><label for="ac-code">' + esc(A('code')) + '</label>' +
            '<div class="fieldrow">' +
-             '<input id="ac-code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" />' +
+             '<input id="ac-code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" />' +
              '<button class="btn btn-ghost" type="button" data-act="send-code" data-label="' + esc(A('getCode')) + '">' +
                esc(codeSent ? A('resend') : A('getCode')) + '</button>' +
            '</div>' +
@@ -5880,27 +5880,23 @@ body.docs #view{ display:block !important; }
            esc(A('noMailLink')) + '</a></div>';
     }
 
-    if (authTab === 'up') {
-      f += '<div class="field"><label for="ac-name">' + esc(A('name')) + '</label>' +
-           '<input id="ac-name" name="name" autocomplete="name" placeholder="—" /></div>';
-    }
 
     if (authMode === 'reset') {
       f += '<div class="field"><label for="ac-pass">' + esc(A('newPass')) + '</label>' +
-           '<input id="ac-pass" name="password" type="password" autocomplete="new-password" placeholder="••••••••" />' +
+           '<input id="ac-pass" name="password" type="password" autocomplete="new-password" />' +
            '<div class="hint">' + esc(A('pwRule')) + '</div></div>' +
            '<div class="field"><label for="ac-pass2">' + esc(A('pass2')) + '</label>' +
-           '<input id="ac-pass2" name="password2" type="password" autocomplete="new-password" placeholder="••••••••" /></div>';
+           '<input id="ac-pass2" name="password2" type="password" autocomplete="new-password" /></div>';
     } else if (authTab === 'up') {
       f += '<div class="field"><label for="ac-pass">' + esc(A('pass')) + '</label>' +
-           '<input id="ac-pass" name="password" type="password" autocomplete="new-password" placeholder="••••••••" />' +
+           '<input id="ac-pass" name="password" type="password" autocomplete="new-password" />' +
            '<div class="hint">' + esc(A('pwRule')) + '</div></div>' +
            '<div class="field"><label for="ac-pass2">' + esc(A('pass2')) + '</label>' +
-           '<input id="ac-pass2" name="password2" type="password" autocomplete="new-password" placeholder="••••••••" />' +
+           '<input id="ac-pass2" name="password2" type="password" autocomplete="new-password" />' +
            '<div class="hint" id="ac-pass2-hint">' + esc(A('pass2Hint')) + '</div></div>';
     } else {
       f += '<div class="field"><label for="ac-pass">' + esc(A('pass')) + '</label>' +
-           '<input id="ac-pass" name="password" type="password" autocomplete="current-password" placeholder="••••••••" /></div>';
+           '<input id="ac-pass" name="password" type="password" autocomplete="current-password" /></div>';
     }
 
     if (authMode === 'reset') {
@@ -6347,7 +6343,7 @@ body.docs #view{ display:block !important; }
         '<div class="kpi"><div class="v">' + (admin ? CONSOLE.profiles.length : 1) + '</div><div class="l">' +
           (zh ? (admin ? '注册用户' : '我的资料') : (admin ? 'Profiles' : 'My profile')) + '</div></div>' +
         '<div class="kpi"><div class="v" style="font-size:18px;padding-top:6px">' +
-          (admin ? (zh ? '管理员' : 'Administrator') : (zh ? '成员' : 'Member')) + '</div><div class="l">' +
+          (admin ? (zh ? '管理员' : 'Administrator') : (zh ? '普通用户' : 'User')) + '</div><div class="l">' +
           (zh ? '当前身份' : 'Access level') + '</div></div>' +
       '</div>';
 
@@ -6389,7 +6385,7 @@ body.docs #view{ display:block !important; }
             : (CONSOLE.admins.length
               /* The slot is one-shot: once somebody holds it, offer nobody a
                  button that could only ever fail. */
-              ? '<span class="chipnote">' + (zh ? '本站已有管理员' : 'An administrator already exists') + '</span>'
+              ? ''
               : '<button class="btn btn-ghost btn-sm" type="button" data-act="claim-admin">' +
                 (zh ? '领取管理员' : 'Claim administrator') + '</button>')) +
           '<button class="btn btn-ghost btn-sm" type="button" data-act="signout">' + (zh ? '退出登录' : 'Sign out') + '</button>' +
@@ -6568,9 +6564,7 @@ body.docs #view{ display:block !important; }
       ? '<p class="sub" style="margin-top:20px">' +
         (zh ? '当前账号是管理员，可以看到全部留言与注册用户。数据由数据库的行级安全策略决定，前端不做判断。'
             : 'This account is an administrator, so it sees every request and every profile. What is visible is decided by the database row-level policies, not by this page.') + '</p>'
-      : '<p class="sub" style="margin-top:20px">' +
-        (zh ? '普通成员只能看到自己提交的内容。如果这是你的站点，点上方“领取管理员”即可获得完整视图（仅第一个账号可领取）。'
-            : 'A regular member sees only their own submissions. If this is your site, use “Claim administrator” above for the full view — only the first account can claim it.') + '</p>';
+      : '';
 
     return '<h3 class="h2" style="font-size:17px">' + (zh ? '最近提交' : 'Recent submissions') + '</h3>' +
       '<div style="margin-top:14px">' + list + '</div>' + note;
