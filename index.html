@@ -6662,108 +6662,133 @@ body.docs #view{ display:block !important; }
       zh ? '还没有用户资料。' : 'No profiles yet.') + admins;
   }
 
-  /* ── 用户记忆（管理员专属，2026-10-18 新增）─────────────────────────
+  /* ── 用户记忆（管理员专属，2026-10-18 新增；01:15 重构）────────────
      左列 = 全部用户的独立记忆库（/api/dash/namespaces，服务端附 owner 标签），
      右列 = 点开的那个库的全量记忆（/api/dash/memories?ns=）。
-     「谁能看」由服务端 dash_admin_guard 决定，本页不做权限判断；
-     时间统一走 when()（秒级 epoch → 2026-10-18 修）。 */
+     用局部 DOM 更新而非整体重绘（与 adminsPanel 同款模式）；
+     每步 try/catch 并把错误写进面板 —— 「无数据」不许再无声发生。 */
   function mnemPanel(zh) {
-    if (CONSOLE.nsLoading && !CONSOLE.nsList.length) {
-      return '<div class="kempty">' + (zh ? '正在读取记忆库列表…' : 'Loading memory stores…') + '</div>';
-    }
-    if (CONSOLE.nsErr && !CONSOLE.nsList.length) {
-      return '<div class="kempty">' + esc(CONSOLE.nsErr) + '</div>';
-    }
-    if (!CONSOLE.nsList.length) {
-      return '<div class="kempty">' + (zh ? '还没有任何用户记忆库。' : 'No memory stores yet.') + '</div>';
-    }
-    var rows = CONSOLE.nsList.map(function (r) {
-      var cur = String(r.namespace) === String(CONSOLE.nsCur);
-      var owner = r.owner
-        ? esc(r.owner)
-        : '<span style="color:var(--fg3)">' + (zh ? '未绑定账号' : 'unlinked') + '</span>';
-      return '<button type="button" data-act="ns-open" data-v="' + esc(r.namespace) + '"' +
-        ' style="display:block;width:100%;text-align:left;padding:10px 12px;border-radius:8px;' +
-        'border:1px solid ' + (cur ? 'var(--accent)' : 'transparent') + ';' +
-        'background:' + (cur ? 'var(--bg2,rgba(127,127,127,.08))' : 'transparent') + ';' +
-        'cursor:pointer;margin-bottom:4px">' +
-        '<div class="mono" style="font-size:12px;word-break:break-all">' + esc(r.namespace) + '</div>' +
-        '<div style="font-size:12px;margin-top:3px">' + owner + '</div>' +
-        '<div class="mono" style="font-size:11px;color:var(--fg3);margin-top:2px">' +
-        (r.count || 0) + (zh ? ' 条 · ' : ' items · ') + fmtBytes(r.bytes || 0) + '</div>' +
-        '</button>';
-    }).join('');
+    setTimeout(mnemBoot, 0);
+    return '<div id="memn-root">' +
+      '<div style="display:grid;grid-template-columns:290px 1fr;gap:16px;align-items:start">' +
+        '<div class="card card-pad" style="max-height:72vh;overflow-y:auto">' +
+          '<h3 class="h2" style="font-size:14px;margin-bottom:10px">' + (zh ? '全部用户记忆库' : 'All user stores') + '</h3>' +
+          '<div id="memn-list"><div class="kempty">' + (zh ? '加载中…' : 'Loading…') + '</div></div>' +
+        '</div>' +
+        '<div id="memn-detail"><div class="kempty">' + (zh ? '从左侧选择一个用户，查看其全部记忆。' : 'Pick a user on the left.') + '</div></div>' +
+      '</div>' +
+      '<p class="sub" style="margin-top:16px;font-size:12.5px">' +
+        (zh ? '每个「u_」库是用户在 /auth/keys 自助领取密钥后绑定的私有记忆库；「default」是站点自己的库。'
+            : 'Each "u_" store is a user private library bound to their self-issued key; "default" is the site\'s own store.') +
+      '</p></div>';
+  }
 
-    var right;
-    if (!CONSOLE.nsCur) {
-      right = '<div class="kempty">' + (zh ? '从左侧选择一个记忆库。' : 'Pick a store on the left.') + '</div>';
-    } else if (CONSOLE.nsLoading) {
-      right = '<div class="kempty">' + (zh ? '正在读取该库…' : 'Loading…') + '</div>';
-    } else if (CONSOLE.nsErr) {
-      right = '<div class="kempty">' + esc(CONSOLE.nsErr) + '</div>';
-    } else {
-      var body = CONSOLE.nsItems.map(function (m) {
+  function mnemBoot() {
+    var box = document.getElementById('memn-list');
+    if (!box) return;
+    api('/api/dash/namespaces').then(function (r) {
+      var b = (r.ok && r.body) ? r.body : {};
+      var rows = b.namespaces || [];
+      CONSOLE.nsList = rows;
+      if (!document.getElementById('memn-list')) return;
+      if (!r.ok) {
+        box.innerHTML = '<div class="kempty">' + esc(apiErr(r, lang === 'zh' ? '无法读取记忆库列表。' : 'Could not load stores.')) + '</div>';
+        return;
+      }
+      if (!rows.length) { box.innerHTML = '<div class="kempty">还没有任何用户记忆库。</div>'; return; }
+      var html = rows.map(function (r2) {
+        var cur = String(r2.namespace) === String(CONSOLE.nsCur);
+        var label = r2.namespace === 'default'
+          ? (lang === 'zh' ? 'default（站点自己的库）' : 'default (site\'s own)')
+          : (r2.owner ? String(r2.owner) : r2.namespace);
+        return '<button type="button" data-act="ns-open" data-v="' + esc(r2.namespace) + '"' +
+          ' style="display:block;width:100%;text-align:left;padding:9px 11px;border-radius:8px;margin-bottom:4px;' +
+          'border:1px solid ' + (cur ? 'var(--accent)' : 'transparent') + ';' +
+          'background:' + (cur ? 'var(--bg2,rgba(127,127,127,.08))' : 'transparent') + ';cursor:pointer">' +
+          '<div style="font-size:12.5px;word-break:break-all">' + esc(label) + '</div>' +
+          '<div class="mono" style="font-size:11px;color:var(--fg3);margin-top:2px">' +
+          esc(r2.namespace) + ' · ' + (r2.count || 0) + (lang === 'zh' ? ' 条 · ' : ' items · ') + esc(nmemBytes(r2.bytes)) + '</div>' +
+          '</button>';
+      }).join('');
+      box.innerHTML = html;
+      /* 自动展开第一个用户库：点开 tab 即有数据可看，不用先猜要点谁 */
+      var first = null;
+      for (var i = 0; i < rows.length; i++) {
+        if (rows[i].namespace !== 'default') { first = rows[i]; break; }
+      }
+      if (first && !CONSOLE.nsCur) loadNsMemories(first.namespace);
+    })['catch'](function (e) {
+      var b2 = document.getElementById('memn-list');
+      if (b2) b2.innerHTML = '<div class="kempty">加载失败：' + esc(String(e && e.message || e)) + '</div>';
+    });
+  }
+
+  function nmemBytes(n) {
+    try { return fmtBytes(n || 0); } catch (e) { return String(n || 0) + ' B'; }
+  }
+
+  function loadNsMemories(ns) {
+    if (!ns) return;
+    CONSOLE.nsCur = ns;
+    var box = document.getElementById('memn-detail');
+    var listBox = document.getElementById('memn-list');
+    if (!box) return;
+    box.innerHTML = '<div class="kempty">正在读取 ' + esc(ns) + ' …</div>';
+    if (listBox) mnemPaintList(listBox);
+    api('/api/dash/memories?ns=' + encodeURIComponent(ns)).then(function (r) {
+      if (String(CONSOLE.nsCur) !== String(ns)) return;   /* 已切换到别的库 */
+      var b = (r.ok && r.body) ? r.body : {};
+      var items = b.items || [];
+      if (!r.ok) {
+        box.innerHTML = '<div class="kempty">' + esc(apiErr(r, lang === 'zh' ? '无法读取该库。' : 'Could not load this store.')) + '</div>';
+        return;
+      }
+      if (!items.length) {
+        box.innerHTML = '<div class="kempty">' + esc(ns) + (lang === 'zh' ? '：这个库是空的。' : ' is empty.') + '</div>';
+        return;
+      }
+      var body = items.map(function (m) {
         return '<tr>' +
           '<td class="mono" style="font-size:11.5px;white-space:nowrap">' + esc(m.id || '—') + '</td>' +
           '<td>' + esc(m.kind || '—') + '</td>' +
           '<td class="mono" style="white-space:nowrap">' + esc(when(m.createdAt || m.day)) + '</td>' +
           '<td style="max-width:520px">' + esc(String(m.excerpt || '').slice(0, 300) || '—') + '</td>' +
           '<td style="max-width:200px;word-break:break-all">' + esc((m.tags || []).join(', ')) + '</td>' +
-          '<td class="mu" style="white-space:nowrap">' + fmtBytes(m.size || 0) + '</td>' +
+          '<td class="mu" style="white-space:nowrap">' + esc(nmemBytes(m.size)) + '</td>' +
           '</tr>';
       }).join('');
-      right = tableOr(CONSOLE.nsItems,
-        '<th>id</th><th>' + (zh ? '类型' : 'Kind') + '</th><th>' + (zh ? '时间' : 'When') + '</th>' +
-        '<th>' + (zh ? '内容' : 'Content') + '</th><th>' + (zh ? '标签' : 'Tags') + '</th>' +
-        '<th>' + (zh ? '大小' : 'Size') + '</th>', body,
-        zh ? '这个库是空的。' : 'This store is empty.');
-    }
-
-    return '<div style="display:grid;grid-template-columns:250px 1fr;gap:16px;align-items:start">' +
-      '<div class="card card-pad" style="max-height:70vh;overflow-y:auto">' +
-        '<h3 class="h2" style="font-size:14px;margin-bottom:10px">' + (zh ? '全部记忆库' : 'All memory stores') + '</h3>' +
-        rows +
-      '</div>' +
-      '<div>' +
+      box.innerHTML =
         '<div class="sub" style="font-size:12.5px;margin-bottom:8px">' +
-          esc(CONSOLE.nsCur || '—') +
-          (CONSOLE.nsCur ? ' · <span class="mono">' + CONSOLE.nsTotal + (zh ? ' 条' : ' items') + '</span>' : '') +
-        '</div>' + right +
-      '</div>' +
-      '</div>' +
-      '<p class="sub" style="margin-top:16px;font-size:12.5px">' +
-        (zh ? '每个「u_」库是用户在 /auth/keys 自助领取密钥后绑定的私有记忆库；「default」是站点自己的库。'
-            : 'Each "u_" store is a user private library bound to their self-issued key; "default" is the site\'s own store.') +
-      '</p>';
-  }
-
-  function loadNamespaces(force) {
-    if (CONSOLE.nsLoading) return;
-    if (CONSOLE.nsList.length && !force) return;
-    CONSOLE.nsLoading = true;
-    api('/api/dash/namespaces').then(function (r) {
-      CONSOLE.nsLoading = false;
-      var b = (r.ok && r.body) ? r.body : {};
-      CONSOLE.nsList = b.namespaces || [];
-      CONSOLE.nsErr = r.ok ? '' : apiErr(r, lang === 'zh' ? '无法读取记忆库列表。' : 'Could not load memory stores.');
-      paintConsole();
+          esc(ns) + ' · <span class="mono">' + (b.total || items.length) + (lang === 'zh' ? ' 条' : ' items') + '</span>' +
+        '</div>' +
+        '<div class="card" style="overflow:hidden"><div style="overflow-x:auto">' +
+          '<table class="ltable"><thead><tr>' +
+            '<th>id</th><th>' + (lang === 'zh' ? '类型' : 'Kind') + '</th><th>' + (lang === 'zh' ? '时间' : 'When') + '</th>' +
+            '<th>' + (lang === 'zh' ? '内容' : 'Content') + '</th><th>' + (lang === 'zh' ? '标签' : 'Tags') + '</th>' +
+            '<th>' + (lang === 'zh' ? '大小' : 'Size') + '</th>' +
+          '</tr></thead><tbody>' + body + '</tbody></table>' +
+        '</div></div>';
+    })['catch'](function (e) {
+      box.innerHTML = '<div class="kempty">加载失败：' + esc(String(e && e.message || e)) + '</div>';
     });
   }
 
-  function loadNsMemories(ns) {
-    if (!ns) return;
-    CONSOLE.nsCur = ns;
-    CONSOLE.nsLoading = true;
-    CONSOLE.nsErr = '';
-    paintConsole();
-    api('/api/dash/memories?ns=' + encodeURIComponent(ns)).then(function (r) {
-      CONSOLE.nsLoading = false;
-      var b = (r.ok && r.body) ? r.body : {};
-      CONSOLE.nsItems = b.items || [];
-      CONSOLE.nsTotal = b.total || 0;
-      CONSOLE.nsErr = r.ok ? '' : apiErr(r, lang === 'zh' ? '无法读取该记忆库。' : 'Could not load this store.');
-      paintConsole();
-    });
+  function mnemPaintList(box) {
+    if (!box || !CONSOLE.nsList.length) return;
+    box.innerHTML = CONSOLE.nsList.map(function (r2) {
+      var cur = String(r2.namespace) === String(CONSOLE.nsCur);
+      var label = r2.namespace === 'default'
+        ? (lang === 'zh' ? 'default（站点自己的库）' : 'default (site own)')
+        : (r2.owner ? String(r2.owner) : r2.namespace);
+      return '<button type="button" data-act="ns-open" data-v="' + esc(r2.namespace) + '"' +
+        ' style="display:block;width:100%;text-align:left;padding:9px 11px;border-radius:8px;margin-bottom:4px;' +
+        'border:1px solid ' + (cur ? 'var(--accent)' : 'transparent') + ';' +
+        'background:' + (cur ? 'var(--bg2,rgba(127,127,127,.08))' : 'transparent') + ';cursor:pointer">' +
+        '<div style="font-size:12.5px;word-break:break-all">' + esc(label) + '</div>' +
+        '<div class="mono" style="font-size:11px;color:var(--fg3);margin-top:2px">' +
+        esc(r2.namespace) + ' · ' + (r2.count || 0) + (lang === 'zh' ? ' 条 · ' : ' items · ') + esc(nmemBytes(r2.bytes)) + '</div>' +
+        '</button>';
+    }).join('');
   }
 
   function consoleHTML() {
@@ -6884,8 +6909,7 @@ body.docs #view{ display:block !important; }
     if (!b) return;
     CONSOLE.tab = b.getAttribute('data-ctab') || 'overview';
     paintConsole();
-    /* 用户记忆 tab 懒加载：库清单只在点到它时才拉，不进初始装载的关键路径 */
-    if (CONSOLE.tab === 'memn') loadNamespaces();
+    /* 用户记忆 tab 的数据加载在 mnemPanel → mnemBoot 里自行发起 */
   }
 
   function onConsoleSubmit(e) {
