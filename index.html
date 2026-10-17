@@ -1745,7 +1745,7 @@ body.docs #view{ display:block !important; }
 .dx-doc th, .dx-doc td{ text-align:left; padding:9px 12px; border-bottom:1px solid var(--d-line); }
 .dx-doc th{ color:var(--d-fg3); font-weight:400; }
 .dx-dsep{ height:1px; background:var(--d-line); margin:26px 0; }
-/* 站点管理里的「站点配置」。这批组件原本各自是控制台的一整页，而 .dx 是
+/* 后台管理里的「站点配置」。这批组件原本各自是控制台的一整页，而 .dx 是
    display:flex + min-height:100vh（为「侧栏 + 主体」而写）。直接拼接会让
    四个块被横着排、还撑出一屏空白 —— 这就是错行的来源。这里只关掉整页行为，
    改成竖直堆叠的卡片，并让网格按可用宽度自适应换行。 */
@@ -4941,7 +4941,7 @@ body.docs #view{ display:block !important; }
 
     var signedIn = !!(SESSION && uidOf(SESSION));
     var zh = lang === 'zh';
-    /* 「站点管理」是管理员专属。角色问回来之前先不画这个入口 —— 画出来再
+    /* 「后台管理」是管理员专属。角色问回来之前先不画这个入口 —— 画出来再
        收回去会闪一下，而画错了会让成员以为进得去。拿不到角色就按非管理员
        处理，反正服务端还会再拦一次。 */
     if (signedIn && !DX_ROLE.loaded) dxEnsureRole().then(renderAccountNav);
@@ -4969,7 +4969,7 @@ body.docs #view{ display:block !important; }
             '<a href="#/dashboard/overview"><span class="t">' + (zh ? '控制台' : 'Console') + '</span>' +
               '<span class="d">' + (zh ? '你的记忆、密钥、用量与设置' : 'Your memories, keys, usage and settings') + '</span></a>' +
             (DX_ROLE.loaded && isAdmin()
-              ? '<a href="#/admin"><span class="t">' + (zh ? '站点管理' : 'Site admin') + '</span>' +
+              ? '<a href="#/admin"><span class="t">' + (zh ? '后台管理' : 'Admin console') + '</span>' +
                 '<span class="d">' + (zh ? '留言、成员、管理员与站点配置'
                                           : 'Leads, members, administrators, site settings') + '</span></a>'
               : '') +
@@ -6258,7 +6258,8 @@ body.docs #view{ display:block !important; }
    *  them. The client never decides that — the database policies do.          *
    * ======================================================================= */
 
-  var CONSOLE = { leads: [], profiles: [], admins: [], err: '', loading: false, tab: 'overview', loaded: false };
+  var CONSOLE = { leads: [], profiles: [], admins: [], err: '', loading: false, tab: 'overview', loaded: false,
+                  nsList: [], nsCur: '', nsItems: [], nsTotal: 0, nsLoading: false, nsErr: '' };
 
   function consoleSay(kind, text) {
     var el = document.getElementById('console-msg'); if (!el) return;
@@ -6292,8 +6293,18 @@ body.docs #view{ display:block !important; }
   }
 
   function when(v) {
-    if (!v) return '—';
-    var d = new Date(v);
+    if (v === null || v === undefined || v === '') return '—';
+    var d;
+    if (typeof v === 'number' || (typeof v === 'string' && /^\d+$/.test(v.trim()))) {
+      /* 后端时间字段是秒级 Unix epoch（time.time()）。JS 的 Date 构造按毫秒
+         解析，直接拿秒往里传会全部塌到 1970-01-2x —— 用户页「注册时间」、
+         留言页「时间」、总览「最近提交」曾因此整列显示 1970 年（2026-10-18 修）。
+         1e11 秒 ≈ 5138 年、1e11 毫秒 ≈ 1973 年，用它做分界线两种单位都安全。 */
+      var n = Number(v);
+      d = new Date(n > 0 && n < 1e11 ? n * 1000 : n);
+    } else {
+      d = new Date(v);
+    }
     if (isNaN(d.getTime())) return String(v);
     function p(n) { return (n < 10 ? '0' : '') + n; }
     return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
@@ -6355,6 +6366,7 @@ body.docs #view{ display:block !important; }
         (admin ? tabBtn('health', zh ? '系统概览' : 'System') : '') +
         (admin ? tabBtn('notice', zh ? '通知栏' : 'Announcement') : '') +
         (admin ? tabBtn('members', zh ? '用户' : 'Members') : '') +
+        (admin ? tabBtn('memn', zh ? '用户记忆' : 'User memory') : '') +
         (admin ? tabBtn('admins', zh ? '管理员' : 'Administrators') : '') +
         (admin ? tabBtn('site', zh ? '站点配置' : 'Site settings') : '') +
       '</div>';
@@ -6365,6 +6377,7 @@ body.docs #view{ display:block !important; }
     else if (CONSOLE.tab === 'health' && admin) panel = mnHealthPanel(zh);
     else if (CONSOLE.tab === 'notice' && admin) panel = mnNoticePanel(zh);
     else if (CONSOLE.tab === 'members' && admin) panel = membersPanel(zh);
+    else if (CONSOLE.tab === 'memn' && admin) panel = mnemPanel(zh);
     else if (CONSOLE.tab === 'admins' && admin) panel = adminsPanel(zh);
     else if (CONSOLE.tab === 'site' && admin) panel = sitePanel(zh);
     else panel = overviewPanel(visible, admin, zh);
@@ -6440,7 +6453,7 @@ body.docs #view{ display:block !important; }
       box.innerHTML =
         '<h3 class="h2" style="font-size:17px">' + esc(zh ? '管理员' : 'Administrators') + '</h3>' +
         '<p class="sub" style="margin-top:8px;font-size:12.5px">' +
-          esc(zh ? '只有管理员能进入站点管理。你不能移除自己，最后一名管理员也不能被移除。'
+          esc(zh ? '只有管理员能进入后台管理。你不能移除自己，最后一名管理员也不能被移除。'
                  : 'Only administrators reach site admin. You cannot remove yourself, and the last administrator cannot be removed.') +
         '</p>' +
         '<div style="margin-top:14px">' +
@@ -6649,6 +6662,110 @@ body.docs #view{ display:block !important; }
       zh ? '还没有用户资料。' : 'No profiles yet.') + admins;
   }
 
+  /* ── 用户记忆（管理员专属，2026-10-18 新增）─────────────────────────
+     左列 = 全部用户的独立记忆库（/api/dash/namespaces，服务端附 owner 标签），
+     右列 = 点开的那个库的全量记忆（/api/dash/memories?ns=）。
+     「谁能看」由服务端 dash_admin_guard 决定，本页不做权限判断；
+     时间统一走 when()（秒级 epoch → 2026-10-18 修）。 */
+  function mnemPanel(zh) {
+    if (CONSOLE.nsLoading && !CONSOLE.nsList.length) {
+      return '<div class="kempty">' + (zh ? '正在读取记忆库列表…' : 'Loading memory stores…') + '</div>';
+    }
+    if (CONSOLE.nsErr && !CONSOLE.nsList.length) {
+      return '<div class="kempty">' + esc(CONSOLE.nsErr) + '</div>';
+    }
+    if (!CONSOLE.nsList.length) {
+      return '<div class="kempty">' + (zh ? '还没有任何用户记忆库。' : 'No memory stores yet.') + '</div>';
+    }
+    var rows = CONSOLE.nsList.map(function (r) {
+      var cur = String(r.namespace) === String(CONSOLE.nsCur);
+      var owner = r.owner
+        ? esc(r.owner)
+        : '<span style="color:var(--fg3)">' + (zh ? '未绑定账号' : 'unlinked') + '</span>';
+      return '<button type="button" data-act="ns-open" data-v="' + esc(r.namespace) + '"' +
+        ' style="display:block;width:100%;text-align:left;padding:10px 12px;border-radius:8px;' +
+        'border:1px solid ' + (cur ? 'var(--accent)' : 'transparent') + ';' +
+        'background:' + (cur ? 'var(--bg2,rgba(127,127,127,.08))' : 'transparent') + ';' +
+        'cursor:pointer;margin-bottom:4px">' +
+        '<div class="mono" style="font-size:12px;word-break:break-all">' + esc(r.namespace) + '</div>' +
+        '<div style="font-size:12px;margin-top:3px">' + owner + '</div>' +
+        '<div class="mono" style="font-size:11px;color:var(--fg3);margin-top:2px">' +
+        (r.count || 0) + (zh ? ' 条 · ' : ' items · ') + fmtBytes(r.bytes || 0) + '</div>' +
+        '</button>';
+    }).join('');
+
+    var right;
+    if (!CONSOLE.nsCur) {
+      right = '<div class="kempty">' + (zh ? '从左侧选择一个记忆库。' : 'Pick a store on the left.') + '</div>';
+    } else if (CONSOLE.nsLoading) {
+      right = '<div class="kempty">' + (zh ? '正在读取该库…' : 'Loading…') + '</div>';
+    } else if (CONSOLE.nsErr) {
+      right = '<div class="kempty">' + esc(CONSOLE.nsErr) + '</div>';
+    } else {
+      var body = CONSOLE.nsItems.map(function (m) {
+        return '<tr>' +
+          '<td class="mono" style="font-size:11.5px;white-space:nowrap">' + esc(m.id || '—') + '</td>' +
+          '<td>' + esc(m.kind || '—') + '</td>' +
+          '<td class="mono" style="white-space:nowrap">' + esc(when(m.createdAt || m.day)) + '</td>' +
+          '<td style="max-width:520px">' + esc(String(m.excerpt || '').slice(0, 300) || '—') + '</td>' +
+          '<td style="max-width:200px;word-break:break-all">' + esc((m.tags || []).join(', ')) + '</td>' +
+          '<td class="mu" style="white-space:nowrap">' + fmtBytes(m.size || 0) + '</td>' +
+          '</tr>';
+      }).join('');
+      right = tableOr(CONSOLE.nsItems,
+        '<th>id</th><th>' + (zh ? '类型' : 'Kind') + '</th><th>' + (zh ? '时间' : 'When') + '</th>' +
+        '<th>' + (zh ? '内容' : 'Content') + '</th><th>' + (zh ? '标签' : 'Tags') + '</th>' +
+        '<th>' + (zh ? '大小' : 'Size') + '</th>', body,
+        zh ? '这个库是空的。' : 'This store is empty.');
+    }
+
+    return '<div style="display:grid;grid-template-columns:250px 1fr;gap:16px;align-items:start">' +
+      '<div class="card card-pad" style="max-height:70vh;overflow-y:auto">' +
+        '<h3 class="h2" style="font-size:14px;margin-bottom:10px">' + (zh ? '全部记忆库' : 'All memory stores') + '</h3>' +
+        rows +
+      '</div>' +
+      '<div>' +
+        '<div class="sub" style="font-size:12.5px;margin-bottom:8px">' +
+          esc(CONSOLE.nsCur || '—') +
+          (CONSOLE.nsCur ? ' · <span class="mono">' + CONSOLE.nsTotal + (zh ? ' 条' : ' items') + '</span>' : '') +
+        '</div>' + right +
+      '</div>' +
+      '</div>' +
+      '<p class="sub" style="margin-top:16px;font-size:12.5px">' +
+        (zh ? '每个「u_」库是用户在 /auth/keys 自助领取密钥后绑定的私有记忆库；「default」是站点自己的库。'
+            : 'Each "u_" store is a user private library bound to their self-issued key; "default" is the site\'s own store.') +
+      '</p>';
+  }
+
+  function loadNamespaces(force) {
+    if (CONSOLE.nsLoading) return;
+    if (CONSOLE.nsList.length && !force) return;
+    CONSOLE.nsLoading = true;
+    api('/api/dash/namespaces').then(function (r) {
+      CONSOLE.nsLoading = false;
+      var b = (r.ok && r.body) ? r.body : {};
+      CONSOLE.nsList = b.namespaces || [];
+      CONSOLE.nsErr = r.ok ? '' : apiErr(r, lang === 'zh' ? '无法读取记忆库列表。' : 'Could not load memory stores.');
+      paintConsole();
+    });
+  }
+
+  function loadNsMemories(ns) {
+    if (!ns) return;
+    CONSOLE.nsCur = ns;
+    CONSOLE.nsLoading = true;
+    CONSOLE.nsErr = '';
+    paintConsole();
+    api('/api/dash/memories?ns=' + encodeURIComponent(ns)).then(function (r) {
+      CONSOLE.nsLoading = false;
+      var b = (r.ok && r.body) ? r.body : {};
+      CONSOLE.nsItems = b.items || [];
+      CONSOLE.nsTotal = b.total || 0;
+      CONSOLE.nsErr = r.ok ? '' : apiErr(r, lang === 'zh' ? '无法读取该记忆库。' : 'Could not load this store.');
+      paintConsole();
+    });
+  }
+
   function consoleHTML() {
     return '<div class="console"><div class="max-w-shell mx-auto px-5 sm:px-8">' +
       '<a class="back" href="#top" style="margin-bottom:22px;display:inline-flex">' +
@@ -6724,6 +6841,14 @@ body.docs #view{ display:block !important; }
     var t = e.target;
     if (!t || !t.closest) return;
 
+    /* 用户记忆 tab：点左侧某一库，读该库全量记忆 */
+    var nsOpen = t.closest('[data-act="ns-open"]');
+    if (nsOpen) {
+      var ns = nsOpen.getAttribute('data-v') || '';
+      if (ns && ns !== CONSOLE.nsCur) loadNsMemories(ns);
+      return;
+    }
+
     /* 管理员名册的增删。两条硬规则（不能自删、最后一名不能删）由服务端
        强制，这里只把服务端的话原样告诉用户。 */
     var rm = t.closest('[data-act="adm-remove"]');
@@ -6759,6 +6884,8 @@ body.docs #view{ display:block !important; }
     if (!b) return;
     CONSOLE.tab = b.getAttribute('data-ctab') || 'overview';
     paintConsole();
+    /* 用户记忆 tab 懒加载：库清单只在点到它时才拉，不进初始装载的关键路径 */
+    if (CONSOLE.tab === 'memn') loadNamespaces();
   }
 
   function onConsoleSubmit(e) {
@@ -7346,7 +7473,7 @@ var DX = {
 function dz(zh, en) { return lang === 'zh' ? zh : en; }
 
 /* 控制台是「用户管自己的记忆」的界面。站点级的管理功能 —— API 密钥、网络钩子、
-   以及一般/模型/邮件/成员/危险区域 —— 已经不在这里：它们统一收进「站点管理」，
+   以及一般/模型/邮件/成员/危险区域 —— 已经不在这里：它们统一收进「后台管理」，
    那是管理员管理网站与控制台的唯一入口。 */
 var DX_NAV = [
   [{ id: 'install',    z: '安装 Mnemosyne OS', e: 'Install',        ic: 'download' },
@@ -7445,11 +7572,10 @@ function fmtBytes2(n) {
   return n + ' B';
 }
 function fmtWhen(t) {
-  if (!t) return '—';
-  var d = new Date(typeof t === 'number' ? t * 1000 : t);
-  if (isNaN(d.getTime())) return '—';
-  var p = function (x) { return (x < 10 ? '0' : '') + x; };
-  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  /* 与 when() 同一套单位判定：后端是秒级 epoch，字符串数字同样按秒处理。
+     此前各页面各写一份，when() 漏了 ×1000 导致用户/留言页整列显示 1970 年，
+     2026-10-18 起统一走这里，不允许多份实现再次漂移。 */
+  return when(t);
 }
 function fmtAgo(sec) {
   sec = Number(sec || 0);
@@ -7586,7 +7712,7 @@ function renderDash(path) {
   var view = $('#view'), home = $('#home');
   if (!view) return;
   var rest = path.split('/')[1] || 'overview';
-  /* keys / webhooks / settings 已经迁进「站点管理」，不再算控制台的页面 ——
+  /* keys / webhooks / settings 已经迁进「后台管理」，不再算控制台的页面 ——
      老书签会被兜回仪表盘，而不是渲染一个已经没有入口的页。 */
   var known = ['install', 'highlights', 'copilot', 'overview', 'requests', 'entities',
                'memories', 'dream', 'graph', 'exports', 'billing',
@@ -8799,7 +8925,7 @@ function kpi(ic, label, value, foot, badge) {
 document.addEventListener('click', function (e) {
   var t = e.target;
   if (!t || !t.closest) return;
-  /* 站点管理页也复用这批控件，所以不再要求 body.dash —— 只要点击落在
+  /* 后台管理页也复用这批控件，所以不再要求 body.dash —— 只要点击落在
      一个 .dx 容器里就放行。dxPaintBody() 找不到 #dx-body 时会自行返回，
      所以在控制台之外触发它是安全的。 */
   if (!document.body.classList.contains('dash') && !t.closest('.dx')) return;
@@ -10004,14 +10130,14 @@ function docsOpen(open) {
  *  MN —— 站点级运行时模块
  * ===========================================================================
  * 这一段与上面那个巨大的 IIFE 之间只有两条接口：MN.apply()（每次整页渲染完调一次）
- * 与 MN.wireAdmin()（站点管理页把它自己的容器交过来绑事件）。这样切分的理由很实际：
+ * 与 MN.wireAdmin()（后台管理页把它自己的容器交过来绑事件）。这样切分的理由很实际：
  * 主脚本是「营销站 + 控制台」的历史产物，绝大多数函数定义在闭包里，从外部改不动；
  * 与其去动那 60 万字节，不如给新功能一条明确的通道，两边都能单独读懂。
  *
  * 它负责三件事：
  *   ① 公告栏 / 页脚 —— 由服务端 site.json 下发，改完刷新即生效，无需重新部署；
  *   ② 登录方式 —— 按服务端「后台开关 AND 凭据就绪」的结论，决定 SSO 按钮可不可点；
- *   ③ 站点管理的新面板 —— 就绪状态、品牌、登录方式、第三方凭据、记忆系统、页脚。
+ *   ③ 后台管理的新面板 —— 就绪状态、品牌、登录方式、第三方凭据、记忆系统、页脚。
  */
 (function () {
   'use strict';
@@ -10270,7 +10396,7 @@ function docsOpen(open) {
   };
 
   /* ====================================================================== *
-   *  站点管理的面板
+   *  后台管理的面板
    * ====================================================================== */
 
   function hrow(title, sub, right) {
