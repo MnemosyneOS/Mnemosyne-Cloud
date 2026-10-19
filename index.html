@@ -7714,7 +7714,7 @@ body.docs #view{ display:block !important; }
 var DX = {
   page: '',
   data: {},
-  ui: { copilot: [], ask: '', busy: false, banner: true, memPage: 1, memQ: '', memKind: '',
+  ui: { copilot: [], ask: '', busy: false, banner: true, memPage: 1, memQ: '', memKind: '', memOrigin: '',
         entTab: '', entQ: '', reqQ: '', keyNew: '', exportNote: '', range: 'all' }
 };
 
@@ -8455,7 +8455,21 @@ function dxPageMemories(el) {
     var all = d.items || [];
     var kinds = [];
     all.forEach(function (m) { if (kinds.indexOf(m.kind) < 0) kinds.push(m.kind); });
+    /* v8.1.0 记忆形成层视图：会话摘要 / 未决 / 任务事实 / 经验 / 代码变更
+       五类记忆在存储层复用既有 mtype，服务端用 origin 字段标出真实来源。
+       这里按 origin 分桶，给每类一个可点的计数入口 —— 否则用户只能靠翻列表
+       判断「系统到底有没有记住我的经验」。 */
+    var ORIGINS = [
+      ['session',  '会话摘要', 'Session'],
+      ['pending',  '未决事项', 'Pending'],
+      ['task',     '任务事实', 'Task'],
+      ['playbook', '经验',     'Playbook'],
+      ['code',     '代码变更', 'Code']
+    ];
+    var orgCount = {};
+    all.forEach(function (m) { if (m.origin) orgCount[m.origin] = (orgCount[m.origin] || 0) + 1; });
     var rows = all.filter(function (m) {
+      if (DX.ui.memOrigin && m.origin !== DX.ui.memOrigin) return false;
       if (DX.ui.memKind && m.kind !== DX.ui.memKind) return false;
       if (!DX.ui.memQ) return true;
       var q = DX.ui.memQ.toLowerCase();
@@ -8475,6 +8489,14 @@ function dxPageMemories(el) {
           kinds.map(function (k) { return '<option value="' + esc(k) + '"' + (DX.ui.memKind === k ? ' selected' : '') + '>' + esc(k) + '</option>'; }).join('') +
         '</select>' +
         '<span class="dx-tag">' + rows.length + ' / ' + all.length + '</span>' +
+      '</div>' +
+      '<div class="dx-tools" style="margin-top:-4px">' +
+        '<button type="button" class="dx-btn ' + (DX.ui.memOrigin ? 'gh' : '') + ' sm" data-dx="mem-origin" data-o="">' +
+          esc(dz('全部', 'All')) + ' <span class="mono">' + all.length + '</span></button>' +
+        ORIGINS.map(function (o) {
+          return '<button type="button" class="dx-btn ' + (DX.ui.memOrigin === o[0] ? '' : 'gh') + ' sm" data-dx="mem-origin" data-o="' + o[0] + '">' +
+            esc(dz(o[1], o[2])) + ' <span class="mono">' + (orgCount[o[0]] || 0) + '</span></button>';
+        }).join('') +
       '</div>' + dxErr(d) +
       (slice.length ? slice.map(dxMemCard).join('') : '<div class="dx-empty"><div class="ic"></div><h3>' +
         esc(all.length ? dz('没有匹配的记忆', 'No matching memories') : dz('未找到任何记忆', 'No memories found')) + '</h3><p>' +
@@ -9230,6 +9252,13 @@ document.addEventListener('click', function (e) {
   if (act === 'refresh') { dxReload('overview').then(function () { dxPaintBody(); }); return; }
   if (act === 'mem-prev') { DX.ui.memPage = Math.max(1, DX.ui.memPage - 1); dxPaintBody(); return; }
   if (act === 'mem-next') { DX.ui.memPage += 1; dxPaintBody(); return; }
+  if (act === 'mem-origin') {
+    var _o = el.getAttribute('data-o') || '';
+    DX.ui.memOrigin = (DX.ui.memOrigin === _o) ? '' : _o;
+    DX.ui.memPage = 1;
+    dxPaintBody();
+    return;
+  }
 
   if (act === 'ob-save') {
     var name = ($('#dx-ob-company') || {}).value || '';
