@@ -734,6 +734,56 @@
   .post .meta{ margin-top:9px; font-size:12.5px; color:var(--fg3); }
   .postempty{ margin-top:8px; font-size:13px; color:var(--fg3); }
 
+  /* ------------------------------------------------------------------ *
+   *  blog articles — a card per article: cover plate on the left, then the
+   *  category, the headline, the lede and a read link. The cover is a real
+   *  <img> (it is a supplied picture, not a generated tone), so it carries
+   *  object-fit:cover instead of a flat background like .thumb above.
+   * ------------------------------------------------------------------ */
+  .agrid{ display:grid; gap:18px; grid-template-columns:1fr; margin-top:16px; }
+  @media (min-width:820px){ .agrid{ grid-template-columns:1fr 1fr; } }
+  .acard{
+    display:flex; gap:16px; padding:14px; text-decoration:none;
+    border:1px solid var(--hair); border-radius:10px; background:var(--surface);
+    transition:border-color .22s ease, background .22s ease;
+  }
+  .acard:hover{ border-color:var(--hair-hi); background:var(--surface-2); }
+  .athumb{
+    flex:none; width:132px; aspect-ratio:16/10; border-radius:7px; overflow:hidden;
+    display:flex; align-items:center; justify-content:center; background:var(--surface-2);
+  }
+  .athumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .abody{ display:flex; flex-direction:column; min-width:0; }
+  .ameta{
+    font-family:'DM Mono',monospace; font-size:10.5px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--accent-ink);
+  }
+  .atitle{ margin-top:8px; font-size:15.5px; font-weight:600; line-height:1.38; letter-spacing:-.014em; color:var(--fg); }
+  .acard:hover .atitle{ color:var(--accent-ink); }
+  .alede{ margin-top:8px; font-size:13px; line-height:1.66; color:var(--fg2); }
+  .amore{ margin-top:auto; padding-top:12px; font-size:12.5px; color:var(--accent-ink); }
+  @media (max-width:520px){
+    .acard{ flex-direction:column; }
+    .athumb{ width:100%; aspect-ratio:16/9; }
+  }
+
+  /* the article itself: one narrow column, the cover on top, the text below */
+  .pv-article .pv-h1{ max-width:46rem; margin-left:auto; margin-right:auto; }
+  .pv-article .pv-lede{ max-width:44rem; }
+  .pmeta{ margin-top:16px; text-align:center; font-size:12.5px; color:var(--fg3); }
+  .artbody{ max-width:44rem; margin:0 auto; padding-bottom:40px; }
+  .artcover{
+    width:100%; aspect-ratio:16/9; object-fit:cover; object-position:50% 22%;
+    border-radius:10px; border:1px solid var(--hair); display:block;
+    background:var(--surface-2);
+  }
+  .arttext{
+    margin:28px 0 0; padding:0; border:0; background:none;
+    font-family:'Mona Sans Variable','Mona Sans',Inter,sans-serif;
+    font-size:14.5px; line-height:1.85; color:var(--fg2); white-space:pre-wrap;
+  }
+  .arttext:first-letter{ color:var(--fg); }
+
   /* contact: the title on the left, the form in its own card on the right */
   .split{ display:grid; gap:44px; grid-template-columns:1fr; align-items:start; }
   @media (min-width:900px){ .split{ grid-template-columns:1fr 1fr; gap:60px; } }
@@ -3154,6 +3204,89 @@ body.docs #view{ display:block !important; }
   var DICT = { en: EN, zh: ZH };
 
   /* ======================================================================= *
+   *  BLOG POSTS — 文章数据。分类、日期、封面都在这里，正文在 BLOG_POSTS[id].body
+   *                                                                          *
+   *  正文是逐行的字符串数组（body 是字符串），作者写的换行与分段原样保留。
+   *  新增文章：往 BLOG_POSTS 里加一条 + 在 blog 页的 articles 数组里引用 id。
+   * ======================================================================= */
+
+  var BLOG_POSTS = {
+    'kimi-vs-deepseek': {
+      cat: '行业观察',
+      catEn: 'Industry',
+      date: '2026-10-17 08:41',
+      dateEn: '17 October 2026, 08:41',
+      title: '国产开源AI正在悄然分叉成两条道路！',
+      lede: '不是谁赢、谁输的抉择，是两种完全不同的未来！',
+      img: 'assets/blog-kimi-vs-deepseek.jpg',
+      alt: '两人站在飘扬的五星红旗前，一人食指抵唇示意安静，一人握拳高举。',
+      body: [
+        '国产开源AI正在悄然分叉成两条道路！Kimi杨植麟 vs DeepSeek梁文峰',
+        '',
+        '不是谁赢、谁输的抉择，是两种完全不同的未来！',
+        '',
+        '最终国产AI很可能迎来双赢局面！',
+        '',
+        '一条路把开源当产品杠杆，用长上下文和Agent快速锁住用户、冲商业化；',
+        '',
+        '另一条路把开源当生态武器，用极致效率和国产算力适配，把模型做成不可替代的底座。',
+        '',
+        'Kimi和DeepSeek，从表面趋同到彻底分岔，只花了一年。',
+        '',
+        '【关键差异】',
+        '',
+        '1.开源的用法',
+        '',
+        '- Kimi开源是为了加速产品落地和心智占领；',
+        '',
+        '- DeepSeek开源是为了降低接入门槛、扩大生态渗透，让别人都跑在自己的算力上。',
+        '',
+        '2.融资与控制权',
+        '',
+        '- 杨植麟密集融资、估值跟产品节奏暴涨，冲港股讲收入故事；',
+        '',
+        '- 梁文峰个人大额出资锁死控制，估值按战略稀缺定价，冲科创板。',
+        '',
+        '3.收入逻辑',
+        '',
+        '- Kimi增长驱动，API+付费快速放量；',
+        '',
+        '- DeepSeek效率驱动，高毛利+涨价不流失，靠成本结构而非规模。',
+        '',
+        '4.组织与姿态',
+        '',
+        '- 一个约300人产品公司，轻资产锁定客户；',
+        '',
+        '- 一个约270人研究实验室，开源渗透、不急于锁客。',
+        '',
+        '国产开源AI第一次真正出现结构性分叉：一条路在卖产品，一条路在建底座。',
+        '',
+        '接下来谁能走得更远，取决于你更相信"收入"还是"不可替代"。'
+      ].join('\n')
+    }
+  };
+
+  /* 文章卡片 —— b.articles 里的每一项 = 一篇可点开的文章 */
+  function articleCards(ids) {
+    return (ids || []).map(function (id) {
+      var a = BLOG_POSTS[id];
+      if (!a) return '';
+      var zh = lang === 'zh';
+      var cat = zh ? a.cat : (a.catEn || a.cat);
+      var when = zh ? a.date : (a.dateEn || a.date);
+      return '<a class="acard" href="#/blog/' + esc(id) + '">' +
+               '<span class="athumb"><img src="' + esc(a.img) + '" alt="' + esc(a.alt || a.title) + '" loading="lazy"></span>' +
+               '<span class="abody">' +
+                 '<span class="ameta">' + esc(cat) + ' · ' + esc(when) + '</span>' +
+                 '<span class="atitle">' + esc(a.title) + '</span>' +
+                 '<span class="alede">' + esc(a.lede) + '</span>' +
+                 '<span class="amore">' + esc(dz('阅读全文', 'Read the article')) + ' →</span>' +
+               '</span>' +
+             '</a>';
+    }).join('');
+  }
+
+  /* ======================================================================= *
    *  ROUTED PAGES — mirrors the mem0 menu architecture one-for-one           *
    * ======================================================================= */
 
@@ -3567,6 +3700,8 @@ body.docs #view{ display:block !important; }
               ['A graph channel that was nominally present', 'Entity extraction was silently producing fragments, so graph traversal always returned nothing while still consuming fusion weight.'],
               ['Acceptance, not configuration', 'A guide to proving the stack works end to end: handshake, environment parity, cold and warm latency, namespace isolation, audit chain.']
             ] },
+          { h: 'Articles',
+            articles: ['kimi-vs-deepseek'] },
           { note: 'Longer-form articles will be published here as the engineering notes are adapted. The primary source stays the repository, where each claim sits next to the code and the test that verifies it.' }
         ]
       },
@@ -4360,6 +4495,8 @@ body.docs #view{ display:block !important; }
               ['一个名义上存在的图通道', '实体抽取在悄悄产出碎片，于是图遍历永远返回空，却仍然占着融合权重。'],
               ['验收，而不是配置', '一份端到端证明这套栈可用的指南：握手、环境一致性、冷热延迟、命名空间隔离、审计链。']
             ] },
+          { h: '文章',
+            articles: ['kimi-vs-deepseek'] },
           { note: '更长的文章会在工程笔记整理成文后陆续发布在这里。一手资料仍然是仓库 —— 每个论断就挨着它的代码和验证它的测试。' }
         ]
       },
@@ -5473,6 +5610,7 @@ body.docs #view{ display:block !important; }
       '<div class="bar"><span class="nm">' + esc(b.code.n) + '</span></div>' +
       '<pre><code>' + esc(b.code.b) + '</code></pre></div>';
     if (b.p2) out += '<p>' + b.p2 + '</p>';
+    if (b.articles) out += '<div class="agrid">' + articleCards(b.articles) + '</div>';
     if (b.note) out += '<div class="note">' + b.note + '</div>';
     if (!b.h && !out) return '';
     return '<section class="blk">' + (b.h ? '<h2>' + b.h + '</h2>' : '') + out + '</section>';
@@ -5592,6 +5730,9 @@ body.docs #view{ display:block !important; }
     /* the account routes own their own rendering — they are not content pages */
     if (path === 'login' || path === 'admin' || path === 'account') { renderAccount(); return; }
 
+    /* #/blog/<id> —— 文章有独立可分享的地址；读的是同一份 BLOG_POSTS 数据 */
+    if (path.indexOf('blog/') === 0) { renderPost(path.slice(5)); return; }
+
     var pg = path ? ((PAGES[lang] || {})[path]) : null;
 
     if (!pg) {
@@ -5651,6 +5792,40 @@ body.docs #view{ display:block !important; }
     bindGallery();
     bindPosts();
     icons();
+  }
+
+  /* 单篇文章页。正文就是 BLOG_POSTS[id].body 原文，用 <pre> 保真输出 ——
+     作者写的换行与分段一个字符都不动，站点只负责排版。 */
+  function renderPost(id) {
+    var a = BLOG_POSTS[id];
+    var view = $('#view'), home = $('#home');
+    if (!a || !view || !home) {
+      view.hidden = true; view.innerHTML = '';
+      home.classList.remove('off');
+      return;
+    }
+    home.classList.add('off');
+    view.hidden = false;
+    var zh = lang === 'zh';
+    var back = '<a class="back" href="#/blog">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>' +
+        esc(zh ? '博客' : 'Blog') + '</a>';
+
+    view.innerHTML =
+      '<div class="pv-hero pv-article"><div class="max-w-shell mx-auto px-5 sm:px-8">' + back +
+        '<h1 class="pv-h1">' + esc(a.title) + '</h1>' +
+        '<p class="pv-lede">' + esc(a.lede) + '</p>' +
+        '<p class="pmeta">' + esc(zh ? '发布时间：' : 'Published: ') + esc(zh ? a.date : (a.dateEn || a.date)) + ' · ' + esc(zh ? a.cat : (a.catEn || a.cat)) + '</p>' +
+        '<div class="pv-cta"><a class="btn btn-ghost btn-lg" href="#/blog">' + esc(zh ? '返回工程笔记' : 'Back to engineering notes') + '</a></div>' +
+      '</div></div>' +
+      '<div class="pv-body"><div class="max-w-shell mx-auto px-5 sm:px-8">' +
+        '<article class="artbody">' +
+          '<img class="artcover" src="' + esc(a.img) + '" alt="' + esc(a.alt || a.title) + '">' +
+          '<pre class="arttext">' + esc(a.body) + '</pre>' +
+        '</article>' +
+      '</div></div>';
+    document.title = a.title + ' — Mnemosyne OS';
+    window.scrollTo(0, 0);
   }
 
   /* ======================================================================= *
