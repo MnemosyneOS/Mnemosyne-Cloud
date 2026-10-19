@@ -179,6 +179,18 @@
      seeing “Start free” sitting next to their own account chip. */
   [hidden]{ display:none !important; }
 
+  /* 响应式工具类的优先级护栏（2026-10-19 修）。
+     `assets/tailwind.css` 在 <link> 里、排在本文档样式表之前，而组件样式
+     给 .ghstar / .ctrl 直接写了 display:inline-flex。同特异性下后写的赢，
+     于是 Tailwind 的 `.hidden` / `.xl\:hidden` 全部失效，后果是：
+       · <640px 时顶栏同时挂着 GitHub + pip + 汉堡三套入口，把页面横向
+         撑宽 210px（手机上整页可以左右拖）；
+       · ≥1280px 时汉堡按钮反而关不掉，桌面端右侧多出一个用不上的按钮。
+     这两条按断点把结论钉死。断点与 tailwind.config 保持一致：
+     sm=640、xl=1280。 */
+  @media (max-width:639.98px){ .hidden{ display:none !important; } }
+  @media (min-width:1280px){ .xl\:hidden{ display:none !important; } }
+
   /* ------------------------------------------------------------ surfaces */
   #dust{ position:fixed; inset:0; width:100%; height:100%; z-index:0; display:block; pointer-events:none; }
   .aura{
@@ -234,9 +246,20 @@
     background:rgba(255,255,255,.15); border-color:rgba(255,255,255,.26);
   }
 
-  /* mem0 runs a very generous vertical rhythm — keep step with it */
-  .section-pad{ padding-top:8rem; padding-bottom:8rem; }
-  @media (min-width:640px){ .section-pad{ padding-top:9.5rem; padding-bottom:9.5rem; } }
+  /* =====================================================================
+     Vertical rhythm.
+
+     国际通用 SaaS 的纵向节奏大致是：section 之间 80~112px，section 内部
+     的块之间 32~48px，正文行距 1.6~1.8。原先是 section 9.5rem(152px)、
+     块间 48px、`.pv-body` 底部 7rem(112px) —— 叠在内容页上就成了
+     「关于我们」那种上下大片空白、内容被推到屏幕两头的观感。
+
+     这里整体下调一档：section 7rem / 8rem，块间 38px，内容页底部 4.5rem。
+     数值不是拍脑袋，是按「首屏标题与上一屏尾部的视觉距离不超过一个
+     标题高度」反推的。
+     ===================================================================== */
+  .section-pad{ padding-top:7rem; padding-bottom:7rem; }
+  @media (min-width:640px){ .section-pad{ padding-top:8rem; padding-bottom:8rem; } }
 
   /* Container width follows mem0's real endpoints — 1439.98px on desktop and
      809.98px on tablet. The 1200–1439 band is deliberately left unclamped:
@@ -246,7 +269,17 @@
      its own .max-w-shell at runtime, after this sheet, so nothing weaker wins. */
   @media (max-width:1199px){ .max-w-shell{ max-width:809.98px !important; } }
   /* the hero code window keeps mem0's 1100px content measure */
-  .term{ max-width:1100px; margin-left:auto; margin-right:auto; }
+  /* 这三条都是实测踩出来的，不是装饰：
+     ① min-width:0 —— grid 子项默认 min-width:auto，而 .term 里是
+        white-space:pre 的代码块，它的最小内容宽度（~490px）会反过来把所在的
+        网格列撑宽。
+     ② width:100% —— #proof-body 是 grid，.term 是它的第二列。grid item 的
+        stretch 会被 margin-left/right:auto 打断（auto margin 吃掉了全部剩余
+        空间），item 于是退回 max-content 宽度 = 534px，而列只有 365px
+        （1024 视口）/ 350px（390 视口），整页被撑出 30px / 164px。
+        显式给 width:100%，auto margin 没有剩余空间可吃，宽度就锁在列宽上。
+     ③ 溢出交给 .term-body 的 overflow-x:auto 吃掉，代码照旧可以横向滚。 */
+  .term{ max-width:1100px; width:100%; margin-left:auto; margin-right:auto; min-width:0; }
 
   /* -------------------------------------------------------------- header */
   #hdr{
@@ -260,16 +293,21 @@
     -webkit-backdrop-filter:blur(14px) saturate(160%);
     border-bottom-color:var(--hair);
   }
+  /* 顶栏间距：nav 容器 gap-0.5(2px) 太挤，菜单之间几乎没有呼吸感，
+     国际化 SaaS 顶栏（mem0 / Linear / Vercel）普遍在 4~10px 之间。
+     这里按钮 padding 0 14px + 容器 gap-1.5(6px)，两项一起调到约 8px 视觉间隔。 */
   .navbtn{
-    display:inline-flex; align-items:center; gap:5px; height:36px; padding:0 14px;
-    border-radius:8px; border:1px solid transparent; background:transparent;
-    color:var(--fg2); font-size:14px; cursor:pointer;
+    display:inline-flex; align-items:center; gap:6px; height:38px; padding:0 16px;
+    border-radius:9px; border:1px solid transparent; background:transparent;
+    color:var(--fg2); font-size:14px; font-weight:450; cursor:pointer;
     transition:color .18s ease, background .18s ease;
   }
   .navbtn:hover{ color:var(--fg); background:var(--surface-2); }
   .navbtn[aria-expanded="true"]{ color:var(--fg); background:var(--surface-2); }
   .navbtn .chev{ width:13px; height:13px; opacity:.65; transition:transform .2s ease; }
   .navbtn[aria-expanded="true"] .chev{ transform:rotate(180deg); }
+  /* 触屏/键盘可达：用 :focus-visible 补一条轮廓，避免只能靠鼠标操作 */
+  .navbtn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 
   /* Drop-down panels — header rows carry a label plus a one-line description,
      exactly the density mem0 uses; the Resources panel widens into a
@@ -452,7 +490,7 @@
   /* ------------------------------------------------------ routed page views */
   #home.off{ display:none; }
   #view[hidden]{ display:none; }
-  .pv-hero{ padding:60px 0 0; text-align:center; }
+  .pv-hero{ padding:48px 0 0; text-align:center; }
   /* `.back` is shared by the content pages, the sign-in card and the console,
      so it is declared unscoped. Scoped to `.pv-hero` its icon carried no size
      rule on the account routes and rendered at the SVG default — a
@@ -470,7 +508,9 @@
   }
   .pv-lede{ margin:17px auto 0; max-width:44rem; font-size:15px; line-height:1.72; color:var(--fg2); }
   .pv-cta{ margin-top:28px; display:flex; flex-wrap:wrap; gap:11px; justify-content:center; }
-  .pv-body{ padding:56px 0 7rem; }
+  /* 内容页（关于我们 / 定价 / 公司…）的纵向节奏。
+     底部 7rem 留白让最后一屏看起来像被截断，收到 4.5rem。 */
+  .pv-body{ padding:44px 0 4.5rem; }
 
   /* =====================================================================
      Account surface — sign-in / sign-up, and the console behind them.
@@ -789,7 +829,7 @@
   @media (min-width:900px){ .split{ grid-template-columns:1fr 1fr; gap:60px; } }
   .formcard{ background:var(--surface); border:1px solid var(--hair); border-radius:10px; padding:26px; }
 
-  .blk{ border-top:1px solid var(--hair); padding-top:34px; margin-top:48px; }
+  .blk{ border-top:1px solid var(--hair); padding-top:28px; margin-top:38px; }
   .blk.first{ border-top:0; padding-top:0; margin-top:0; }
   .blk h2{ margin:0; font-size:clamp(1.2rem,2.3vw,1.6rem); font-weight:650; letter-spacing:-.022em; color:var(--fg); }
   .blk h2 + p{ margin-top:11px; }
@@ -892,23 +932,45 @@
   }
 
   /* ----------------------------------------------------------- hero text */
+  /* 主标题尺寸按「最长那一行」反推，不是拍脑袋定的。
+     2026-10-19 文案换成 'From remembering conversations / to maintaining an
+     evolving world model' 之后，原来的 7vw / 4.75rem 在 1440 宽下是 76px，
+     两行各自又折成两行（实测 span 高 155px = 2 × 77.5px），看上去就是错行。
+     实测这段文案在 100px 时宽 1743px → 1024 的容器最多 58px，746 的平板容器
+     最多 42px。下面按这两个上限取 4vw / 3.55rem，两边都留了 3% 余量。
+     text-wrap:balance 兜住窄屏：允许换行，但两行必须一样长，不留孤儿词。 */
   .h1{
-    font-weight:600; font-size:clamp(2.6rem,7vw,4.75rem);
-    line-height:1.02; letter-spacing:-.038em; margin:0;
+    font-weight:600; font-size:clamp(1.85rem,4vw,3.55rem);
+    line-height:1.08; letter-spacing:-.032em; margin:0; text-wrap:balance;
   }
   .h1 .l1{ display:block; color:var(--fg); }
   /* Solid colour, exactly like mem0. The previous gradient used
      background-clip:text, which renders as a full-width dark block whenever
      the engine does not clip — the headline's second line disappears behind it. */
   .h1 .l2{ display:block; color:var(--fg); }
-  .lede{ font-size:1.0625rem; line-height:1.7; color:var(--fg2); max-width:46rem; margin:0; }
+  /* 中文只有 12 个字，同样宽的容器能放到 4.2rem；英文上限 3.55rem。
+     两种语言各自取到自己的上限，视觉重量才对得上，不会一个撑满一个偏小。 */
+  [data-lang="zh"] .h1{
+    font-size:clamp(2.1rem,5vw,4.2rem); letter-spacing:-.02em; line-height:1.1;
+  }
+  /* text-wrap:pretty —— 长段落不用 balance（会强行让每行等长，读起来反而断气），
+     只让浏览器把最后一行从「一个词」匀成正常长度。中文尤其明显：
+     实测 1440 下末行只剩 119px（「重归你的掌控。」），pretty 会把它摊平。 */
+  .lede{ font-size:1.0625rem; line-height:1.7; color:var(--fg2); max-width:46rem; margin:0; text-wrap:pretty; }
   .lede b{ color:var(--fg); font-weight:500; }
   /* mem0 sets its section titles between 40 and 48px with tight tracking. */
   .h2{
     font-size:30px; font-weight:600; letter-spacing:-.028em; line-height:1.14; margin:0; color:var(--fg);
   }
+  /* 标题折行统一交给浏览器平衡：允许换行，但各行长度必须接近，不留孤儿词。
+     这一条覆盖全站 h1–h3（.h1/.h2/.h3 三个类名之外，还有大量直接写 <h2>/<h3>
+     的区块标题，它们没有类名，只能靠标签选择器兜住）。Chrome 对超过 6 行的
+     元素会自动忽略 balance，标题不会超，所以没有副作用。 */
+  h1, h2, h3, .h1, .h2, .h3{ text-wrap:balance; }
   @media (min-width:640px){ .h2{ font-size:40px; } }
-  @media (min-width:1024px){ .h2{ font-size:46px; } }
+  /* 48px 是对标 mem0.ai 实测的 h2 阶梯（48 / line-height 52.8 / tracking -0.02em）。
+     原来 46px 与自家 h1 的比例偏紧，区块标题压不住下方的三栏卡片。 */
+  @media (min-width:1024px){ .h2{ font-size:48px; } }
   .sub{ font-size:16px; line-height:1.7; color:var(--fg2); margin:0; }
   .angle{ font-family:'DM Mono',monospace; color:var(--accent-ink); font-weight:400; }
 
@@ -1074,7 +1136,10 @@
      meta line. Same shape here, carrying the repository's own artefacts —
      it is the one place on the page where a second hue (mem0's yellow) is
      allowed in, and it stops the bottom of the page going monochrome. */
-  .bcard{ display:flex; flex-direction:column; text-decoration:none; }
+  /* min-width:0 —— 卡片是 #res-grid 的 grid item，默认 min-width:auto 会让
+     里面的长串（scripts/verify_recall_quality.py 这类无空格路径）把整张卡片
+     和所在列一起撑宽，实测 1024 视口下 #res-grid 溢出 17px。 */
+  .bcard{ display:flex; flex-direction:column; text-decoration:none; min-width:0; }
   .bcard .thumb{
     display:flex; align-items:center; justify-content:center;
     aspect-ratio:16/10; border-radius:8px; margin-bottom:18px; overflow:hidden;
@@ -1087,8 +1152,10 @@
     background:rgba(255,255,255,.32); white-space:nowrap;
     max-width:88%; overflow:hidden; text-overflow:ellipsis;
   }
-  .bcard-t{ font-size:17px; font-weight:600; line-height:1.32; letter-spacing:-.015em; color:var(--fg); }
-  .bcard-d{ margin-top:9px; font-size:13.5px; line-height:1.65; color:var(--fg2); }
+  /* overflow-wrap:anywhere —— 只在整行放不下时才断，正常单词不受影响；
+     断不了的只有路径、URL、代码标识符这类超长无空格串，正是撑爆卡片的元凶。 */
+  .bcard-t{ font-size:17px; font-weight:600; line-height:1.32; letter-spacing:-.015em; color:var(--fg); overflow-wrap:anywhere; }
+  .bcard-d{ margin-top:9px; font-size:13.5px; line-height:1.65; color:var(--fg2); overflow-wrap:anywhere; }
   .bcard-m{ margin-top:auto; padding-top:14px; font-size:11.5px; color:var(--accent-ink); }
 
   /* ------------------------------------------------------------ reveal */
@@ -1266,6 +1333,64 @@
   .brn-host .brn-note b{ color:#DED9F5; font-weight:500; font-size:13px; }
   @media (max-width:900px){ .brn-host{ height:460px; } }
 
+  /* =====================================================================
+     图谱渲染层的指针穿透补丁
+
+     assets/brain.bundle.js 自带 CSS 里有三层 absolute 覆盖物没有声明
+     pointer-events，于是它们各自吃掉覆盖区域的鼠标事件：
+
+       .brn-legend  left/bottom   图例（纯展示）
+       .brn-stats   right/top     节点/边计数（纯展示）
+       .brn-msg     inset:0       居中提示（当前 JSX 未用到，但规则在）
+
+     三层都不含任何可交互元素，本应让指针穿过去。实际效果是：图看得见、
+     布局也在动，但鼠标移到左下图例、右上计数附近时 hover / 点击全部无
+     反应 —— 节点恰恰最密的地方被一层看不见的玻璃盖住。
+
+     为什么必须 !important：bundle 在运行时把自己的 CSS 追加到 <head> 末尾，
+     晚于本样式表，同特异性下签到的规则输。这里补的是第三方产物的缺陷，
+     不打算为了它去 fork 1.1 MB 的构建文件。
+     ===================================================================== */
+  .brn-legend, .brn-stats, .brn-msg { pointer-events:none !important; }
+  /* 提示层若将来真的放按钮（比如"重试"），让按钮自己把事件收回来，
+     而不是把整层的 pointer-events 再放开。 */
+  .brn-msg button, .brn-msg a { pointer-events:auto !important; }
+
+  /* 操作提示：图谱是 3D 点云，不给提示的话没人知道能拖、能滚、能悬停。
+     这不是装饰 —— 「鼠标放上去没反应」有一半是「不知道可以放上去」。 */
+  .brn-hint{
+    display:flex; align-items:center; flex-wrap:wrap; gap:6px 14px;
+    margin-top:14px; font-size:12px; color:var(--d-fg3);
+  }
+  .brn-hint span{ display:inline-flex; align-items:center; gap:6px; }
+  .brn-hint kbd{
+    font-family:'DM Mono',monospace; font-size:10.5px; padding:1px 5px;
+    border:1px solid var(--d-line2); border-radius:4px; color:var(--d-fg2);
+  }
+  /* 可交互的视觉承诺：指针形状是最便宜的 affordance。
+     注意不能只写 canvas —— 组件把 canvas 挂成 position:fixed 且
+     pointer-events:none（three.js 的渲染层），指针实际落在它上面的
+     .brn-root 上，canvas 的 cursor 永远不会生效。 */
+  .brn-root, #brain-host canvas{ cursor:grab; }
+  .brn-root:active, #brain-host canvas:active{ cursor:grabbing; }
+  .brn-retry{ margin-left:10px; pointer-events:auto !important; }
+
+  /* 工具台：一列工具 + 展开的参数面板 */
+  .dx-tool{ padding:10px 12px; border-radius:8px; cursor:pointer;
+            border:1px solid transparent; transition:background .16s ease; }
+  .dx-tool:hover{ background:rgba(255,255,255,.04); }
+  .dx-tool.on{ background:rgba(123,97,255,.12); border-color:rgba(123,97,255,.4); }
+  .dx-tool.off{ opacity:.55; cursor:default; }
+  .dx-tool .nm{ font-size:13px; font-weight:550; font-family:var(--mono, ui-monospace, monospace); }
+  .dx-tool .ds{ font-size:11.5px; color:#9C99B0; margin-top:4px; line-height:1.6;
+                display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .dx-toolpanel{ margin:6px 0 12px; padding:14px; border-radius:8px;
+                 background:rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.08); }
+  .dx-trow{ display:flex; align-items:center; gap:12px; padding:6px 0; }
+  .dx-trow .k{ width:150px; flex:none; font-size:12px; color:#9C99B0;
+               font-family:var(--mono, ui-monospace, monospace); }
+  .dx-trow .k.rq::after{ content:' *'; color:#ff8080; }
+
   /* ============================ documentation shell ==================== */
   .ds{ min-height:100vh; background:var(--canvas); color:var(--fg); }
   .ds-top{
@@ -1377,6 +1502,10 @@
   }
   .ds-article table{
     width:100%; border-collapse:collapse; margin:0 0 20px; font-size:13.5px;
+    /* 窄屏宽表格：390 下这张 366px 的「Verb / What it does / Typical call」
+       表把正文撑宽 12px。display:block + overflow-x:auto 让表格在自己的盒子
+       里横滚，tbody 仍按表格布局渲染，视觉上还是表，只是可以左右拖。 */
+    display:block; overflow-x:auto; -webkit-overflow-scrolling:touch;
   }
   .ds-article th, .ds-article td{
     text-align:left; padding:9px 12px; border-bottom:1px solid var(--hair); vertical-align:top;
@@ -1691,6 +1820,28 @@ body.docs #view{ display:block !important; }
 /* ------------------------------------------------------------ install */
 .dx-steps{ display:grid; grid-template-columns:repeat(4,1fr); gap:0; margin:24px 0 8px; }
 @media (max-width:900px){ .dx-steps{ grid-template-columns:repeat(2,1fr); } }
+
+/* ------------------------------------------------ 控制台：≤820px 收成单列 */
+/* 控制台是 flex 双栏：侧栏固定 212px + 主区 flex:1。390 视口下主区只剩 178px，
+   而 .dx-top 里「语言切换 + 升级 + 头像」固定宽加起来 214px，整页被撑出
+   37–53px（中英都中）。国际惯例的做法是窄屏把侧栏收成顶部横向 tab 条 ——
+   导航一个不少，但不再和主区抢宽度，主区拿到整屏。 */
+@media (max-width:820px){
+  .dx{ display:block; }
+  .dx-side{
+    width:auto; height:auto; position:static; flex-direction:row; align-items:center;
+    border-right:0; border-bottom:1px solid var(--d-line);
+    overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch;
+  }
+  .dx-proj{ flex:none; border-bottom:0; border-right:1px solid var(--d-line); }
+  .dx-nav{ display:flex; flex:1 1 auto; min-width:0; gap:2px; padding:6px 8px; overflow:visible; }
+  .dx-grp{ display:none; }            /* 分组标题在横排里只会制造断点 */
+  .dx-it{ flex:none; white-space:nowrap; padding:6px 10px; }
+  .dx-it .bdg{ margin-left:6px; }
+  .dx-quota, .dx-links{ display:none; }  /* 配额与外部链接在手机上另有入口 */
+  .dx-top{ flex-wrap:wrap; row-gap:8px; padding:8px 12px; }
+  .dx-top .sp{ display:none; }
+}
 .dx-step{ padding:0 10px; text-align:center; position:relative; }
 .dx-step .ic{ width:34px; height:34px; margin:0 auto 9px; border-radius:7px; border:1px solid var(--d-line2);
   display:flex; align-items:center; justify-content:center; color:var(--d-fg2); background:var(--d-panel2); }
@@ -1873,7 +2024,7 @@ body.docs #view{ display:block !important; }
     </a>
 
     <!-- desktop nav: centred between the logo and the actions, like mem0 -->
-    <nav class="hidden xl:flex items-center gap-0.5 flex-1 justify-center" id="mainnav" aria-label="Main"></nav>
+    <nav class="hidden xl:flex items-center gap-1.5 flex-1 justify-center" id="mainnav" aria-label="Main"></nav>
 
     <div class="flex items-center gap-1.5 shrink-0">
       <a class="ghstar hidden sm:inline-flex" id="ghstar" href="https://github.com/MnemosyneOS/mnemosyne" target="_blank" rel="noopener" aria-label="MnemosyneOS on GitHub">
@@ -2093,7 +2244,7 @@ body.docs #view{ display:block !important; }
     <div class="reveal">
       <span class="eyebrow-lg">New in 8.1.0</span>
       <h2 class="h2 mt-4 max-w-3xl">Memory formation layer —— 把经历变成记忆</h2>
-      <p class="sub mt-5 max-w-2xl">8.0.0 擅长把记忆找出来；8.1.0 补上「把经历变成记忆」。五个模块、九个新工具（31 → 40），旧工具签名与旧数据格式完全不变。</p>
+      <p class="sub mt-5 max-w-2xl">8.0.0 擅长把记忆找出来；8.1.0 补上「把经历变成记忆」。十二个模块、二十一个新工具（31 → 52），旧工具签名与旧数据格式完全不变。</p>
     </div>
 
     <div class="mt-14 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -2248,7 +2399,7 @@ body.docs #view{ display:block !important; }
     <div class="text-center reveal">
       <span class="pill" data-i18n="int.eyebrow">Integrations</span>
       <h2 class="h2 mt-6 mx-auto max-w-3xl" data-i18n="int.h2">Anything that speaks MCP already works.</h2>
-      <p class="sub mt-5 mx-auto max-w-2xl" data-i18n="int.sub">Mnemosyne OS exposes its 40 tools over the standard Model Context Protocol, so it mounts without a bespoke adapter. Every transport below has a runnable or a config in the repository.</p>
+      <p class="sub mt-5 mx-auto max-w-2xl" data-i18n="int.sub">Mnemosyne OS exposes its 52 tools over the standard Model Context Protocol, so it mounts without a bespoke adapter. Every transport below has a runnable or a config in the repository.</p>
     </div>
     <div class="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-4" id="int-grid"></div>
     <p class="mt-6 text-[12px] leading-[1.7] text-fg3" data-i18n="int.note">Every entry above rides the public MCP surface — stdio or Streamable HTTP. No forked client, no vendor plugin, no private SDK.</p>
@@ -2415,7 +2566,10 @@ body.docs #view{ display:block !important; }
         </div>
       </div>
 
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-10 flex-1 min-w-0" id="foot-cols"></div>
+      <!-- 5 列留到 1280 才开：1024–1279 这段里品牌区固定占 ~330px，剩下的
+           宽度切 5 列每列只有 76px，「Documentation」这种单词直接撑出容器
+           （实测溢出 17px）。1024 用 3 列，每列 ~140px，长单词放得下。 -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-x-6 gap-y-10 flex-1 min-w-0" id="foot-cols"></div>
     </div>
 
     <div class="mt-14 pt-8 hair-t">
@@ -2493,7 +2647,7 @@ body.docs #view{ display:block !important; }
          '    <span class="tk-p">}</span>\n' +
          '  <span class="tk-p">}</span>\n' +
          '<span class="tk-p">}</span>\n\n' +
-         '<span class="tk-c">// 40 tools ship with the server — 29 native + 11 client-compatible:</span>\n' +
+         '<span class="tk-c">// 52 tools ship with the server — 41 native + 11 client-compatible:</span>\n' +
          '<span class="tk-c">//   core     retain · recall · forget · retain_batch (~15x faster)</span>\n' +
          '<span class="tk-c">//   compress consolidate · dedup · reflect · capsule · expand</span>\n' +
          '<span class="tk-c">//   graph    graph_query · temporal_query · recall_health</span>\n' +
@@ -2573,14 +2727,14 @@ body.docs #view{ display:block !important; }
     'code.copied': 'Copied',
 
     'ann.tag': '8.1.0',
-    'ann.txt': 'Mnemosyne OS 8.1.0 已上线：新增记忆形成层——会话摘要、冲突消解、任务与经验记忆、代码演进记忆、敏感度治理。MCP 工具 31 → 40，旧工具与旧数据完全兼容。',
+    'ann.txt': 'Mnemosyne OS 8.1.0 已上线：新增记忆形成层——会话摘要、冲突消解、任务与经验记忆、代码演进记忆、敏感度治理。MCP 工具 31 → 52，旧工具与旧数据完全兼容。',
     'ann.cta': 'Read the changelog',
 
     'hero.badge': 'Mnemosyne OS 8.1.0',
     'hero.badge2': 'Zero-cloud memory layer',
-    'hero.l1': 'Private, Zero-Hallucination',
-    'hero.l2': 'Unified Memory OS for AI',
-    'hero.lede': 'The <b>privacy-first memory infrastructure</b> built for multi-agent systems and cross-session context. <b>Eliminate long-context hallucination</b>, <b>achieve pinpoint recall in milliseconds</b>, and keep your data <b>under your own control</b>.',
+    'hero.l1': 'From remembering conversations',
+    'hero.l2': 'to maintaining an evolving world model',
+    'hero.lede': 'The <b>unified memory infrastructure</b> built for multi-agent systems and cross-session context. Eight memory classes carry facts and experience, consolidation paths distill repeated episodes into semantic knowledge, and a decay policy lets stale state retire on its own. <b>Pinpoint recall in milliseconds</b>, with your data <b>under your own control</b>.',
     'hero.start': 'Get started',
     'hero.setup': 'Agent setup',
     'hero.seg1': 'SDK',
@@ -2613,7 +2767,7 @@ body.docs #view{ display:block !important; }
 
     'int.eyebrow': 'Integrations',
     'int.h2': 'Anything that speaks MCP already works.',
-    'int.sub': 'Mnemosyne OS exposes its 40 tools over the standard Model Context Protocol, so it mounts without a bespoke adapter. Every transport below has a runnable or a config in the repository.',
+    'int.sub': 'Mnemosyne OS exposes its 52 tools over the standard Model Context Protocol, so it mounts without a bespoke adapter. Every transport below has a runnable or a config in the repository.',
     'int.note': 'Every entry above rides the public MCP surface — stdio or Streamable HTTP. No forked client, no vendor plugin, no private SDK.',
 
     'bench.tag': 'New algorithm',
@@ -2687,7 +2841,7 @@ body.docs #view{ display:block !important; }
     stats: [
       { value: '37', label: 'GitHub stars', note: 'fetched live from the GitHub API', live: 1 },
       { value: '0.3', label: 'ms per stored record', note: 'storage layer, measured at 100k records' },
-      { value: '31', label: 'MCP tools', note: '29 native + 11 client-compatible' },
+      { value: '52', label: 'MCP tools', note: '41 native + 11 client-compatible' },
       { value: '0', label: 'third-party dependencies', note: 'install_requires is an empty list' }
     ],
 
@@ -2708,7 +2862,7 @@ body.docs #view{ display:block !important; }
 
     how: [
       { num: '01', title: 'Retain', meta: 'retain(content, mtype=..., project=...)',
-        body: 'One call builds a record with twelve available memory types, runs the notary check for prompt injection and credentials, writes to SQLite plus FTS5 plus the inverted index, appends a hash-chain ledger entry, and parks the memory in the hot tier.' },
+        body: 'One call builds a record with the eight memory classes from the design guide, runs the notary check for prompt injection and credentials, writes to SQLite plus FTS5 plus the inverted index, appends a hash-chain ledger entry, and parks the memory in the hot tier.' },
       { num: '02', title: 'Learn', meta: 'demote_cycle · consolidate · dedup',
         body: 'A demote cycle scores every memory — importance×2 + accesses×0.05 + confidence×3 + recency×2 + hit-rate — then pushes the lowest 20 % down a tier. Hot to warm is a flag change; warm to cold becomes a gzip archive plus a Bloom-filter index. Demote is not delete, and every migration is booked in the ledger.' },
       { num: '03', title: 'Retrieve', meta: 'recall(query, k=5, budget_tokens=100)',
@@ -2729,7 +2883,7 @@ body.docs #view{ display:block !important; }
     archCloud: {
       title: 'Cloud deployment, when you need it',
       body: 'The same source runs unchanged on a server: Qdrant for the vector tier, BGE-M3 for multilingual embeddings, and an MCP over Streamable HTTP gateway as the single public port. Tokens map to tenants — each tenant gets its own SQLite file and vector collection, which is physical isolation rather than permission filtering. Optional numpy / transformers extras and the Qdrant plugin add true semantic embeddings when you want them, and a 100,000-record corpus stays around 298 MB resident.',
-      stats: [['31', 'MCP tools'], ['1', 'Public port'], ['0', 'GPUs required']]
+      stats: [['52', 'MCP tools'], ['1', 'Public port'], ['0', 'GPUs required']]
     },
 
     uc: [
@@ -2903,14 +3057,18 @@ body.docs #view{ display:block !important; }
     'code.copied': '已复制',
 
     'ann.tag': '8.1.0',
-    'ann.txt': 'Mnemosyne OS 8.1.0 已上线：新增记忆形成层——会话摘要、冲突消解、任务与经验记忆、代码演进记忆、敏感度治理。MCP 工具 31 → 40，旧工具与旧数据完全兼容。',
+    'ann.txt': 'Mnemosyne OS 8.1.0 已上线：新增记忆形成层——会话摘要、冲突消解、任务与经验记忆、代码演进记忆、敏感度治理。MCP 工具 31 → 52，旧工具与旧数据完全兼容。',
     'ann.cta': '查看更新记录',
 
     'hero.badge': 'Mnemosyne OS 8.1.0',
     'hero.badge2': '零云端记忆层',
-    'hero.l1': '隐私原生 · 零幻觉的下一代',
-    'hero.l2': 'AI 统一记忆操作系统',
-    'hero.lede': '<b>专为多 Agent 与跨会话打造的统一记忆基础设施</b>。<b>彻底消除长上下文幻觉</b>，实现<b>短上下文毫秒级精准召回</b>，让数据隐私<b>重归你的掌控</b>。',
+    /* 定位从「工具」上移到「世界模型」：记住对话只是手段，
+       维护一个随使用持续演化、可回溯、可遗忘的世界模型才是目的。
+       这跟 MINT/BM25 类"更好的检索框"划清界限，也解释了为什么需要
+       八类记忆、巩固路径、遗忘机制这一整套东西。 */
+    'hero.l1': '从「记住对话」到',
+    'hero.l2': '维护一个会演化的世界模型',
+    'hero.lede': '<b>专为多 Agent 与跨会话打造的统一记忆基础设施</b>：八类记忆分层承载事实与经验，巩固路径把重复出现的情景提炼为语义，遗忘机制让过期状态自然退场。<b>短上下文毫秒级精准召回</b>，让数据隐私<b>重归你的掌控</b>。',
     'hero.start': '开始使用',
     'hero.setup': '代理设置',
     'hero.seg1': 'SDK 集成',
@@ -2943,7 +3101,7 @@ body.docs #view{ display:block !important; }
 
     'int.eyebrow': '集成',
     'int.h2': '凡是会说 MCP 的，接上就能用。',
-    'int.sub': 'Mnemosyne OS 通过标准 Model Context Protocol 暴露全部 40 个工具，因此无需为每个宿主写专属适配层。下表中每一条通路，仓库里都有可运行示例或配置。',
+    'int.sub': 'Mnemosyne OS 通过标准 Model Context Protocol 暴露全部 52 个工具，因此无需为每个宿主写专属适配层。下表中每一条通路，仓库里都有可运行示例或配置。',
     'int.note': '以上所有条目都走公开的 MCP 接口 —— stdio 或 Streamable HTTP。没有 fork 的客户端、没有厂商插件、没有私有 SDK。',
 
     'bench.tag': '新算法',
@@ -3017,7 +3175,7 @@ body.docs #view{ display:block !important; }
     stats: [
       { value: '37', label: 'GitHub 星标', note: '实时取自 GitHub API', live: 1 },
       { value: '0.3', label: 'ms / 每条写入', note: '存储层耗时，10 万条语料下测得' },
-      { value: '31', label: 'MCP 工具', note: '20 原生 + 11 客户端兼容' },
+      { value: '52', label: 'MCP 工具', note: '41 原生 + 11 客户端兼容' },
       { value: '0', label: '第三方依赖', note: 'install_requires 是空列表' }
     ],
 
@@ -3038,7 +3196,7 @@ body.docs #view{ display:block !important; }
 
     how: [
       { num: '01', title: '写入 Retain', meta: 'retain(content, mtype=..., project=...)',
-        body: '一次调用即建好记录（支持 12 种记忆类型），跑完公证检查（提示词注入 / 凭据检测），写入 SQLite + FTS5 + 倒排索引，往哈希链账本追加一笔，最后把记忆放进热层。' },
+        body: '一次调用即建好记录（支持指南定义的八类记忆），跑完公证检查（提示词注入 / 凭据检测），写入 SQLite + FTS5 + 倒排索引，往哈希链账本追加一笔，最后把记忆放进热层。' },
       { num: '02', title: '学习 Learn', meta: 'demote_cycle · consolidate · dedup',
         body: '降级周期给每条记忆打分 —— 重要性×2 + 访问次数×0.05 + 置信度×3 + 近因×2 + 命中率 —— 把最低的 20% 往下迁一层。热→温只改标志位；温→冷变成 gzip 归档 + 布隆过滤器索引。降级不是删除，每次迁移都记进账本。' },
       { num: '03', title: '召回 Retrieve', meta: 'recall(query, k=5, budget_tokens=100)',
@@ -3059,7 +3217,7 @@ body.docs #view{ display:block !important; }
     archCloud: {
       title: '需要时，再上云',
       body: '同一份源码可原样跑在服务器上：Qdrant 承载向量层，BGE-M3 提供多语言嵌入，MCP over Streamable HTTP 网关作为唯一对外端口。令牌决定租户 —— 每个租户一个独立 SQLite 与向量集合，这是物理隔离，而不是权限过滤。可选的 numpy / transformers 扩展与 Qdrant 插件能补上真正的语义嵌入；10 万条记忆常驻内存约 298 MB。',
-      stats: [['31', 'MCP 工具'], ['1', '对外端口'], ['0', '无需 GPU']]
+      stats: [['52', 'MCP 工具'], ['1', '对外端口'], ['0', '无需 GPU']]
     },
 
     uc: [
@@ -3111,7 +3269,7 @@ body.docs #view{ display:block !important; }
       ['离线可用', '是（退回 FTS5）', '否', '否'],
       ['防篡改审计', 'SHA-256 哈希链账本', '无', '无'],
       ['时序知识图谱', '原生 TripleStore 版本链', '有限', '需自行拼装'],
-      ['Agent 接入', '40 个 MCP 工具，开箱即用', 'REST API', '需自写工具层'],
+      ['Agent 接入', '52 个 MCP 工具，开箱即用', 'REST API', '需自写工具层'],
       ['许可与成本', 'MIT · 自托管 $0', '按调用量计费', '按向量量 + 席位计费']
     ],
 
@@ -3131,7 +3289,7 @@ body.docs #view{ display:block !important; }
           ['每月 1,000 次检索请求', 0],
           ['1 个项目', 0],
           ['BEAM 双层记忆 + 时序 TripleStore', 0],
-          ['40 个 MCP 工具，不做功能阉割', 0],
+          ['52 个 MCP 工具，不做功能阉割', 0],
           ['AIC 压缩胶囊 —— capsule / expand / recall_health', 0],
           ['纯 SQLite，零第三方依赖', 0],
           ['SHA-256 哈希链账本 + 安全公证脱敏', 0],
@@ -3216,6 +3374,19 @@ body.docs #view{ display:block !important; }
   };
 
   var DICT = { en: EN, zh: ZH };
+
+  /* 后台「页面文案」要列出全部可改键，得先知道有哪些键、默认值是什么。
+     DICT 是主脚本作用域内的局部变量，后台面板在另一个作用域里拿不到，
+     所以在这里挂一份出去。只导出字符串键：meta 这种嵌套对象不是「一行文案」，
+     硬塞进输入框只会变成 [object Object]。 */
+  window.__I18N_KEYS = (function () {
+    var out = [], k;
+    for (k in ZH) {
+      if (Object.prototype.hasOwnProperty.call(ZH, k) && typeof ZH[k] === 'string') out.push(k);
+    }
+    return out;
+  })();
+  window.__I18N_DEFAULTS = { zh: ZH, en: EN };
 
   /* ======================================================================= *
    *  BLOG POSTS — 文章数据。分类、日期、封面都在这里，正文在 BLOG_POSTS[id].body
@@ -3334,7 +3505,7 @@ body.docs #view{ display:block !important; }
           { h: 'Add memory to your coding agent',
             p: 'Claude Code first, then any host that speaks MCP. They all point at the same stdio server, so the memory is shared rather than duplicated per editor.',
             cards: [
-              ['Claude Code / Claude Desktop', 'Point the client at the stdio server and 40 tools appear — no adapter to write.'],
+              ['Claude Code / Claude Desktop', 'Point the client at the stdio server and 52 tools appear — no adapter to write.'],
               ['Cursor', 'Drop the same block into mcp.json and the editor remembers your project decisions across sessions.'],
               ['DeepSeek Harness', 'Patch-style deployment guide — the host config is amended, never overwritten.'],
               ['OpenWebUI', 'Point it at the Streamable HTTP gateway with a bearer token. Nothing else changes.']
@@ -3488,7 +3659,7 @@ body.docs #view{ display:block !important; }
           { h: 'Hosts that work today',
             p: 'Each of these is a configuration entry, not an integration project.',
             cards: [
-              ['Claude Code / Claude Desktop', 'stdio JSON-RPC. All 40 tools appear on connect.'],
+              ['Claude Code / Claude Desktop', 'stdio JSON-RPC. All 52 tools appear on connect.'],
               ['Cursor', 'stdio via mcp.json. Project decisions survive the session.'],
               ['OpenWebUI', 'Streamable HTTP plus a bearer token.'],
               ['Hermes Agent', 'stdio. A long-running agent ends up with memory that outlives every session it starts.'],
@@ -3726,7 +3897,7 @@ body.docs #view{ display:block !important; }
         search: { ph: 'Search integrations…', all: 'All categories', none: 'No integration matches that search.' },
         cats: ['MCP · stdio', 'MCP · HTTP', 'Python SDK', 'Plugin SDK', 'Local'],
         items: [
-          { n: 'Claude Code', c: 'MCP · stdio', i: 'CC', d: '40 tools appear on connect. The agent remembers decisions between sessions without being told again.',
+          { n: 'Claude Code', c: 'MCP · stdio', i: 'CC', d: '52 tools appear on connect. The agent remembers decisions between sessions without being told again.',
             cp: 'claude mcp add mnemosyne -- python -m mnemosyne.webui.mcp_server --brain-dir ./mem' },
           { n: 'Claude Desktop', c: 'MCP · stdio', i: 'CD', d: 'The same stdio server, declared in claude_desktop_config.json.',
             cp: '{"command":"python","args":["-m","mnemosyne.webui.mcp_server","--brain-dir","./mem"]}' },
@@ -3765,7 +3936,7 @@ body.docs #view{ display:block !important; }
               '<b>Four-dimensional scoping, physically enforced.</b> <code>user_id</code> / <code>agent_id</code> / <code>run_id</code> / <code>app_id</code> — one SQLite file per scope combination, not a filter over shared rows. Namespaces are hashed over sorted, length-prefixed components, so <code>(a, bc)</code> and <code>(ab, c)</code> cannot collide and key order cannot change the result.',
               '<b>Complete filter language</b> — <code>eq</code> <code>ne</code> <code>gt</code> <code>gte</code> <code>lt</code> <code>lte</code> <code>in</code> <code>nin</code> <code>contains</code> <code>icontains</code> <code>startswith</code> <code>endswith</code> and wildcards, with arbitrarily nested <code>AND</code> / <code>OR</code> / <code>NOT</code>.',
               '<b>72 optional providers</b> — 20 LLM, 13 embedder, 28 vector store, 5 reranker, 6 graph store. Everything reachable over HTTP is implemented on the standard library\'s <code>urllib</code>, so <code>install_requires</code> is still an empty list.',
-              '<b>MCP surface 20 → 40 tools.</b> Twenty native, plus eleven that reuse the conventional agent-memory tool names, so an existing MCP client can be pointed at Mnemosyne without rewriting its tool definitions.',
+              '<b>MCP surface 20 → 52 tools.</b> Forty-one native, plus eleven that reuse the conventional agent-memory tool names, so an existing MCP client can be pointed at Mnemosyne without rewriting its tool definitions.',
               '<b>Service surface.</b> REST <code>/v1</code>, <code>/v2</code> and <code>/v3</code> sharing the console\'s listener with token auth and async event ids; a compatible CLI with <code>--agent</code> JSON envelopes; manifests for Claude, Codex, Cursor and Kimi; integrations for LangChain, LlamaIndex, CrewAI, Dify, n8n and the Vercel AI SDK.',
               '<b>Nine defects fixed, each with regression coverage.</b> The most serious: <code>meta</code> was absent from the column list, so every <code>INSERT</code> silently dropped it and the read path then <i>fabricated</i> a replacement — user metadata vanished across a restart. <code>meta</code> is now a real column with an idempotent migration for existing databases.',
               '<b>Breaking change.</b> The client API moved to <code>mnemosyne/api/</code> and its helper modules were renamed to match. The memory-store format, REST routes and MCP tool names are unaffected.'
@@ -3969,7 +4140,7 @@ body.docs #view{ display:block !important; }
         eyebrow: 'About us', h1: 'Mnemosyne OS — the memory layer for AI agents',
         lede: 'Every interaction should be personal, considered and efficient. An agent can only be those things if it remembers what came before — so we built the memory layer we wanted to depend on.',
         cta: [['Get started', '#/docs', 'primary'], ['Read the source', REPO, 'ghost']],
-        tiles: [['37', 'GitHub stars'], ['300', 'PyPI downloads / month'], ['31', 'MCP tools'], ['9', 'documented languages']],
+        tiles: [['37', 'GitHub stars'], ['300', 'PyPI downloads / month'], ['52', 'MCP tools'], ['9', 'documented languages']],
         person: {
           img: 'data:image/jpeg;base64,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',
           kicker: 'Founder & CEO',
@@ -4173,7 +4344,7 @@ body.docs #view{ display:block !important; }
 
       api: {
         eyebrow: 'API 参考', h1: '不摆架子的记忆 API',
-        lede: '一个 Python 类、一套命令行、一个 HTTP 面、40 个 MCP 工具 —— 底下是同一个 SQLite 文件。没有任何一个是定制接口，所以智能体能用 SDK，控制台也能读同一个存储。',
+        lede: '一个 Python 类、一套命令行、一个 HTTP 面、52 个 MCP 工具 —— 底下是同一个 SQLite 文件。没有任何一个是定制接口，所以智能体能用 SDK，控制台也能读同一个存储。',
         cta: [['MCP 集成', '#/mcp', 'primary'], ['命令行参考', '#/cli', 'ghost']],
         blocks: [
           { h: 'Python —— MemoryBrain',
@@ -4208,8 +4379,8 @@ body.docs #view{ display:block !important; }
               'cost["dropped_count"]     # 恒为 0 —— 没有东西被直接扔掉'
             ].join('\n') } },
 
-          { h: 'MCP 工具 —— 40 个，走 stdio 或 Streamable HTTP',
-            p: '完整的工具面：二十九个原生（含 8.1.0 新增的九个记忆形成层工具），外加十一个沿用通行 Agent 记忆工具名的别名，既有 MCP 客户端无需重写。智能体只要声明它们就获得了记忆能力，不需要胶水代码，也不需要自写工具层。',
+          { h: 'MCP 工具 —— 52 个，走 stdio 或 Streamable HTTP',
+            p: '完整的工具面：四十一个原生（含 8.1.0 新增的二十一个记忆形成层工具），外加十一个沿用通行 Agent 记忆工具名的别名，既有 MCP 客户端无需重写。智能体只要声明它们就获得了记忆能力，不需要胶水代码，也不需要自写工具层。',
             tools: [
               ['retain', '写入一条记忆。'],
               ['recall', '在 token 预算内召回记忆；回传置信带与胶囊层级。'],
@@ -4252,7 +4423,7 @@ body.docs #view{ display:block !important; }
               '# 首次运行会创建 admin / mnemosyne —— 登录后请改密码'
             ].join('\n') } },
 
-          { note: '协议版本 2024-11-05。MCP 工具面保持向后兼容：7.0.0 是 13 个，7.0.1 是 14 个，7.0.2 是 20 个，8.0.0 是 31 个，8.1.0 是 40 个，每次增加都是纯增量。' }
+          { note: '协议版本 2024-11-05。MCP 工具面保持向后兼容：7.0.0 是 13 个，7.0.1 是 14 个，7.0.2 是 20 个，8.0.0 是 31 个，8.1.0 是 52 个，每次增加都是纯增量。' }
         ]
       },
 
@@ -4284,7 +4455,7 @@ body.docs #view{ display:block !important; }
           { h: '现在就能挂上的宿主',
             p: '下面每一条都只是配置项，不是一个集成项目。',
             cards: [
-              ['Claude Code / Claude Desktop', 'stdio JSON-RPC，连上就出现全部 40 个工具。'],
+              ['Claude Code / Claude Desktop', 'stdio JSON-RPC，连上就出现全部 52 个工具。'],
               ['Cursor', '通过 mcp.json 走 stdio，项目决策跨会话留存。'],
               ['OpenWebUI', 'Streamable HTTP 加一个 Bearer 令牌。'],
               ['Hermes Agent', 'stdio。常驻智能体由此获得一层跨越它所有会话的记忆。'],
@@ -4521,7 +4692,7 @@ body.docs #view{ display:block !important; }
         search: { ph: '搜索集成…', all: '全部分类', none: '没有匹配这个搜索的集成。' },
         cats: ['MCP · stdio', 'MCP · HTTP', 'Python SDK', '插件 SDK', '本地模型'],
         items: [
-          { n: 'Claude Code', c: 'MCP · stdio', i: 'CC', d: '连上就出现 40 个工具。智能体在会话之间记住决策，不需要被重新告知。',
+          { n: 'Claude Code', c: 'MCP · stdio', i: 'CC', d: '连上就出现 52 个工具。智能体在会话之间记住决策，不需要被重新告知。',
             cp: 'claude mcp add mnemosyne -- python -m mnemosyne.webui.mcp_server --brain-dir ./mem' },
           { n: 'Claude Desktop', c: 'MCP · stdio', i: 'CD', d: '同一个 stdio 服务端，在 claude_desktop_config.json 里声明即可。',
             cp: '{"command":"python","args":["-m","mnemosyne.webui.mcp_server","--brain-dir","./mem"]}' },
@@ -4601,7 +4772,7 @@ body.docs #view{ display:block !important; }
 
       pricing: {
         eyebrow: '定价', h1: '简单实惠',
-        lede: '引擎是 MIT 许可，免费那一档也没有被阉割 —— 全部 40 个 MCP 工具都在里面。付费买的是托管、多租户与合规交付，而不是解锁你本来就有的功能。',
+        lede: '引擎是 MIT 许可，免费那一档也没有被阉割 —— 全部 52 个 MCP 工具都在里面。付费买的是托管、多租户与合规交付，而不是解锁你本来就有的功能。',
         plans: true,
         blocks: [
           { h: '你到底在为哪些东西付费',
@@ -4761,7 +4932,7 @@ body.docs #view{ display:block !important; }
         eyebrow: '关于我们', h1: 'Mnemosyne OS —— AI 代理的记忆层',
         lede: '因此，每一次互动都应当是个性化的、考虑周到的、高效的。而智能体只有记得住之前发生过什么，才可能做到这三点 —— 所以我们先做了自己愿意依赖的那层记忆。',
         cta: [['开始使用', '#/docs', 'primary'], ['阅读源码', REPO, 'ghost']],
-        tiles: [['37', 'GitHub 星标'], ['300', 'PyPI 月下载量'], ['31', 'MCP 工具'], ['9', '文档语言数']],
+        tiles: [['37', 'GitHub 星标'], ['300', 'PyPI 月下载量'], ['52', 'MCP 工具'], ['9', '文档语言数']],
         person: {
           img: 'data:image/jpeg;base64,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',
           kicker: '创始人 & CEO',
@@ -4790,7 +4961,7 @@ body.docs #view{ display:block !important; }
             p: '半年的工作，在公开场合被测量，而不是被声称。',
             tools: [
               ['版本 8.1.0 —— 2026 年 9 月 22 日', '四周内四个版本，每一个都把自身发现的缺陷作为文档交付。'],
-              ['40 个 MCP 工具', '每一项能力都可通过公开协议触达，包括免费档在内的所有档位。'],
+              ['52 个 MCP 工具', '每一项能力都可通过公开协议触达，包括免费档在内的所有档位。'],
               ['九种 README 语言', 'English、简体中文、繁體中文、Español、Русский、Deutsch、ไทย、한국어、日本語。'],
               ['0 个第三方依赖', 'install_requires 是空列表 —— 并且有一个回归测试，一旦它不再是空列表就会失败。'],
               ['10 万条 298 MB', '整个存储常驻内存，这是没有向量服务也能做到 0.21 ms 召回的物理前提。']
@@ -5056,15 +5227,22 @@ body.docs #view{ display:block !important; }
       var id = m.getAttribute('data-menu-panel');
       var btn = $('[data-menu="' + id + '"]');
       if (btn) btn.setAttribute('aria-expanded', 'false');
+      // 打开来源随面板一起清掉，否则下次 hover 展开会残留上一次的 click 标记
+      try { delete panel.dataset.openedBy; } catch (err) { /* 老浏览器无 dataset，忽略 */ }
     });
   }
 
-  function openMenu(id) {
+  function openMenu(id, source) {
     var panel = $('[data-menu-panel="' + id + '"]');
     var btn = $('[data-menu="' + id + '"]');
     if (!panel) return;
     closeMenus(panel);
     panel.classList.add('on');
+    /* 记下是谁打开的。hover 展开的面板在被点击时**不能**当成"再点一次要收起"——
+       否则用户 hover 展开、想去点其中一项、途中碰到按钮，面板当场消失，
+       下拉菜单看起来就是坏的。区分来源后：hover 展开时第一次点击只接管，
+       第二次才收起；触屏没有 hover，第一次点击即展开，两种设备行为一致。 */
+    panel.dataset.openedBy = source || 'click';
     if (btn) btn.setAttribute('aria-expanded', 'true');
   }
 
@@ -5084,7 +5262,7 @@ body.docs #view{ display:block !important; }
     var panel = $('[data-menu-panel="' + id + '"]');
     if (!panel || panel.classList.contains('on')) return;
     if (menuTimer) { clearTimeout(menuTimer); menuTimer = null; }
-    openMenu(id);
+    openMenu(id, 'hover');
   });
 
   document.addEventListener('mouseout', function (e) {
@@ -5430,7 +5608,9 @@ body.docs #view{ display:block !important; }
                '<span>' + esc(f[0]) + '</span></li>';
     }).join('');
     return '<div class="tier' + (t.rec ? ' tier-rec' : '') + '">' +
-             '<div class="flex items-center justify-between gap-3">' +
+             /* flex-wrap：Enterprise / Custom 这种「长名字 + 徽标」在窄列里
+                一行放不下（1024 下实测溢出 19px），允许徽标掉到下一行。 */
+             '<div class="flex flex-wrap items-center justify-between gap-3">' +
                '<h3 class="tier-name">' + esc(t.name) + '</h3>' +
                (t.badge ? '<span class="' + (t.rec ? 'pill' : 'tagbox2') + '"' + (t.rec ? ' style="height:24px;padding:0 10px;font-size:11px"' : '') + '>' + esc(t.badge) + '</span>' : '') +
              '</div>' +
@@ -6752,6 +6932,8 @@ body.docs #view{ display:block !important; }
       box.innerHTML = '<div class="dx site-cfg">' +
         '<section class="site-sec">' + MN.secReadiness(site) + '</section>' +
         '<section class="site-sec">' + MN.secBrand(site) + '</section>' +
+        /* 文案紧跟在品牌后面：它是管理员最高频的改动，不该沉到凭据区下面 */
+        '<section class="site-sec">' + MN.secContent(site) + '</section>' +
         '<section class="site-sec">' + MN.secAuth(site) + '</section>' +
         '<section class="site-sec">' + MN.secOAuth(oauth) + '</section>' +
         '<section class="site-sec">' + MN.secMemory(site, sys) + '</section>' +
@@ -7281,9 +7463,54 @@ body.docs #view{ display:block !important; }
    *  6 · LANGUAGE                                                            *
    * ======================================================================= */
 
+  /* -------------------------------------------- 后台改过的页面文案覆盖层 */
+  /* 服务端 site.json 的 content 段形如 { 'zh.hero.l1': '…', 'en.hero.l2': '…' }。
+     下面的 MN 站点模块把它拆成 zh / en 两份写到 window.__SITE_CONTENT，这里再压到
+     i18n 表上。压的方式是「先复制一份默认表，再往上合并」，不去改 DICT 本身：
+     改了 DICT，撤销一条覆盖之后内置默认值就永久丢了，之后切语言会越切越空。 */
+  window.__SITE_CONTENT = window.__SITE_CONTENT || { zh: {}, en: {} };
+  window.__SITE_CONTENT_HAD = false;
+  window.__onSiteContent = function () {
+    applySiteContent();
+    /* 覆盖可能影响页面上任何一处 [data-i18n]，所以整页重画一次。
+       这条路径只有「后台改完文案 → 刷新」会走到，代价可以接受；
+       且 MN.apply() 在 CFG 已就绪时直接返回，不会和 fetchCfg 形成循环。 */
+    try { renderAll(); } catch (e) {}
+  };
+  /* 后台把覆盖全部清空时也要让页面回到内置默认，但只在"原来确实有覆盖"时重画：
+     从没配过覆盖的普通访客首屏加载走的就是这条，没必要为它再画一次。 */
+  window.__onSiteContentEmpty = function () {
+    applySiteContent();
+    if (window.__SITE_CONTENT_HAD) { try { renderAll(); } catch (e) {} }
+  };
+
+  function applySiteContent() {
+    var base = DICT[lang] || {};
+    var merged = {};
+    var k;
+    for (k in base) {
+      if (Object.prototype.hasOwnProperty.call(base, k)) merged[k] = base[k];
+    }
+    var oc = (window.__SITE_CONTENT || {})[lang];
+    if (oc) {
+      for (k in oc) {
+        if (!Object.prototype.hasOwnProperty.call(oc, k)) continue;
+        var v = oc[k];
+        /* 空串 = 撤销这条覆盖，回到内置默认。服务端也是这个语义：
+           整体替换而不是逐键深合并，所以"清空"才能真的清掉。 */
+        if (v === '' || v === null || v === undefined) { delete merged[k]; continue; }
+        merged[k] = String(v);
+      }
+    }
+    T = merged;
+  }
+
   function setLang(next) {
     lang = (next === 'zh') ? 'zh' : 'en';
     T = DICT[lang];
+    /* 后台改过的文案要压在内置 i18n 表之上。放在这里而不是只在初始化时做
+       一次：否则切换语言会把后台的改动"切回"默认值，看起来像设置丢了。 */
+    applySiteContent();
     root.setAttribute('data-lang', lang);
     root.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
     try { localStorage.setItem('mn-lang', lang); } catch (e) {}
@@ -7521,10 +7748,11 @@ body.docs #view{ display:block !important; }
     if (navBtn) {
       var mid = navBtn.getAttribute('data-menu');
       var mpanel = $('[data-menu-panel="' + mid + '"]');
-      /* Clicking an already-open panel closes it. The account menu lives
-         outside #mainnav, so hover never opens it — it must toggle on click. */
-      if (mpanel && mpanel.classList.contains('on')) { closeMenus(); return; }
-      openMenu(mid);
+      /* 只有"由点击打开的"面板才在再次点击时收起。hover 打开的那次点击
+         是把面板接管过来（openedBy 改成 click），并不收起 —— 见 openMenu 里的注释。 */
+      if (mpanel && mpanel.classList.contains('on') &&
+          mpanel.dataset.openedBy === 'click') { closeMenus(); return; }
+      openMenu(mid, 'click');
       return;
     }
 
@@ -7741,7 +7969,8 @@ var DX_NAV = [
   [{ id: 'install',    z: '安装 Mnemosyne OS', e: 'Install',        ic: 'download' },
    { id: 'highlights', z: '精选',           e: 'Highlights',      ic: 'star' }],
   [{ g: 'agent' },
-   { id: 'copilot', z: '副驾驶',   e: 'Copilot',  ic: 'sparkles', badge: 'NEW' }],
+   { id: 'copilot', z: '副驾驶',   e: 'Copilot',  ic: 'sparkles', badge: 'NEW' },
+   { id: 'tools',   z: '工具台',   e: 'Tools',    ic: 'wrench',  badge: 'NEW' }],
   [{ g: 'data' },
    { id: 'overview', z: '仪表盘',   e: 'Dashboard', ic: 'layout-grid' },
    { id: 'requests', z: '请求',     e: 'Requests',  ic: 'list' },
@@ -7811,7 +8040,8 @@ function dxGet(page) {
     formation: '/api/dash/formation',
     dreamItems: '/api/dash/dream',
     audit: '/api/dash/audit',
-    members: '/api/dash/members'
+    members: '/api/dash/members',
+    tools: '/api/dash/tools'
   }[page];
   if (!url) return Promise.resolve({});
   return dxApi(url).then(function (d) { DX.data[page] = d; return d; });
@@ -8084,6 +8314,7 @@ function dxPaintBody() {
   if (p === 'formation') return dxPageFormation(el);
   if (p === 'members') return dxPageMembers(el);
   if (p === 'audit') return dxPageAudit(el);
+  if (p === 'tools') return dxPageTools(el);
   return dxPageOverview(el);
 }
 
@@ -8783,6 +9014,80 @@ function dxPageDream(el) {
   });
 }
 
+/* --------------------------------------------------------- 10 mcp tools */
+
+/* 参数表单按 JSON Schema 生成：required 的给必填标记，enum 给下拉，
+   其余给文本框。schema 是网关实时给的，所以新工具加参数不用改这里。 */
+function dxToolForm(t) {
+  var sc = (t && t.schema) || {};
+  var props = sc.properties || {};
+  var req = sc.required || [];
+  var keys = Object.keys(props);
+  if (!keys.length) {
+    return '<div class="dx-note">' + esc(dz('这个工具没有参数。', 'This tool takes no arguments.')) + '</div>';
+  }
+  return keys.map(function (k) {
+    var p = props[k] || {};
+    var isReq = req.indexOf(k) >= 0;
+    var ph = (p.description || p.type || '') + (isReq ? '' : dz('（可选）', ' (optional)'));
+    var input;
+    if (p.enum && p.enum.length) {
+      input = '<select class="dx-sel" data-targ="' + esc(k) + '">' +
+        p.enum.map(function (v) {
+          return '<option value="' + esc(String(v)) + '">' + esc(String(v)) + '</option>';
+        }).join('') + '</select>';
+    } else if (p.type === 'boolean') {
+      input = '<select class="dx-sel" data-targ="' + esc(k) + '">' +
+        '<option value="false">false</option><option value="true">true</option></select>';
+    } else {
+      input = '<input class="dx-inp wide" data-targ="' + esc(k) + '" placeholder="' + esc(ph) + '">';
+    }
+    return '<div class="dx-trow"><span class="k' + (isReq ? ' rq' : '') + '">' + esc(k) + '</span>' + input + '</div>';
+  }).join('');
+}
+
+function dxPageTools(el) {
+  var __p = 'tools';
+  dxBusy(el);
+  dxReload('tools').then(function (d) {
+    if (DX.page !== __p) return;
+    var groups = d.groups || [];
+    var open = DX.ui.toolOpen || '';
+    el.innerHTML = dxHead(dz('工具台', 'Tools'),
+        d.online
+          ? dz('网关共 ' + (d.total || 0) + ' 个 MCP 工具，逐个可调。', (d.total || 0) + ' MCP tools on the gateway — each one callable here.')
+          : dz('MCP 网关不可达。', 'The MCP gateway is unreachable.'),
+        '<span class="dx-tag">' + (d.total || 0) + '</span>') +
+      dxErr(d) +
+      groups.map(function (g) {
+        var body = g.tools.map(function (t) {
+          if (t.missing) {
+            return '<div class="dx-tool off"><div class="nm">' + esc(t.name) + '</div>' +
+              '<div class="ds">' + esc(dz('网关上没有这个工具 —— 部署版本可能落后于控制台。',
+                                         'Not present on the gateway — the deployment may lag the console.')) + '</div></div>';
+          }
+          var on = open === t.name;
+          return '<div class="dx-tool' + (on ? ' on' : '') + '" data-dx="tool-open" data-name="' + esc(t.name) + '">' +
+            '<div class="nm">' + esc(t.name) + '</div>' +
+            '<div class="ds">' + esc(t.desc || '') + '</div></div>' +
+            (on ? '<div class="dx-toolpanel" id="dx-tool-panel">' +
+                   dxToolForm(t) +
+                   '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">' +
+                     '<button type="button" class="dx-btn sm" data-dx="tool-run" data-name="' + esc(t.name) + '">' +
+                       esc(dz('执行', 'Run')) + '</button>' +
+                     '<button type="button" class="dx-btn gh sm" data-dx="tool-close">' + esc(dz('收起', 'Close')) + '</button>' +
+                   '</div>' +
+                   '<div id="dx-tool-out" style="margin-top:10px"></div>' +
+                 '</div>' : '');
+        }).join('');
+        return '<div class="dx-card" style="margin-bottom:14px">' +
+          '<div class="dx-cardhd">' + esc(dz(g.zh, g.en)) + '<span class="dim">' + g.count + '</span></div>' +
+          body + '</div>';
+      }).join('');
+    icons();
+  });
+}
+
 /* ---------------------------------------------------------------- 9 graph */
 
 function dxPageGraph(el) {
@@ -8791,6 +9096,12 @@ function dxPageGraph(el) {
       dz('与大脑板块同一个组件：软引力井聚成花瓣状星云、跨区交叉连线、流光脉冲。',
          'The same component the brain panel uses: soft gravity wells, cross-region links and travelling light pulses.'),
       '<button class="dx-btn gh" type="button" data-dx="brain-replay">' + esc(dz('重播绽放', 'Replay the bloom')) + '</button>') +
+    '<div class="brn-hint">' +
+      '<span><kbd>' + esc(dz('拖动', 'Drag')) + '</kbd>' + esc(dz('旋转视角', 'to orbit')) + '</span>' +
+      '<span><kbd>' + esc(dz('滚轮', 'Scroll')) + '</kbd>' + esc(dz('缩放', 'to zoom')) + '</span>' +
+      '<span><kbd>' + esc(dz('悬停', 'Hover')) + '</kbd>' + esc(dz('高亮节点并查看它连向谁', 'to highlight a node and see what it links to')) + '</span>' +
+      '<span><kbd>' + esc(dz('点击', 'Click')) + '</kbd>' + esc(dz('固定当前筛选', 'to pin the current filter')) + '</span>' +
+    '</div>' +
     '<div class="brn-host" id="brain-host">' +
       '<div class="brn-note"><b>' + esc(dz('正在载入三维图谱…', 'Loading the 3D graph…')) + '</b>' +
       '<span>' + esc(dz('渲染组件约 1.1 MB，只会下载一次。',
@@ -8798,6 +9109,27 @@ function dxPageGraph(el) {
     '</div>';
   icons();
   dxLoadBrain();
+  /* 数据侧失败（网关不可达时 /api/graph 返回 503）必须给出可操作的出口：
+     bundle 只会把错误写成一行灰字，用户看到的是「一个空画布 + 一行报错」，
+     既不知道是自己没数据还是服务挂了，也没有重试的地方。 */
+  setTimeout(function () {
+    var host = document.getElementById('brain-host');
+    if (!host || DX.page !== __p) return;
+    var err = host.querySelector('.brn-err');
+    if (err && !host.querySelector('.brn-retry')) {
+      var btn = document.createElement('button');
+      btn.className = 'dx-btn brn-retry';
+      btn.type = 'button';
+      btn.textContent = dz('重试', 'Retry');
+      btn.onclick = function () {
+        BRAIN.ready = false;
+        BRAIN.node = null;
+        host.innerHTML = '<div class="brn-note"><b>' + esc(dz('重新载入…', 'Reloading…')) + '</b></div>';
+        dxLoadBrain();
+      };
+      err.parentNode.appendChild(btn);
+    }
+  }, 4200);
 }
 
 var BRAIN = { node: null, loading: false, ready: false };
@@ -8836,7 +9168,14 @@ function dxMountBrain() {
   if (BRAIN.node) {
     host.innerHTML = '';
     host.appendChild(BRAIN.node);
-    if (window.BrainGraph) window.BrainGraph.ensure();
+    /* detach 期间 ResizeObserver 量到的是 0×0，同步调 resize 只会把 0 写进去。
+       等一帧让观测器重新跑过，再触发一次才拿得到真实宽高 —— 否则切页回来
+        canvas 停在错误尺寸，交互热区也跟着错位。 */
+    if (window.BrainGraph && window.BrainGraph.resize) {
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () { window.BrainGraph.resize(); });
+      });
+    }
     return;
   }
   host.innerHTML = '<div id="brainroot" style="width:100%;height:100%"></div>';
@@ -9698,6 +10037,50 @@ document.addEventListener('click', function (e) {
   /* mem-role 在 change 委托里处理（见第 9 节）：点开下拉不改选项也会触发
      click，那条路径发请求只会造出一条无意义审计。 */
 
+  if (act === 'tool-open') {
+    var n1 = el.getAttribute('data-name');
+    DX.ui.toolOpen = (DX.ui.toolOpen === n1) ? '' : n1;
+    dxPaintBody();
+    return;
+  }
+  if (act === 'tool-close') { DX.ui.toolOpen = ''; dxPaintBody(); return; }
+
+  if (act === 'tool-run') {
+    var n2 = el.getAttribute('data-name');
+    var panel = document.getElementById('dx-tool-panel');
+    var args = {};
+    if (panel) {
+      Array.prototype.forEach.call(panel.querySelectorAll('[data-targ]'), function (inp) {
+        var v = inp.value;
+        if (v === '' || v === null) return;
+        var k = inp.getAttribute('data-targ');
+        if (inp.tagName === 'SELECT' && (v === 'true' || v === 'false')) {
+          args[k] = (v === 'true');
+          return;
+        }
+        // 数字按 schema type 转；转不动的保持字符串，由网关报错 ——
+        // 猜错类型比不给更糟，这里只做有依据的转换。
+        var num = Number(v);
+        args[k] = (v !== '' && !isNaN(num) && /^-?\d+(\.\d+)?$/.test(v.trim())) ? num : v;
+      });
+    }
+    el.disabled = true;
+    var out = document.getElementById('dx-tool-out');
+    if (out) out.innerHTML = '<div class="dx-note">' + esc(dz('执行中…', 'Running…')) + '</div>';
+    dxApi('/api/dash/tools/call', { name: n2, args: args }).then(function (r) {
+      el.disabled = false;
+      if (!out) return;
+      if (r && r.__err) { out.innerHTML = '<div class="dx-note warn">' + esc(r.__err) + '</div>'; return; }
+      var txt;
+      try { txt = JSON.stringify(r.result !== undefined && r.result !== null ? r.result : r, null, 2); }
+      catch (e) { txt = String(r); }
+      out.innerHTML = '<div class="dx-note ' + (r && r.ok ? '' : 'warn') + '">' +
+        esc((r && r.ok ? dz('成功', 'ok') : dz('网关返回错误', 'gateway error'))) + '</div>' +
+        '<pre class="dx-pre">' + esc(txt.slice(0, 20000)) + '</pre>';
+    });
+    return;
+  }
+
   if (act === 'mem-del') {
     var em2 = el.getAttribute('data-email');
     if (!window.confirm(dz('删除成员 ' + em2 + '？此操作不可撤销。',
@@ -10062,7 +10445,7 @@ var DOCS_ZH = {
         ] }
       ] },
       { h: '工具清单', id: 'tools', blocks: [
-        { p: '网关当前暴露 40 个 MCP 工具。常用的几个：' },
+        { p: '网关当前暴露 52 个 MCP 工具。常用的几个：' },
         { ul: [
           '<code>retain</code> / <code>retain_batch</code> —— 写入一条 / 批量写入。',
           '<code>recall</code> —— 语义检索，可限定类型与标签。',
@@ -10098,7 +10481,7 @@ var DOCS_ZH = {
       { h: '第二步：登记到 Claude Code', id: 'register', blocks: [
         { p: '把服务写进 Claude Code 的 MCP 配置。项目级配置只对这个目录生效，用户级配置则到处可用。' },
         { code: '{\n  "mcpServers": {\n    "mnemosyne": {\n      "url": "http://127.0.0.1:8788/mcp"\n    }\n  }\n}' },
-        { p: '保存后重开一个会话，用 <code>/mcp</code> 查看连接状态，应当能看到 40 个工具。' }
+        { p: '保存后重开一个会话，用 <code>/mcp</code> 查看连接状态，应当能看到 52 个工具。' }
       ] },
       { h: '第三步：让它真的用起来', id: 'use', blocks: [
         { p: '工具挂上不等于会被用。在项目的说明文件里写清楚什么时候该写、什么时候该取，效果会明显不同：' },
@@ -10260,7 +10643,7 @@ var DOCS_EN = {
         { p: 'Each result is a triple: the score, the record, and why it matched. The reasons say whether it came in on keywords, vectors or time proximity, which is what makes recall quality debuggable.' }
       ] },
       { h: 'Run it as an MCP server', id: 'mcp', blocks: [
-        { p: 'To let another agent use it, expose it as a local HTTP endpoint. 40 tools appear over MCP.' },
+        { p: 'To let another agent use it, expose it as a local HTTP endpoint. 52 tools appear over MCP.' },
         { code: '# start the gateway on 127.0.0.1:8788\npython -m mnemosyne.gateway --port 8788\n\n# then point any MCP client at\nhttp://127.0.0.1:8788/mcp' },
         { callout: '<b>Off-loopback needs a token.</b> Requests from the loopback address are trusted; anything else must carry <code>Authorization: Bearer &lt;token&gt;</code>.' }
       ] },
@@ -10364,7 +10747,7 @@ var DOCS_EN = {
       { h: 'Step two: register it', id: 'register', blocks: [
         { p: 'Add the server to the MCP configuration. A project-level entry applies to that directory only; a user-level entry applies everywhere.' },
         { code: '{\n  "mcpServers": {\n    "mnemosyne": {\n      "url": "http://127.0.0.1:8788/mcp"\n    }\n  }\n}' },
-        { p: 'Open a new session and run <code>/mcp</code>. You should see 40 tools listed.' }
+        { p: 'Open a new session and run <code>/mcp</code>. You should see 52 tools listed.' }
       ] },
       { h: 'Step three: make it actually use them', id: 'use', blocks: [
         { p: 'Attaching tools is not the same as using them. Saying when to write and when to read changes the behaviour noticeably:' },
@@ -10781,6 +11164,46 @@ function docsOpen(open) {
     setTimeout(function () { applyAnnounce(); applyFooter(); }, 60);
   }
 
+  /* ------------------------------------ 后台改过的页面文案 → 外层 i18n 表 */
+  /* content 段是「语言前缀 + i18n 键」的扁平结构（zh.hero.l1 / en.hero.l1）。
+     在这里拆成两份交给外层脚本，外层才知道当前是哪种语言、该压哪一份。
+     只认 zh / en 两种前缀、值一律转字符串：配置是管理员手填的，
+     形状不对时宁可丢掉这一条，也不要让整个语言表变成 undefined。 */
+  function publishContent(raw) {
+    var out = { zh: {}, en: {} };
+    if (raw && typeof raw === 'object') {
+      for (var k in raw) {
+        if (!Object.prototype.hasOwnProperty.call(raw, k)) continue;
+        var m = /^(zh|en)\.(.+)$/.exec(k);
+        if (!m) continue;
+        var v = raw[k];
+        if (v === null || v === undefined) continue;
+        out[m[1]][m[2]] = String(v);
+      }
+    }
+    /* 没配过覆盖时什么都不做：绝大多数访客走的就是这条，不要为了一个空对象
+       在首屏加载后再整页重画一次（那会冲掉刚敲了一半的输入）。
+       配了才重画，而且内容和上次完全一致也不重画 —— 防止 admin 页反复
+       MN.refresh() 时把控制台界面刷回初始状态。 */
+    var sig = '';
+    try { sig = JSON.stringify(out); } catch (e) {}
+    var had = window.__SITE_CONTENT_COMPARE !== null && window.__SITE_CONTENT_COMPARE !== undefined;
+    var empty = !out.zh || !Object.keys(out.zh).length;
+    if (empty && (!out.en || !Object.keys(out.en).length)) {
+      window.__SITE_CONTENT_COMPARE = null;
+      window.__SITE_CONTENT_HAD = had;
+      window.__SITE_CONTENT = out;
+      try { if (typeof window.__onSiteContentEmpty === 'function') window.__onSiteContentEmpty(); } catch (e) {}
+      return;
+    }
+    if (sig === window.__SITE_CONTENT_COMPARE) return;
+    window.__SITE_CONTENT_COMPARE = sig;
+    window.__SITE_CONTENT = out;
+    try {
+      if (typeof window.__onSiteContent === 'function') window.__onSiteContent();
+    } catch (e) {}
+  }
+
   /* --------------------------------------------------------------- 取配置 */
 
   function fetchCfg(force) {
@@ -10789,7 +11212,10 @@ function docsOpen(open) {
     if (CFG_P) return CFG_P;
     CFG_P = api('/api/site').then(function (r) {
       CFG_P = null;
-      if (r && r.ok && r.body && r.body.brand) { CFG = r.body; CFG_AT = Date.now(); }
+      if (r && r.ok && r.body && r.body.brand) {
+        CFG = r.body; CFG_AT = Date.now();
+        publishContent(CFG.content);
+      }
       return CFG;
     })['catch'](function () { CFG_P = null; return CFG; });
     return CFG_P;
@@ -11078,6 +11504,104 @@ function docsOpen(open) {
       '</div>' +
       '<div><button class="dx-btn" type="button" data-mnsave="footer">' +
       esc(L('保存页脚', 'Save footer')) + '</button></div>';
+  };
+
+  /* ---- ③b 页面文案：全站 i18n 键的可视化编辑 ---- */
+  /* 这里列的是前台每一处写死的文案（77 个键、18 个分区）。改的是覆盖层，
+     不是源码：值写进 site.json 的 content 段，前台加载时压到 i18n 表上；
+     清空一个输入框 = 撤销这条覆盖，回到内置默认。
+     分组按页面从上到下的阅读顺序排，不按字母 —— 管理员找「页脚」时脑子里
+     的顺序是「往下滚」，不是「f 排在 a 后面」。 */
+  var CONTENT_GROUPS = [
+    ['hero',  '首页 · 主视觉',     'Home · hero'],
+    ['ann',   '首页 · 公告条',     'Home · announcement'],
+    ['proof', '首页 · 产品主张',   'Home · value proposition'],
+    ['how',   '首页 · 工作方式',   'Home · how it works'],
+    ['arch',  '首页 · 架构',       'Home · architecture'],
+    ['bench', '首页 · 性能基准',   'Home · benchmarks'],
+    ['uc',    '首页 · 使用场景',   'Home · use cases'],
+    ['int',   '首页 · 集成',       'Home · integrations'],
+    ['ent',   '首页 · 企业与信任', 'Home · enterprise and trust'],
+    ['price', '首页 · 定价',       'Home · pricing'],
+    ['res',   '首页 · 资源',       'Home · resources'],
+    ['cta',   '首页 · 结尾号召',   'Home · closing CTA'],
+    ['nav',   '顶栏',              'Header'],
+    ['theme', '外观菜单',          'Appearance menu'],
+    ['lang',  '语言菜单',          'Language menu'],
+    ['code',  '代码窗口',          'Code window'],
+    ['foot',  '页脚',              'Footer'],
+    ['a11y',  '无障碍',            'Accessibility']
+  ];
+
+  MN.secContent = function (d) {
+    var site = (d || {}).site || {};
+    var content = site.content || {};
+    var keys = window.__I18N_KEYS || [];
+    var defs = window.__I18N_DEFAULTS || { zh: {}, en: {} };
+    var byGroup = {};
+    keys.forEach(function (k) {
+      var p = k.split('.')[0];
+      (byGroup[p] = byGroup[p] || []).push(k);
+    });
+    /* 分组表没覆盖到的前缀也要露出来：以后往 i18n 表里加文案时，
+       新键会自动出现在后台，不会因为忘了登记分组就变成改不了的死文案。 */
+    var extra = Object.keys(byGroup).filter(function (p) {
+      return !CONTENT_GROUPS.some(function (g) { return g[0] === p; });
+    });
+    var groups = CONTENT_GROUPS.concat(extra.map(function (p) { return [p, p, p]; }));
+    var overridden = 0;
+    for (var ck in content) {
+      if (Object.prototype.hasOwnProperty.call(content, ck) && content[ck]) overridden++;
+    }
+    var cellInp = 'width:100%;min-width:150px';
+
+    return hrow(L('页面文案', 'Page copy'),
+                L('前台每一处写死的文案都在这里。改的是覆盖层，不动源码；清空一个框就是撤销这条覆盖、回到内置默认。保存后前台立即生效。',
+                  'Every hard-coded string on the site lives here. Edits go into an override layer, not the source; clearing a field reverts it to the built-in default. Applies immediately.')) +
+      '<p class="dx-note">' +
+        esc(L('已覆盖 ', 'Overrides: ') + overridden + L(' 条（共 ' + keys.length + ' 条可改文案）',
+             ' of ' + keys.length + ' editable strings')) +
+      '</p>' +
+      '<div style="margin:10px 0 14px">' +
+        '<input class="inp" id="mn-content-q" style="max-width:340px" placeholder="' +
+        escAttr(L('搜索文案或键名…', 'Search copy or key…')) + '">' +
+      '</div>' +
+      groups.map(function (g) {
+        var list = byGroup[g[0]] || [];
+        if (!list.length) return '';
+        var rows = list.map(function (key) {
+          var z = content['zh.' + key];
+          var e = content['en.' + key];
+          return '<tr data-mnc-row="' + escAttr(key) + '">' +
+            '<td class="mono" style="font-size:11px;opacity:.62;white-space:nowrap;vertical-align:top;padding:6px 10px 6px 0">' +
+              esc(key) + '</td>' +
+            '<td style="padding:4px 8px 4px 0"><input class="inp" style="' + cellInp + '" data-mnc="zh.' +
+              escAttr(key) + '" value="' + escAttr(z || '') + '" placeholder="' +
+              escAttr(String(defs.zh[key] || '')) + '"></td>' +
+            '<td style="padding:4px 0"><input class="inp" style="' + cellInp + '" data-mnc="en.' +
+              escAttr(key) + '" value="' + escAttr(e || '') + '" placeholder="' +
+              escAttr(String(defs.en[key] || '')) + '"></td>' +
+          '</tr>';
+        }).join('');
+        return '<details class="mn-cg" style="margin:0 0 10px;border:1px solid var(--d-line);border-radius:8px;padding:0 12px">' +
+          '<summary style="cursor:pointer;padding:10px 0;font-size:13px;font-weight:500">' +
+            esc(L(g[1], g[2])) +
+            ' <span style="opacity:.45;font-weight:400">· ' + list.length + '</span>' +
+          '</summary>' +
+          '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">' +
+            '<thead><tr style="font-size:10.5px;opacity:.5;text-align:left">' +
+              '<th style="padding:0 10px 6px 0">KEY</th>' +
+              '<th style="padding:0 8px 6px 0">' + esc(L('中文', 'Chinese')) + '</th>' +
+              '<th style="padding:0 0 6px">English</th>' +
+            '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+          '</details>';
+      }).join('') +
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">' +
+        '<button class="dx-btn" type="button" data-mnsave="content">' +
+          esc(L('保存页面文案', 'Save page copy')) + '</button>' +
+        '<button class="dx-btn" type="button" data-mncontentreset="1">' +
+          esc(L('清空全部覆盖', 'Clear all overrides')) + '</button>' +
+      '</div>';
   };
 
   /* ---- ④ 登录方式（开关） ---- */
@@ -11432,6 +11956,22 @@ function docsOpen(open) {
     if (box.__mnWired) return;
     box.__mnWired = true;
     box.addEventListener('click', onClick);
+    /* 文案搜索：77 条文案摊开太长，边打边筛。命中的行留在原位、不命中的
+       直接 display:none，同时把所有分组展开 —— 折叠状态下搜到却看不见
+       等于没搜到。 */
+    box.addEventListener('input', function (e) {
+      var q = e.target;
+      if (!q || q.id !== 'mn-content-q') return;
+      var v = String(q.value || '').toLowerCase().trim();
+      Array.prototype.forEach.call(box.querySelectorAll('[data-mnc-row]'), function (tr) {
+        var key = (tr.getAttribute('data-mnc-row') || '').toLowerCase();
+        var txt = (tr.textContent || '').toLowerCase();
+        tr.style.display = (!v || key.indexOf(v) >= 0 || txt.indexOf(v) >= 0) ? '' : 'none';
+      });
+      if (v) {
+        Array.prototype.forEach.call(box.querySelectorAll('details.mn-cg'), function (d) { d.open = true; });
+      }
+    });
   }
 
   MN.wireAdmin = function (box, reload) { wirePanel(box, reload); };
@@ -11473,6 +12013,28 @@ function docsOpen(open) {
     var sv = t.closest('[data-mnsave]');
     if (sv) { saveSection(sv); return; }
 
+    /* 清空全部文案覆盖：一次性把 content 段整体替换成空对象。
+       服务端对 content 是「整体替换」语义，所以空对象 = 真的清干净，
+       不会像深合并那样留下上一次的值。 */
+    var cr = t.closest('[data-mncontentreset]');
+    if (cr) {
+      if (!window.confirm(L('清空全部文案覆盖，前台回到内置默认？',
+                            'Clear every copy override and revert to the built-in defaults?'))) return;
+      cr.disabled = true;
+      api('/api/dash/site', { site: { content: {} } }).then(function (r) {
+        cr.disabled = false;
+        toast(r.ok ? L('已回到内置默认。', 'Reverted to the built-in defaults.')
+                   : L('操作失败。', 'Failed.'), !r.ok);
+        if (r.ok) {
+          fetchCfg(true).then(function () {
+            try { applySiteContent(); renderAll(); } catch (e) {}
+          });
+          doReload();
+        }
+      });
+      return;
+    }
+
     var gen = t.closest('[data-mngen]');
     if (gen) { genConfig(gen); return; }
 
@@ -11501,8 +12063,25 @@ function docsOpen(open) {
       }
     }
 
-    if (kind === 'oauth') {
-      var payload = {};
+    /* 页面文案走的是扁平键（zh.hero.l1 / en.hero.l1），不是 readForm 的点路径
+       嵌套对象 —— 服务端 content 段要的就是扁平结构，转成嵌套反而全被白名单
+       过滤掉。所以这里单独收集 data-mnc，不经过 readForm。 */
+    if (kind === 'content') {
+      var content = {};
+      Array.prototype.forEach.call(scope.querySelectorAll('[data-mnc]'), function (el) {
+        content[el.getAttribute('data-mnc')] = el.value;
+      });
+      api('/api/dash/site', { site: { content: content } }).then(function (r) {
+        if (r.ok) {
+          done(true, L('文案已保存，前台立即生效。', 'Copy saved — the site is updated.'));
+        } else {
+          done(false, (r.body && (r.body.message_zh || r.body.message)) || L('保存失败。', 'Could not save.'));
+        }
+      });
+      return;
+    }
+
+    if (kind === 'oauth') {      var payload = {};
       ['github', 'google'].forEach(function (p) {
         var o = {};
         var cid = scope.querySelector('[data-mno="' + p + '.clientId"]');
