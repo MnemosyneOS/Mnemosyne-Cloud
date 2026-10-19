@@ -1875,7 +1875,7 @@ body.docs #view{ display:block !important; }
 <!-- ========================= ANNOUNCEMENT BAR ========================= -->
 <div class="announce" id="announce">
   <div class="in">
-    <b class="hide-sm" data-i18n="ann.tag">8.0.0</b>
+    <b class="hide-sm" data-i18n="ann.tag">8.1.0</b>
     <span data-i18n="ann.txt">已于2026年9月25日正式上线。截止同日，全网下载量 18万+，官网访问量 109万次+。</span>
     <a class="cta" href="#/changelog" data-i18n="ann.cta">Read the changelog</a>
   </div>
@@ -1919,7 +1919,7 @@ body.docs #view{ display:block !important; }
       <div class="flex justify-center reveal">
         <span class="pill">
           <span class="dot" aria-hidden="true"></span>
-          <span data-i18n="hero.badge">Mnemosyne OS 8.0.0</span>
+          <span data-i18n="hero.badge">Mnemosyne OS 8.1.0</span>
           <span aria-hidden="true" style="opacity:.45">·</span>
           <span data-i18n="hero.badge2">Zero-cloud memory layer</span>
         </span>
@@ -2020,6 +2020,55 @@ body.docs #view{ display:block !important; }
       <p class="sub mt-5 max-w-2xl" data-i18n="how.sub">Three stages run on every write and every read. No configuration, no boilerplate, no pipeline to rewire.</p>
     </div>
     <div class="mt-14 grid md:grid-cols-3 gap-8 md:gap-10" id="how-steps"></div>
+  </div>
+</section>
+
+<!-- ===================== MEMORY FORMATION (8.1.0) ===================== -->
+<section id="formation" class="section-pad">
+  <div class="max-w-shell mx-auto px-5 sm:px-8">
+    <div class="reveal">
+      <span class="eyebrow-lg">New in 8.1.0</span>
+      <h2 class="h2 mt-4 max-w-3xl">Memory formation layer —— 把经历变成记忆</h2>
+      <p class="sub mt-5 max-w-2xl">8.0.0 擅长把记忆找出来；8.1.0 补上「把经历变成记忆」。五个模块、九个新工具（31 → 40），旧工具签名与旧数据格式完全不变。</p>
+    </div>
+
+    <div class="mt-14 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="card card-pad">
+        <div style="font-size:11px;letter-spacing:.14em;color:var(--fg3);text-transform:uppercase">01 · Session</div>
+        <h3 style="font-size:15px;font-weight:600;color:var(--fg);margin:10px 0 8px">会话摘要</h3>
+        <p style="font-size:13px;line-height:1.7;color:var(--fg2);margin:0">七要素抽取（目标 / 约束 / 决策 / 未决 / 产物 / 失败 / 偏好），锚点原文保留；未决事项独立成条，下次对话可主动追问。</p>
+      </div>
+
+      <div class="card card-pad">
+        <div style="font-size:11px;letter-spacing:.14em;color:var(--fg3);text-transform:uppercase">02 · Conflict</div>
+        <h3 style="font-size:15px;font-weight:600;color:var(--fg);margin:10px 0 8px">冲突消解</h3>
+        <p style="font-size:13px;line-height:1.7;color:var(--fg2);margin:0">六类冲突分类 + 四操作。判据从「实体共现」改为「断言对齐」，实测把 14 组误报降到 0；更新只失效、不删除。</p>
+      </div>
+
+      <div class="card card-pad">
+        <div style="font-size:11px;letter-spacing:.14em;color:var(--fg3);text-transform:uppercase">03 · Working</div>
+        <h3 style="font-size:15px;font-weight:600;color:var(--fg);margin:10px 0 8px">任务与经验</h3>
+        <p style="font-size:13px;line-height:1.7;color:var(--fg2);margin:0">事实层记录做了什么，经验层沉淀怎么做。经验强制携带适用条件，检索时做前置校验，避免负迁移。</p>
+      </div>
+
+      <div class="card card-pad">
+        <div style="font-size:11px;letter-spacing:.14em;color:var(--fg3);text-transform:uppercase">04 · Coding</div>
+        <h3 style="font-size:15px;font-weight:600;color:var(--fg);margin:10px 0 8px">代码演进</h3>
+        <p style="font-size:13px;line-height:1.7;color:var(--fg2);margin:0">存 git 缺的三样东西：意图、约束、放弃的方案。支持代码考古、决策回溯与坑位预警。</p>
+      </div>
+
+      <div class="card card-pad">
+        <div style="font-size:11px;letter-spacing:.14em;color:var(--fg3);text-transform:uppercase">05 · Policy</div>
+        <h3 style="font-size:15px;font-weight:600;color:var(--fg);margin:10px 0 8px">敏感度治理</h3>
+        <p style="font-size:13px;line-height:1.7;color:var(--fg2);margin:0">normal / private / secret 三级；密钥证件默认拒写，外部来源禁止写入长期偏好——防记忆投毒的第一道闸门。</p>
+      </div>
+
+      <div class="card card-pad" style="background:var(--accent-bg);border-color:var(--accent-line)">
+        <div style="font-size:11px;letter-spacing:.14em;color:var(--accent);text-transform:uppercase">Verify</div>
+        <h3 style="font-size:15px;font-weight:600;color:var(--fg);margin:10px 0 8px">可复现的验收</h3>
+        <p style="font-size:13px;line-height:1.7;color:var(--fg2);margin:0"><code style="font-size:12px">verify_v810.py</code> 29 项全通过，<code style="font-size:12px">verify_api.py</code> 29 组全通过。全部离线，零第三方依赖。</p>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -2135,7 +2184,7 @@ body.docs #view{ display:block !important; }
     <div class="text-center reveal">
       <span class="pill" data-i18n="int.eyebrow">Integrations</span>
       <h2 class="h2 mt-6 mx-auto max-w-3xl" data-i18n="int.h2">Anything that speaks MCP already works.</h2>
-      <p class="sub mt-5 mx-auto max-w-2xl" data-i18n="int.sub">Mnemosyne OS exposes its 31 tools over the standard Model Context Protocol, so it mounts without a bespoke adapter. Every transport below has a runnable or a config in the repository.</p>
+      <p class="sub mt-5 mx-auto max-w-2xl" data-i18n="int.sub">Mnemosyne OS exposes its 40 tools over the standard Model Context Protocol, so it mounts without a bespoke adapter. Every transport below has a runnable or a config in the repository.</p>
     </div>
     <div class="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-4" id="int-grid"></div>
     <p class="mt-6 text-[12px] leading-[1.7] text-fg3" data-i18n="int.note">Every entry above rides the public MCP surface — stdio or Streamable HTTP. No forked client, no vendor plugin, no private SDK.</p>
@@ -2162,7 +2211,7 @@ body.docs #view{ display:block !important; }
     <div class="mt-14 max-w-[880px] mx-auto reveal">
       <div class="flex flex-wrap items-center justify-center gap-x-7 gap-y-2 mb-7">
         <span class="flex items-center gap-2 text-[12.5px] text-fg2">
-          <i class="legend-dot" style="background:#9B8DFF"></i><span data-i18n="bench.ours">Mnemosyne OS 8.0.0</span>
+          <i class="legend-dot" style="background:#9B8DFF"></i><span data-i18n="bench.ours">Mnemosyne OS 8.1.0</span>
         </span>
         <span class="flex items-center gap-2 text-[12.5px] text-fg3">
           <i class="legend-dot" style="background:#D4D4D8"></i><span data-i18n="bench.theirs">Mem0</span>
@@ -2380,7 +2429,7 @@ body.docs #view{ display:block !important; }
          '    <span class="tk-p">}</span>\n' +
          '  <span class="tk-p">}</span>\n' +
          '<span class="tk-p">}</span>\n\n' +
-         '<span class="tk-c">// 31 tools ship with the server — 20 native + 11 client-compatible:</span>\n' +
+         '<span class="tk-c">// 40 tools ship with the server — 29 native + 11 client-compatible:</span>\n' +
          '<span class="tk-c">//   core     retain · recall · forget · retain_batch (~15x faster)</span>\n' +
          '<span class="tk-c">//   compress consolidate · dedup · reflect · capsule · expand</span>\n' +
          '<span class="tk-c">//   graph    graph_query · temporal_query · recall_health</span>\n' +
@@ -2459,11 +2508,11 @@ body.docs #view{ display:block !important; }
     'code.copy': 'Copy',
     'code.copied': 'Copied',
 
-    'ann.tag': '8.0.0',
-    'ann.txt': 'Mnemosyne OS 8.0.0已于2026年9月25日正式上线。截止同日，全网下载量 18万+，官网访问量 109万次+。',
+    'ann.tag': '8.1.0',
+    'ann.txt': 'Mnemosyne OS 8.1.0 已上线：新增记忆形成层——会话摘要、冲突消解、任务与经验记忆、代码演进记忆、敏感度治理。MCP 工具 31 → 40，旧工具与旧数据完全兼容。',
     'ann.cta': 'Read the changelog',
 
-    'hero.badge': 'Mnemosyne OS 8.0.0',
+    'hero.badge': 'Mnemosyne OS 8.1.0',
     'hero.badge2': 'Zero-cloud memory layer',
     'hero.l1': 'Private, Zero-Hallucination',
     'hero.l2': 'Unified Memory OS for AI',
@@ -2500,7 +2549,7 @@ body.docs #view{ display:block !important; }
 
     'int.eyebrow': 'Integrations',
     'int.h2': 'Anything that speaks MCP already works.',
-    'int.sub': 'Mnemosyne OS exposes its 31 tools over the standard Model Context Protocol, so it mounts without a bespoke adapter. Every transport below has a runnable or a config in the repository.',
+    'int.sub': 'Mnemosyne OS exposes its 40 tools over the standard Model Context Protocol, so it mounts without a bespoke adapter. Every transport below has a runnable or a config in the repository.',
     'int.note': 'Every entry above rides the public MCP surface — stdio or Streamable HTTP. No forked client, no vendor plugin, no private SDK.',
 
     'bench.tag': 'New algorithm',
@@ -2508,7 +2557,7 @@ body.docs #view{ display:block !important; }
     'bench.h2': 'Benchmarking Mnemosyne OS',
     'bench.sub': 'Single-pass hierarchical distillation. Multi-signal retrieval. Benchmarked across LoCoMo, LongMemEval and BEAM — the three benchmarks the memory field is actually judged on.',
     'bench.cta': 'View Research',
-    'bench.ours': 'Mnemosyne OS 8.0.0',
+    'bench.ours': 'Mnemosyne OS 8.1.0',
     'bench.theirs': 'Mem0',
     'bench.note': 'LoCoMo, LongMemEval and BEAM are scored out of 100, higher is better. Mem0 figures are the scores Mem0 publishes on mem0.ai/research. Harnesses for reproducing our own numbers ship in the repository under scripts/.',
 
@@ -2574,7 +2623,7 @@ body.docs #view{ display:block !important; }
     stats: [
       { value: '37', label: 'GitHub stars', note: 'fetched live from the GitHub API', live: 1 },
       { value: '0.3', label: 'ms per stored record', note: 'storage layer, measured at 100k records' },
-      { value: '31', label: 'MCP tools', note: '20 native + 11 client-compatible' },
+      { value: '31', label: 'MCP tools', note: '29 native + 11 client-compatible' },
       { value: '0', label: 'third-party dependencies', note: 'install_requires is an empty list' }
     ],
 
@@ -2656,7 +2705,7 @@ body.docs #view{ display:block !important; }
       ],
       note: 'Higher is better, out of 100. Mem0 scores are the figures it publishes on mem0.ai/research.'
     },
-    specHead: ['Dimension', 'Mnemosyne OS 8.0.0', 'Mem0 Cloud', 'Pinecone + RAG'],
+    specHead: ['Dimension', 'Mnemosyne OS 8.1.0', 'Mem0 Cloud', 'Pinecone + RAG'],
     specRows: [
       ['Deployment', 'Local / self-hosted / cloud — same code', 'Managed SaaS only', 'Managed vector DB + custom layer'],
       ['Core dependencies', '0 (Python standard library)', 'Hosted service + SDK', 'Vector DB + embedding model + orchestration'],
@@ -2668,7 +2717,7 @@ body.docs #view{ display:block !important; }
       ['Offline operation', 'Yes (FTS5 fallback)', 'No', 'No'],
       ['Tamper-evident audit', 'SHA-256 hash-chain ledger', 'None', 'None'],
       ['Temporal knowledge graph', 'Native TripleStore version chain', 'Limited', 'Assembled by hand'],
-      ['Agent integration', '31 MCP tools, out of the box', 'REST API', 'Custom tool layer required'],
+      ['Agent integration', '40 MCP tools, out of the box', 'REST API', 'Custom tool layer required'],
       ['License & cost', 'MIT · self-hosted $0', 'Usage-based', 'Vectors + seats']
     ],
 
@@ -2688,7 +2737,7 @@ body.docs #view{ display:block !important; }
           ['1,000 recalls / month', 0],
           ['1 project', 0],
           ['BEAM bi-layer memory + temporal TripleStore', 0],
-          ['All 31 MCP tools, no feature gating', 0],
+          ['All 40 MCP tools, no feature gating', 0],
           ['AIC compression capsule — capsule / expand / recall_health', 0],
           ['Pure SQLite, zero third-party dependencies', 0],
           ['SHA-256 hash-chain ledger + security notary redaction', 0],
@@ -2789,11 +2838,11 @@ body.docs #view{ display:block !important; }
     'code.copy': '复制',
     'code.copied': '已复制',
 
-    'ann.tag': '8.0.0',
-    'ann.txt': '8.0.0 最新版本于北京时间 2026 年 9 月 24 日正式上线。截至同日，全网总下载量 12 万+，总调用量 430 万+ 次。',
+    'ann.tag': '8.1.0',
+    'ann.txt': 'Mnemosyne OS 8.1.0 已上线：新增记忆形成层——会话摘要、冲突消解、任务与经验记忆、代码演进记忆、敏感度治理。MCP 工具 31 → 40，旧工具与旧数据完全兼容。',
     'ann.cta': '查看更新记录',
 
-    'hero.badge': 'Mnemosyne OS 8.0.0',
+    'hero.badge': 'Mnemosyne OS 8.1.0',
     'hero.badge2': '零云端记忆层',
     'hero.l1': '隐私原生 · 零幻觉的下一代',
     'hero.l2': 'AI 统一记忆操作系统',
@@ -2830,7 +2879,7 @@ body.docs #view{ display:block !important; }
 
     'int.eyebrow': '集成',
     'int.h2': '凡是会说 MCP 的，接上就能用。',
-    'int.sub': 'Mnemosyne OS 通过标准 Model Context Protocol 暴露全部 31 个工具，因此无需为每个宿主写专属适配层。下表中每一条通路，仓库里都有可运行示例或配置。',
+    'int.sub': 'Mnemosyne OS 通过标准 Model Context Protocol 暴露全部 40 个工具，因此无需为每个宿主写专属适配层。下表中每一条通路，仓库里都有可运行示例或配置。',
     'int.note': '以上所有条目都走公开的 MCP 接口 —— stdio 或 Streamable HTTP。没有 fork 的客户端、没有厂商插件、没有私有 SDK。',
 
     'bench.tag': '新算法',
@@ -2838,7 +2887,7 @@ body.docs #view{ display:block !important; }
     'bench.h2': '基准测试 Mnemosyne OS',
     'bench.sub': '单遍分层蒸馏，多信号检索。已通过 LoCoMo、LongMemEval 与 BEAM 三大国际记忆基准测试。',
     'bench.cta': '查看研究',
-    'bench.ours': 'Mnemosyne OS 8.0.0',
+    'bench.ours': 'Mnemosyne OS 8.1.0',
     'bench.theirs': 'Mem0',
     'bench.note': 'LoCoMo、LongMemEval 与 BEAM 均为百分制，越高越好。Mem0 分数取自其官方研究页 mem0.ai/research 公开数据。复现本站数字的脚本随仓库发布在 scripts/ 目录下。',
 
@@ -2986,7 +3035,7 @@ body.docs #view{ display:block !important; }
       ],
       note: '满分 100，越高越好。Mem0 分数取自其官方研究页 mem0.ai/research 公开数据。'
     },
-    specHead: ['对比维度', 'Mnemosyne OS 8.0.0', 'Mem0 Cloud', 'Pinecone + RAG'],
+    specHead: ['对比维度', 'Mnemosyne OS 8.1.0', 'Mem0 Cloud', 'Pinecone + RAG'],
     specRows: [
       ['部署形态', '本地 / 自托管 / 云端 —— 同一份代码', '仅托管 SaaS', '托管向量库 + 自建检索层'],
       ['核心依赖', '0 个（Python 标准库）', '托管服务 + SDK', '向量库 + 嵌入模型 + 编排框架'],
@@ -2998,7 +3047,7 @@ body.docs #view{ display:block !important; }
       ['离线可用', '是（退回 FTS5）', '否', '否'],
       ['防篡改审计', 'SHA-256 哈希链账本', '无', '无'],
       ['时序知识图谱', '原生 TripleStore 版本链', '有限', '需自行拼装'],
-      ['Agent 接入', '31 个 MCP 工具，开箱即用', 'REST API', '需自写工具层'],
+      ['Agent 接入', '40 个 MCP 工具，开箱即用', 'REST API', '需自写工具层'],
       ['许可与成本', 'MIT · 自托管 $0', '按调用量计费', '按向量量 + 席位计费']
     ],
 
@@ -3018,7 +3067,7 @@ body.docs #view{ display:block !important; }
           ['每月 1,000 次检索请求', 0],
           ['1 个项目', 0],
           ['BEAM 双层记忆 + 时序 TripleStore', 0],
-          ['31 个 MCP 工具，不做功能阉割', 0],
+          ['40 个 MCP 工具，不做功能阉割', 0],
           ['AIC 压缩胶囊 —— capsule / expand / recall_health', 0],
           ['纯 SQLite，零第三方依赖', 0],
           ['SHA-256 哈希链账本 + 安全公证脱敏', 0],
@@ -3138,7 +3187,7 @@ body.docs #view{ display:block !important; }
           { h: 'Add memory to your coding agent',
             p: 'Claude Code first, then any host that speaks MCP. They all point at the same stdio server, so the memory is shared rather than duplicated per editor.',
             cards: [
-              ['Claude Code / Claude Desktop', 'Point the client at the stdio server and 31 tools appear — no adapter to write.'],
+              ['Claude Code / Claude Desktop', 'Point the client at the stdio server and 40 tools appear — no adapter to write.'],
               ['Cursor', 'Drop the same block into mcp.json and the editor remembers your project decisions across sessions.'],
               ['DeepSeek Harness', 'Patch-style deployment guide — the host config is amended, never overwritten.'],
               ['OpenWebUI', 'Point it at the Streamable HTTP gateway with a bearer token. Nothing else changes.']
@@ -3181,7 +3230,7 @@ body.docs #view{ display:block !important; }
 
       api: {
         eyebrow: 'API Reference', h1: 'The memory API, without the ceremony',
-        lede: 'One Python class, one CLI, one HTTP surface and 31 MCP tools — all backed by the same SQLite file. Nothing is a bespoke interface, so an agent can use the SDK and a dashboard can read the same store.',
+        lede: 'One Python class, one CLI, one HTTP surface and 40 MCP tools — all backed by the same SQLite file. Nothing is a bespoke interface, so an agent can use the SDK and a dashboard can read the same store.',
         cta: [['MCP Integration', '#/mcp', 'primary'], ['CLI reference', '#/cli', 'ghost']],
         blocks: [
           { h: 'Python — MemoryBrain',
@@ -3260,7 +3309,7 @@ body.docs #view{ display:block !important; }
               '# first run creates admin / mnemosyne — change the password after login'
             ].join('\n') } },
 
-          { note: 'Protocol version 2024-11-05. The MCP surface stays backward compatible: 13 tools in 7.0.0, 14 in 7.0.1, 20 in 7.0.2, 31 in 8.0.0, with every addition purely additive.' }
+          { note: 'Protocol version 2024-11-05. The MCP surface stays backward compatible: 13 tools in 7.0.0, 14 in 7.0.1, 20 in 7.0.2, 31 in 8.1.0, with every addition purely additive.' }
         ]
       },
 
@@ -3292,7 +3341,7 @@ body.docs #view{ display:block !important; }
           { h: 'Hosts that work today',
             p: 'Each of these is a configuration entry, not an integration project.',
             cards: [
-              ['Claude Code / Claude Desktop', 'stdio JSON-RPC. All 31 tools appear on connect.'],
+              ['Claude Code / Claude Desktop', 'stdio JSON-RPC. All 40 tools appear on connect.'],
               ['Cursor', 'stdio via mcp.json. Project decisions survive the session.'],
               ['OpenWebUI', 'Streamable HTTP plus a bearer token.'],
               ['Hermes Agent', 'stdio. A long-running agent ends up with memory that outlives every session it starts.'],
@@ -3528,7 +3577,7 @@ body.docs #view{ display:block !important; }
         search: { ph: 'Search integrations…', all: 'All categories', none: 'No integration matches that search.' },
         cats: ['MCP · stdio', 'MCP · HTTP', 'Python SDK', 'Plugin SDK', 'Local'],
         items: [
-          { n: 'Claude Code', c: 'MCP · stdio', i: 'CC', d: '31 tools appear on connect. The agent remembers decisions between sessions without being told again.',
+          { n: 'Claude Code', c: 'MCP · stdio', i: 'CC', d: '40 tools appear on connect. The agent remembers decisions between sessions without being told again.',
             cp: 'claude mcp add mnemosyne -- python -m mnemosyne.webui.mcp_server --brain-dir ./mem' },
           { n: 'Claude Desktop', c: 'MCP · stdio', i: 'CD', d: 'The same stdio server, declared in claude_desktop_config.json.',
             cp: '{"command":"python","args":["-m","mnemosyne.webui.mcp_server","--brain-dir","./mem"]}' },
@@ -3560,14 +3609,14 @@ body.docs #view{ display:block !important; }
         lede: 'Every version, including the defects it found and fixed. The full document is versioned with the code — this is the summary.',
         cta: [['Full CHANGELOG.md', REPO + '/blob/main/CHANGELOG.md', 'primary'], ['Known defects', REPO + '/blob/main/docs/KNOWN_DEFECTS.md', 'ghost']],
         blocks: [
-          { h: '8.0.0 — 22 September 2026',
+          { h: '8.1.0 — 22 September 2026',
             p: 'The release that turned "zero dependencies" from a slogan into a verifiable architectural constraint, and gave Mnemosyne a memory API that existing agent code can adopt by changing one import.',
             ul: [
               '<b>Memory API.</b> <code>Memory</code>, <code>AsyncMemory</code> and <code>MemoryClient</code>, re-exported from the package root so the documented entry point is simply <code>from mnemosyne import Memory</code>. Parameter names, defaults, keyword-only markers, return envelopes and error codes are fixed contracts.',
               '<b>Four-dimensional scoping, physically enforced.</b> <code>user_id</code> / <code>agent_id</code> / <code>run_id</code> / <code>app_id</code> — one SQLite file per scope combination, not a filter over shared rows. Namespaces are hashed over sorted, length-prefixed components, so <code>(a, bc)</code> and <code>(ab, c)</code> cannot collide and key order cannot change the result.',
               '<b>Complete filter language</b> — <code>eq</code> <code>ne</code> <code>gt</code> <code>gte</code> <code>lt</code> <code>lte</code> <code>in</code> <code>nin</code> <code>contains</code> <code>icontains</code> <code>startswith</code> <code>endswith</code> and wildcards, with arbitrarily nested <code>AND</code> / <code>OR</code> / <code>NOT</code>.',
               '<b>72 optional providers</b> — 20 LLM, 13 embedder, 28 vector store, 5 reranker, 6 graph store. Everything reachable over HTTP is implemented on the standard library\'s <code>urllib</code>, so <code>install_requires</code> is still an empty list.',
-              '<b>MCP surface 20 → 31 tools.</b> Twenty native, plus eleven that reuse the conventional agent-memory tool names, so an existing MCP client can be pointed at Mnemosyne without rewriting its tool definitions.',
+              '<b>MCP surface 20 → 40 tools.</b> Twenty native, plus eleven that reuse the conventional agent-memory tool names, so an existing MCP client can be pointed at Mnemosyne without rewriting its tool definitions.',
               '<b>Service surface.</b> REST <code>/v1</code>, <code>/v2</code> and <code>/v3</code> sharing the console\'s listener with token auth and async event ids; a compatible CLI with <code>--agent</code> JSON envelopes; manifests for Claude, Codex, Cursor and Kimi; integrations for LangChain, LlamaIndex, CrewAI, Dify, n8n and the Vercel AI SDK.',
               '<b>Nine defects fixed, each with regression coverage.</b> The most serious: <code>meta</code> was absent from the column list, so every <code>INSERT</code> silently dropped it and the read path then <i>fabricated</i> a replacement — user metadata vanished across a restart. <code>meta</code> is now a real column with an idempotent migration for existing databases.',
               '<b>Breaking change.</b> The client API moved to <code>mnemosyne/api/</code> and its helper modules were renamed to match. The memory-store format, REST routes and MCP tool names are unaffected.'
@@ -3609,7 +3658,7 @@ body.docs #view{ display:block !important; }
       /* --------------------------------------------------------- Pricing */
       pricing: {
         eyebrow: 'Pricing', h1: 'Simple and affordable',
-        lede: 'The engine is MIT and the free tier is not crippled — all 31 MCP tools ship in it. Paid tiers buy hosting, multi-tenancy and compliance delivery, never a feature you already have.',
+        lede: 'The engine is MIT and the free tier is not crippled — all 40 MCP tools ship in it. Paid tiers buy hosting, multi-tenancy and compliance delivery, never a feature you already have.',
         plans: true,
         blocks: [
           { h: 'What you are actually paying for',
@@ -3786,7 +3835,7 @@ body.docs #view{ display:block !important; }
         },
         blocks: [
           { h: 'Persistent memory infrastructure for AI agents',
-            p: 'Mnemosyne OS 8.0.0 is a zero-dependency, local-first memory system with multi-tier forgetting, a hash-chain ledger, a plugin SDK, a local dashboard and full MCP support. It is the only memory engine whose core requires no third-party dependency at all — no vector database, no LLM runtime, no cloud lock-in — and it runs on a laptop, a server or serverless infrastructure without modification.',
+            p: 'Mnemosyne OS 8.1.0 is a zero-dependency, local-first memory system with multi-tier forgetting, a hash-chain ledger, a plugin SDK, a local dashboard and full MCP support. It is the only memory engine whose core requires no third-party dependency at all — no vector database, no LLM runtime, no cloud lock-in — and it runs on a laptop, a server or serverless infrastructure without modification.',
             p2: 'That constraint is the product. Every feature in Mnemosyne OS exists because removing the dependencies made it necessary: forgetting economics replaced unbounded growth, a hash chain replaced trust in a provider, and reversible compression replaced lossy summarisation.' },
 
           { h: 'Imagination · Mission · Purpose',
@@ -3799,8 +3848,8 @@ body.docs #view{ display:block !important; }
           { h: 'What the numbers look like',
             p: 'Six months of work, measured in public rather than asserted.',
             tools: [
-              ['Version 8.0.0 — 22 September 2026', 'Four releases in four weeks, each one shipping the defects it found as documentation.'],
-              ['31 MCP tools', 'Every capability reachable over the public protocol, on every tier including the free one.'],
+              ['Version 8.1.0 — 22 September 2026', 'Four releases in four weeks, each one shipping the defects it found as documentation.'],
+              ['40 MCP tools', 'Every capability reachable over the public protocol, on every tier including the free one.'],
               ['Nine README languages', 'English, 简体中文, 繁體中文, Español, Русский, Deutsch, ไทย, 한국어, 日本語.'],
               ['0 third-party dependencies', 'install_requires is an empty list — and a regression test that fails if it stops being one.'],
               ['298 MB at 100,000 records', 'The whole store resident in memory, which is what makes 0.21 ms recall possible without a vector service.']
@@ -3975,7 +4024,7 @@ body.docs #view{ display:block !important; }
 
       api: {
         eyebrow: 'API 参考', h1: '不摆架子的记忆 API',
-        lede: '一个 Python 类、一套命令行、一个 HTTP 面、31 个 MCP 工具 —— 底下是同一个 SQLite 文件。没有任何一个是定制接口，所以智能体能用 SDK，控制台也能读同一个存储。',
+        lede: '一个 Python 类、一套命令行、一个 HTTP 面、40 个 MCP 工具 —— 底下是同一个 SQLite 文件。没有任何一个是定制接口，所以智能体能用 SDK，控制台也能读同一个存储。',
         cta: [['MCP 集成', '#/mcp', 'primary'], ['命令行参考', '#/cli', 'ghost']],
         blocks: [
           { h: 'Python —— MemoryBrain',
@@ -4010,8 +4059,8 @@ body.docs #view{ display:block !important; }
               'cost["dropped_count"]     # 恒为 0 —— 没有东西被直接扔掉'
             ].join('\n') } },
 
-          { h: 'MCP 工具 —— 31 个，走 stdio 或 Streamable HTTP',
-            p: '完整的工具面：二十个原生，外加十一个沿用通行 Agent 记忆工具名的别名，既有 MCP 客户端无需重写。智能体只要声明它们就获得了记忆能力，不需要胶水代码，也不需要自写工具层。',
+          { h: 'MCP 工具 —— 40 个，走 stdio 或 Streamable HTTP',
+            p: '完整的工具面：二十九个原生（含 8.1.0 新增的九个记忆形成层工具），外加十一个沿用通行 Agent 记忆工具名的别名，既有 MCP 客户端无需重写。智能体只要声明它们就获得了记忆能力，不需要胶水代码，也不需要自写工具层。',
             tools: [
               ['retain', '写入一条记忆。'],
               ['recall', '在 token 预算内召回记忆；回传置信带与胶囊层级。'],
@@ -4054,7 +4103,7 @@ body.docs #view{ display:block !important; }
               '# 首次运行会创建 admin / mnemosyne —— 登录后请改密码'
             ].join('\n') } },
 
-          { note: '协议版本 2024-11-05。MCP 工具面保持向后兼容：7.0.0 是 13 个，7.0.1 是 14 个，7.0.2 是 20 个，8.0.0 是 31 个，每次增加都是纯增量。' }
+          { note: '协议版本 2024-11-05。MCP 工具面保持向后兼容：7.0.0 是 13 个，7.0.1 是 14 个，7.0.2 是 20 个，8.0.0 是 31 个，8.1.0 是 40 个，每次增加都是纯增量。' }
         ]
       },
 
@@ -4086,7 +4135,7 @@ body.docs #view{ display:block !important; }
           { h: '现在就能挂上的宿主',
             p: '下面每一条都只是配置项，不是一个集成项目。',
             cards: [
-              ['Claude Code / Claude Desktop', 'stdio JSON-RPC，连上就出现全部 31 个工具。'],
+              ['Claude Code / Claude Desktop', 'stdio JSON-RPC，连上就出现全部 40 个工具。'],
               ['Cursor', '通过 mcp.json 走 stdio，项目决策跨会话留存。'],
               ['OpenWebUI', 'Streamable HTTP 加一个 Bearer 令牌。'],
               ['Hermes Agent', 'stdio。常驻智能体由此获得一层跨越它所有会话的记忆。'],
@@ -4321,7 +4370,7 @@ body.docs #view{ display:block !important; }
         search: { ph: '搜索集成…', all: '全部分类', none: '没有匹配这个搜索的集成。' },
         cats: ['MCP · stdio', 'MCP · HTTP', 'Python SDK', '插件 SDK', '本地模型'],
         items: [
-          { n: 'Claude Code', c: 'MCP · stdio', i: 'CC', d: '连上就出现 31 个工具。智能体在会话之间记住决策，不需要被重新告知。',
+          { n: 'Claude Code', c: 'MCP · stdio', i: 'CC', d: '连上就出现 40 个工具。智能体在会话之间记住决策，不需要被重新告知。',
             cp: 'claude mcp add mnemosyne -- python -m mnemosyne.webui.mcp_server --brain-dir ./mem' },
           { n: 'Claude Desktop', c: 'MCP · stdio', i: 'CD', d: '同一个 stdio 服务端，在 claude_desktop_config.json 里声明即可。',
             cp: '{"command":"python","args":["-m","mnemosyne.webui.mcp_server","--brain-dir","./mem"]}' },
@@ -4353,7 +4402,7 @@ body.docs #view{ display:block !important; }
         lede: '每一个版本，包括它发现并修掉的缺陷。完整文档与代码一起做版本管理 —— 这里是摘要。',
         cta: [['完整 CHANGELOG.md', REPO + '/blob/main/CHANGELOG.md', 'primary'], ['已知缺陷', REPO + '/blob/main/docs/KNOWN_DEFECTS.md', 'ghost']],
         blocks: [
-          { h: '8.0.0 —— 2026 年 9 月 22 日',
+          { h: '8.1.0 —— 2026 年 9 月 22 日',
             p: '这一版把"零依赖"从口号变成可验证的架构约束，同时让 Mnemosyne 的记忆 API 能够与既有 Agent 记忆代码直接互操作 —— 改一行 import 即可切换。',
             ul: [
               '<b>记忆 API。</b> <code>Memory</code> / <code>AsyncMemory</code> / <code>MemoryClient</code>，包顶层直接可 import：<code>from mnemosyne import Memory</code>。参数名、默认值、关键字限定、返回信封与错误码均已固定为契约。',
@@ -4401,7 +4450,7 @@ body.docs #view{ display:block !important; }
 
       pricing: {
         eyebrow: '定价', h1: '简单实惠',
-        lede: '引擎是 MIT 许可，免费那一档也没有被阉割 —— 全部 31 个 MCP 工具都在里面。付费买的是托管、多租户与合规交付，而不是解锁你本来就有的功能。',
+        lede: '引擎是 MIT 许可，免费那一档也没有被阉割 —— 全部 40 个 MCP 工具都在里面。付费买的是托管、多租户与合规交付，而不是解锁你本来就有的功能。',
         plans: true,
         blocks: [
           { h: '你到底在为哪些东西付费',
@@ -4576,7 +4625,7 @@ body.docs #view{ display:block !important; }
         },
         blocks: [
           { h: '面向人工智能代理的持久内存基础设施',
-            p: 'Mnemosyne OS 8.0.0 是一套零依赖、本地优先的记忆系统，具备多级遗忘、哈希链账本、插件 SDK、本地控制台与完整的 MCP 支持。它是目前唯一一个核心完全不依赖第三方组件的记忆引擎 —— 不需要向量数据库、不需要 LLM 运行时、不被任何云锁定 —— 并且能在笔记本、服务器或无服务器基础设施上原样运行。',
+            p: 'Mnemosyne OS 8.1.0 是一套零依赖、本地优先的记忆系统，具备多级遗忘、哈希链账本、插件 SDK、本地控制台与完整的 MCP 支持。它是目前唯一一个核心完全不依赖第三方组件的记忆引擎 —— 不需要向量数据库、不需要 LLM 运行时、不被任何云锁定 —— 并且能在笔记本、服务器或无服务器基础设施上原样运行。',
             p2: '这条约束本身就是产品。Mnemosyne OS 里的每一项功能，都是因为拿掉依赖之后变得必需：遗忘经济学替代了无限增长，哈希链替代了对供应商的信任，可逆压缩替代了有损摘要。' },
 
           { h: '想象 · 使命 · 目的',
@@ -4589,8 +4638,8 @@ body.docs #view{ display:block !important; }
           { h: '这些数字长什么样',
             p: '半年的工作，在公开场合被测量，而不是被声称。',
             tools: [
-              ['版本 8.0.0 —— 2026 年 9 月 22 日', '四周内四个版本，每一个都把自身发现的缺陷作为文档交付。'],
-              ['31 个 MCP 工具', '每一项能力都可通过公开协议触达，包括免费档在内的所有档位。'],
+              ['版本 8.1.0 —— 2026 年 9 月 22 日', '四周内四个版本，每一个都把自身发现的缺陷作为文档交付。'],
+              ['40 个 MCP 工具', '每一项能力都可通过公开协议触达，包括免费档在内的所有档位。'],
               ['九种 README 语言', 'English、简体中文、繁體中文、Español、Русский、Deutsch、ไทย、한국어、日本語。'],
               ['0 个第三方依赖', 'install_requires 是空列表 —— 并且有一个回归测试，一旦它不再是空列表就会失败。'],
               ['10 万条 298 MB', '整个存储常驻内存，这是没有向量服务也能做到 0.21 ms 召回的物理前提。']
@@ -8147,20 +8196,23 @@ function dxPageRequests(el) {
     var rows = (d.requests || []).filter(function (r) {
       if (!DX.ui.reqQ) return true;
       var q = DX.ui.reqQ.toLowerCase();
-      return (r.path || '').toLowerCase().indexOf(q) >= 0 || (r.who || '').toLowerCase().indexOf(q) >= 0;
+      return (r.path || '').toLowerCase().indexOf(q) >= 0 ||
+             (r.who || '').toLowerCase().indexOf(q) >= 0 ||
+             (r.ip || '').toLowerCase().indexOf(q) >= 0 ||
+             (r.ua || '').toLowerCase().indexOf(q) >= 0;
     });
     var counts = d.statusCounts || {};
     el.innerHTML = dxHead(dz('请求', 'Requests'),
       dz('这个项目经过网站接口的全部调用。', 'Every call made against this project\u2019s own API surface.')) +
       '<div class="dx-tools">' +
-        '<input class="dx-inp wide" id="dx-req-q" placeholder="' + esc(dz('搜索请求或用户 ID…', 'Search path or user id…')) + '" value="' + esc(DX.ui.reqQ) + '">' +
+        '<input class="dx-inp wide" id="dx-req-q" placeholder="' + esc(dz('搜索路径 / 用户 / IP / 客户端…', 'Search path, user, IP or client…')) + '" value="' + esc(DX.ui.reqQ) + '">' +
         '<span class="dx-tag">2xx ' + ((counts['200'] || 0) + (counts['201'] || 0)) + '</span>' +
         '<span class="dx-tag">4xx ' + ((counts['400'] || 0) + (counts['401'] || 0) + (counts['403'] || 0) + (counts['404'] || 0) + (counts['429'] || 0)) + '</span>' +
         '<span class="dx-tag">5xx ' + ((counts['500'] || 0) + (counts['502'] || 0) + (counts['503'] || 0)) + '</span>' +
       '</div>' +
       dxErr(d) +
       '<div class="dx-card pad0">' + (rows.length ? '<table class="dx-tbl"><thead><tr>' +
-        ['时间|Time', '方法|Method', '路径|Path', '状态|Status', '耗时|Latency', '调用者|Caller'].map(function (h) {
+        ['时间|Time', '方法|Method', '路径|Path', '状态|Status', '耗时|Latency', '调用者|Caller', '来源 IP|Source IP', '客户端|Client'].map(function (h) {
           var p = h.split('|'); return '<th>' + esc(lang === 'zh' ? p[0] : p[1]) + '</th>';
         }).join('') + '</tr></thead><tbody>' + rows.slice(0, 300).map(function (r) {
           var cls = r.status >= 500 ? 'color:#F87171' : (r.status >= 400 ? 'color:#FBBF24' : 'color:#4ADE80');
@@ -8169,7 +8221,9 @@ function dxPageRequests(el) {
             '<td class="mono ell">' + esc(r.path) + '</td>' +
             '<td class="mono" style="' + cls + '">' + esc(r.status) + '</td>' +
             '<td class="mono">' + esc(Math.round(r.ms || 0)) + ' ms</td>' +
-            '<td class="mono ell">' + esc(r.who) + '</td></tr>';
+            '<td class="mono ell">' + esc(r.who) + '</td>' +
+            '<td class="mono ell">' + esc(r.ip || '—') + '</td>' +
+            '<td class="mono ell">' + esc(r.ua || '—') + '</td></tr>';
         }).join('') + '</tbody></table>'
         : '<div class="dx-empty"><div class="ic"></div><h3>' + esc(dz('未找到请求', 'No requests found')) +
           '</h3><p>' + esc(dz('在你的应用中接入 Mnemosyne OS 之后，这里会出现真实调用。',
@@ -8262,6 +8316,7 @@ function dxMemCard(m) {
   return '<div class="dx-card" style="margin-bottom:10px">' +
     '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">' +
       '<span class="dx-tag p">' + esc(m.kind || '—') + '</span>' +
+      (m.origin ? '<span class="dx-tag">' + esc(m.origin) + '</span>' : '') +
       '<span class="mono" style="font-size:11.5px;color:#6E6B80">' + esc(m.id) + '</span>' +
       '<span class="mono" style="font-size:11.5px;color:#6E6B80">' + esc(m.day || '') + '</span>' +
       '<span class="sp" style="flex:1"></span>' +
@@ -9490,7 +9545,7 @@ var DOCS_ZH = {
           ['仓库', '<a href="https://github.com/MnemosyneOS/mnemosyne" target="_blank" rel="noopener">MnemosyneOS/mnemosyne</a>'],
           ['包名', '<code>mnemosyne-os</code>'],
           ['Python', '3.8 及以上'],
-          ['当前版本', '8.0.0']
+          ['当前版本', '8.1.0']
         ] }
       ] },
       { h: '核心依赖：无', id: 'deps', blocks: [
@@ -9534,7 +9589,7 @@ var DOCS_ZH = {
         ] }
       ] },
       { h: '工具清单', id: 'tools', blocks: [
-        { p: '网关当前暴露 31 个 MCP 工具。常用的几个：' },
+        { p: '网关当前暴露 40 个 MCP 工具。常用的几个：' },
         { ul: [
           '<code>retain</code> / <code>retain_batch</code> —— 写入一条 / 批量写入。',
           '<code>recall</code> —— 语义检索，可限定类型与标签。',
@@ -9570,7 +9625,7 @@ var DOCS_ZH = {
       { h: '第二步：登记到 Claude Code', id: 'register', blocks: [
         { p: '把服务写进 Claude Code 的 MCP 配置。项目级配置只对这个目录生效，用户级配置则到处可用。' },
         { code: '{\n  "mcpServers": {\n    "mnemosyne": {\n      "url": "http://127.0.0.1:8788/mcp"\n    }\n  }\n}' },
-        { p: '保存后重开一个会话，用 <code>/mcp</code> 查看连接状态，应当能看到 31 个工具。' }
+        { p: '保存后重开一个会话，用 <code>/mcp</code> 查看连接状态，应当能看到 40 个工具。' }
       ] },
       { h: '第三步：让它真的用起来', id: 'use', blocks: [
         { p: '工具挂上不等于会被用。在项目的说明文件里写清楚什么时候该写、什么时候该取，效果会明显不同：' },
@@ -9732,7 +9787,7 @@ var DOCS_EN = {
         { p: 'Each result is a triple: the score, the record, and why it matched. The reasons say whether it came in on keywords, vectors or time proximity, which is what makes recall quality debuggable.' }
       ] },
       { h: 'Run it as an MCP server', id: 'mcp', blocks: [
-        { p: 'To let another agent use it, expose it as a local HTTP endpoint. 31 tools appear over MCP.' },
+        { p: 'To let another agent use it, expose it as a local HTTP endpoint. 40 tools appear over MCP.' },
         { code: '# start the gateway on 127.0.0.1:8788\npython -m mnemosyne.gateway --port 8788\n\n# then point any MCP client at\nhttp://127.0.0.1:8788/mcp' },
         { callout: '<b>Off-loopback needs a token.</b> Requests from the loopback address are trusted; anything else must carry <code>Authorization: Bearer &lt;token&gt;</code>.' }
       ] },
@@ -9756,7 +9811,7 @@ var DOCS_EN = {
           ['Repository', '<a href="https://github.com/MnemosyneOS/mnemosyne" target="_blank" rel="noopener">MnemosyneOS/mnemosyne</a>'],
           ['Package', '<code>mnemosyne-os</code>'],
           ['Python', '3.8 or newer'],
-          ['Current version', '8.0.0']
+          ['Current version', '8.1.0']
         ] }
       ] },
       { h: 'Core dependencies: none', id: 'deps', blocks: [
@@ -9800,7 +9855,7 @@ var DOCS_EN = {
         ] }
       ] },
       { h: 'The tool list', id: 'tools', blocks: [
-        { p: 'The gateway exposes 31 MCP tools today. The ones used most:' },
+        { p: 'The gateway exposes 40 MCP tools today. The ones used most:' },
         { ul: [
           '<code>retain</code> / <code>retain_batch</code> — write one memory, or many.',
           '<code>recall</code> — search by meaning, filterable by type and tags.',
@@ -9836,7 +9891,7 @@ var DOCS_EN = {
       { h: 'Step two: register it', id: 'register', blocks: [
         { p: 'Add the server to the MCP configuration. A project-level entry applies to that directory only; a user-level entry applies everywhere.' },
         { code: '{\n  "mcpServers": {\n    "mnemosyne": {\n      "url": "http://127.0.0.1:8788/mcp"\n    }\n  }\n}' },
-        { p: 'Open a new session and run <code>/mcp</code>. You should see 31 tools listed.' }
+        { p: 'Open a new session and run <code>/mcp</code>. You should see 40 tools listed.' }
       ] },
       { h: 'Step three: make it actually use them', id: 'use', blocks: [
         { p: 'Attaching tools is not the same as using them. Saying when to write and when to read changes the behaviour noticeably:' },
