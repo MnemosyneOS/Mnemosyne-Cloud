@@ -281,6 +281,11 @@
      ③ 溢出交给 .term-body 的 overflow-x:auto 吃掉，代码照旧可以横向滚。 */
   .term{ max-width:1100px; width:100%; margin-left:auto; margin-right:auto; min-width:0; }
 
+  /* 顶栏在 1280–1439 这段最挤：logo（251px）+ 5 个菜单 + 6 个右侧控件。
+     未登录多一个「登录」后实测溢 6px。把菜单间隙从 6px 收到 4px，
+     5 个间隙省 10px —— 视觉上几乎看不出来，但刚好够。 */
+  @media (min-width:1280px) and (max-width:1439.98px){ #mainnav{ gap:4px !important; } }
+
   /* -------------------------------------------------------------- header */
   #hdr{
     position:fixed; top:0; left:0; right:0; z-index:60; height:var(--hdr-h);
@@ -948,16 +953,25 @@
      background-clip:text, which renders as a full-width dark block whenever
      the engine does not clip — the headline's second line disappears behind it. */
   .h1 .l2{ display:block; color:var(--fg); }
-  /* 中文只有 12 个字，同样宽的容器能放到 4.2rem；英文上限 3.55rem。
-     两种语言各自取到自己的上限，视觉重量才对得上，不会一个撑满一个偏小。 */
+  /* 中文只有 12 个字，同宽的容器能放到 4.2rem；但那会压过英文版的视觉重量
+     —— 中文笔画密度更高，同字号看起来更大，实测 67px 在 1440 下显得突兀。
+     收到 3.4rem（54px），与英文 57px 的视觉重量持平，两行也留出了呼吸。 */
   [data-lang="zh"] .h1{
-    font-size:clamp(2.1rem,5vw,4.2rem); letter-spacing:-.02em; line-height:1.1;
+    font-size:clamp(1.9rem,4.3vw,3.4rem); letter-spacing:-.02em; line-height:1.12;
   }
   /* text-wrap:pretty —— 长段落不用 balance（会强行让每行等长，读起来反而断气），
      只让浏览器把最后一行从「一个词」匀成正常长度。中文尤其明显：
      实测 1440 下末行只剩 119px（「重归你的掌控。」），pretty 会把它摊平。 */
   .lede{ font-size:1.0625rem; line-height:1.7; color:var(--fg2); max-width:46rem; margin:0; text-wrap:pretty; }
   .lede b{ color:var(--fg); font-weight:500; }
+  /* hero 三块之间的呼吸间距。
+     为什么不能写在 HTML 上的 mt-* 类里：.h1 与 .lede 自己声明了 margin:0，
+     与 Tailwind 的 .mt-6/.mt-7 同特异性，而本文档样式表排在 tailwind.css 之后
+     —— 后写者赢，mt-* 被静默吃掉。实测 pill 底边到 h1 顶边是 0px，
+     这就是「三个框挤在一起」的真正原因。用 #top 提一级特异性，把间距钉在这里。 */
+  #top .h1{ margin-top:2.5rem; }        /* 40px */
+  #top .lede{ margin-top:2.25rem; }     /* 36px */
+  #top .lede + div{ margin-top:2.75rem; } /* 44px，按钮行 */
   /* mem0 sets its section titles between 40 and 48px with tight tracking. */
   .h2{
     font-size:30px; font-weight:600; letter-spacing:-.028em; line-height:1.14; margin:0; color:var(--fg);
@@ -1219,11 +1233,15 @@
   .logo .lg-core{ fill:var(--logo-core); }
   .logo .lg-word, .logo .lg-os{ font-family:'Inter Variable',Inter,'Segoe UI','Helvetica Neue',Arial,sans-serif; }
   /* 字重从 600 提到可变字体的上限 900，再加一圈同色描边——
-     光靠 900 到不了“两倍粗”，描边才让笔画真的变厚。 */
-  .logo .lg-word{ fill:var(--logo-word); font-size:32px; font-weight:900; letter-spacing:-1.3px;
+     光靠 900 到不了“两倍粗”，描边才让笔画真的变厚。
+     字距从 -1.3px 收到 -0.2px：原来的负字距把 8 个字母挤成一坨，
+     配合 textLength 一起放宽（见 SVG 里的 184），整体宽度不变、字母之间有缝。 */
+  .logo .lg-word{ fill:var(--logo-word); font-size:32px; font-weight:900; letter-spacing:-.2px;
     stroke:var(--logo-word); stroke-width:1.05px; paint-order:stroke fill; }
-  .logo .lg-os{ fill:var(--logo-os); font-size:20px; font-weight:800; letter-spacing:4px;
-    stroke:var(--logo-os); stroke-width:.75px; paint-order:stroke fill; }
+  /* OS 与前面反着来：字距从 4px 收到 1px（原来像两个不相干的字母），
+     字重提到 900、描边加厚到 1.05，让它作为后缀站得住。 */
+  .logo .lg-os{ fill:var(--logo-os); font-size:20px; font-weight:900; letter-spacing:1px;
+    stroke:var(--logo-os); stroke-width:1.05px; paint-order:stroke fill; }
 
   /* ----------------------------------------------------- integrations */
   .intg{
@@ -1634,7 +1652,8 @@
   .wire-legend i.dash{ border-top-color:var(--brand-slate); }
   .wire-legend i.hot{ background:var(--brand-teal); }
   .intg .tp{ border-color:var(--brand-slate-line); color:var(--brand-slate); }
-  .logo .lg-os{ font-weight:700; }
+  /* 这里原本有一条 .logo .lg-os{ font-weight:700 }，把上面设的 900 降回 700，
+     「OS 加粗」永远不生效。删掉，字重统一由 1225 行那条决定。 */
   #cta .card{
     background:linear-gradient(155deg, var(--brand-teal-bg) 0%, transparent 52%), var(--surface);
   }
@@ -2018,8 +2037,8 @@ body.docs #view{ display:block !important; }
           </g>
           <circle class="lg-core" cx="32.0" cy="32.0" r="6.6"/>
         </g>
-        <text class="lg-word" x="90" y="59" textLength="170" lengthAdjust="spacingAndGlyphs">mnemosyne</text>
-        <text class="lg-os" x="270" y="58">OS</text>
+        <text class="lg-word" x="90" y="59" textLength="184" lengthAdjust="spacingAndGlyphs">mnemosyne</text>
+        <text class="lg-os" x="284" y="58">OS</text>
       </svg>
     </a>
 
@@ -2140,14 +2159,14 @@ body.docs #view{ display:block !important; }
         </span>
       </div>
 
-      <h1 class="h1 mt-7 reveal">
+      <h1 class="h1 mt-10 reveal">
         <span class="l1" data-i18n="hero.l1">Zero-cloud memory</span>
         <span class="l2" data-i18n="hero.l2">for AI agents.</span>
       </h1>
 
-      <p class="lede mt-6 reveal" style="margin-left:auto;margin-right:auto" data-i18n-html="hero.lede">A local-first memory engine that runs on the Python standard library alone. <b>Sub-millisecond writes</b>, <b>a hash-chained audit ledger</b>, and <b>pure SQLite storage</b> — no vector cloud, no vendor lock-in, no data leaving your machine.</p>
+      <p class="lede mt-9 reveal" style="margin-left:auto;margin-right:auto" data-i18n-html="hero.lede">A local-first memory engine that runs on the Python standard library alone. <b>Sub-millisecond writes</b>, <b>a hash-chained audit ledger</b>, and <b>pure SQLite storage</b> — no vector cloud, no vendor lock-in, no data leaving your machine.</p>
 
-      <div class="mt-9 flex flex-wrap items-center justify-center gap-3 reveal">
+      <div class="mt-11 flex flex-wrap items-center justify-center gap-3 reveal">
         <a class="btn btn-accent btn-lg" href="#/login"><span data-i18n="hero.start">Get started</span><span class="btn-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg></span></a>
         <a class="btn btn-dark btn-lg" href="#/mcp">
           <i data-lucide="plug" style="width:15px;height:15px"></i>
@@ -2546,8 +2565,8 @@ body.docs #view{ display:block !important; }
               </g>
               <circle class="lg-core" cx="32.0" cy="32.0" r="6.6"/>
             </g>
-            <text class="lg-word" x="90" y="59" textLength="170" lengthAdjust="spacingAndGlyphs">mnemosyne</text>
-            <text class="lg-os" x="270" y="58">OS</text>
+            <text class="lg-word" x="90" y="59" textLength="184" lengthAdjust="spacingAndGlyphs">mnemosyne</text>
+            <text class="lg-os" x="284" y="58">OS</text>
           </svg>
         </a>
 
@@ -5359,7 +5378,13 @@ body.docs #view{ display:block !important; }
           '</div>' +
         '</div>';
     } else {
-      host.innerHTML = '';
+      /* 未登录时右上角必须有一个明确的「登录」入口。
+         原来这里是空的 —— 只剩「免费开始」，已经注册过的人得自己猜从哪进去。
+         用 ghost 而不是 primary：主按钮的位置留给转化动作。
+         <640 隐藏：手机上两个按钮 + 图标会挤爆顶栏（实测溢 19–30px），
+         手机端的入口在汉堡菜单里（#sheet-cta 指向同一个 #/login）。 */
+      host.innerHTML = '<a class="btn btn-ghost btn-sm hidden sm:inline-flex" href="#/login">' +
+                       esc(lang === 'zh' ? '登录' : 'Log in') + '</a>';
     }
     if (cta) {
       cta.hidden = signedIn;
