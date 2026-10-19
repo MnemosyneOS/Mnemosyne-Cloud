@@ -515,7 +515,7 @@
   .pv-cta{ margin-top:28px; display:flex; flex-wrap:wrap; gap:11px; justify-content:center; }
   /* 内容页（关于我们 / 定价 / 公司…）的纵向节奏。
      底部 7rem 留白让最后一屏看起来像被截断，收到 4.5rem。 */
-  .pv-body{ padding:44px 0 4.5rem; }
+  .pv-body{ padding:34px 0 3.5rem; }
 
   /* =====================================================================
      Account surface — sign-in / sign-up, and the console behind them.
@@ -834,7 +834,7 @@
   @media (min-width:900px){ .split{ grid-template-columns:1fr 1fr; gap:60px; } }
   .formcard{ background:var(--surface); border:1px solid var(--hair); border-radius:10px; padding:26px; }
 
-  .blk{ border-top:1px solid var(--hair); padding-top:28px; margin-top:38px; }
+  .blk{ border-top:1px solid var(--hair); padding-top:22px; margin-top:30px; }
   .blk.first{ border-top:0; padding-top:0; margin-top:0; }
   .blk h2{ margin:0; font-size:clamp(1.2rem,2.3vw,1.6rem); font-weight:650; letter-spacing:-.022em; color:var(--fg); }
   .blk h2 + p{ margin-top:11px; }
@@ -874,7 +874,7 @@
   .codebox code{ padding:0; border:0; background:none; font-family:'DM Mono','JetBrains Mono',monospace; font-size:12.4px; line-height:1.8; color:var(--code-fg); white-space:pre; }
   .codebox .cm{ color:var(--tk-c); }
 
-  .toolrow{ border-top:1px solid var(--hair); padding:12px 0; display:grid; gap:3px 18px; grid-template-columns:212px 1fr; }
+  .toolrow{ border-top:1px solid var(--hair); padding:11px 0; display:grid; gap:3px 18px; grid-template-columns:250px 1fr; }
   .toolrow:first-of-type{ border-top:0; }
   .toolrow .nm{ font-family:'DM Mono','JetBrains Mono',monospace; font-size:12.3px; color:var(--accent-ink); word-break:break-word; }
   .toolrow .ds{ font-size:13px; line-height:1.65; color:var(--fg2); }
@@ -1240,7 +1240,7 @@
     stroke:var(--logo-word); stroke-width:1.05px; paint-order:stroke fill; }
   /* OS 与前面反着来：字距从 4px 收到 1px（原来像两个不相干的字母），
      字重提到 900、描边加厚到 1.05，让它作为后缀站得住。 */
-  .logo .lg-os{ fill:var(--logo-os); font-size:20px; font-weight:900; letter-spacing:1px;
+  .logo .lg-os{ fill:var(--logo-os); font-size:22px; font-weight:900; letter-spacing:1px;
     stroke:var(--logo-os); stroke-width:1.05px; paint-order:stroke fill; }
 
   /* ----------------------------------------------------- integrations */
@@ -1970,7 +1970,7 @@ body.docs #view{ display:block !important; }
    四个块被横着排、还撑出一屏空白 —— 这就是错行的来源。这里只关掉整页行为，
    改成竖直堆叠的卡片，并让网格按可用宽度自适应换行。 */
 .site-cfg{ display:block; min-height:auto; background:transparent; }
-.site-cfg .site-sec{ background:var(--d-panel); border:1px solid var(--d-line);
+.site-cfg .site-sec{ background:transparent; border:1px solid var(--d-line);
   border-radius:12px; padding:18px 20px; margin-bottom:14px; }
 .site-cfg .dx-hrow{ margin-bottom:14px; }
 .site-cfg .dx-hrow .dx-h1{ font-size:16px; font-weight:600; }
@@ -2097,7 +2097,6 @@ body.docs #view{ display:block !important; }
       </div>
 
       <span id="nav-user" class="flex items-center gap-1.5"></span>
-      <a class="btn btn-primary btn-sm ml-1 hidden sm:inline-flex" id="nav-cta" href="#/login" data-i18n="nav.try">Try Mnemosyne OS</a>
 
       <button class="ctrl xl:hidden" id="menu-open" aria-label="Menu">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
@@ -6962,6 +6961,7 @@ body.docs #view{ display:block !important; }
         '<section class="site-sec">' + MN.secAuth(site) + '</section>' +
         '<section class="site-sec">' + MN.secOAuth(oauth) + '</section>' +
         '<section class="site-sec">' + MN.secMemory(site, sys) + '</section>' +
+        '<section class="site-sec">' + MN.secMailTpl(site) + '</section>' +
         '<section class="site-sec">' + MN.secFooter(site) + '</section>' +
         '<section class="site-sec">' + dxSetGeneral(d.settings || {}, d) + '</section>' +
         '<section class="site-sec">' + dxSetModel(llm) + '</section>' +
@@ -11508,6 +11508,44 @@ function docsOpen(open) {
       esc(L('保存品牌设置', 'Save brand settings')) + '</button></div>';
   };
 
+  /* ---- ③c 邮件模板：验证码邮件的主题与措辞 ---- */
+  /* 主题后缀、动作名、安全提示这三段原来写死在 otp_mail() 里，改一句
+     「注册验证码」要改 Python + 重新部署。这里把它们暴露出来，
+     留空即用内置默认（与页面文案同一套「空值=撤销覆盖」的语义）。 */
+  MN.secMailTpl = function (d) {
+    var mt = ((d || {}).site || {}).mail_templates || {};
+    var v = function (k) { return escAttr(mt[k] || ''); };
+    return hrow(L('邮件模板', 'E-mail templates'),
+                L('验证码邮件的主题后缀、动作名与安全提示。留空即用内置默认；改完对下一封发出的邮件生效。',
+                  'Subject suffix, action name and security notice for verification e-mails. Empty means built-in default; applies to the next message sent.')) +
+      '<div class="dx-grid">' +
+      field(L('主题后缀（中文）', 'Subject suffix (Chinese)'),
+            '<input class="inp" data-mnt="zh.subject" value="' + v('zh.subject') +
+            '" placeholder="注册验证码">') +
+      field(L('主题后缀（英文）', 'Subject suffix (English)'),
+            '<input class="inp" data-mnt="en.subject" value="' + v('en.subject') +
+            '" placeholder="verification code">') +
+      field(L('动作名（中文）', 'Action name (Chinese)'),
+            '<input class="inp" data-mnt="zh.action" value="' + v('zh.action') +
+            '" placeholder="注册">') +
+      field(L('动作名（英文）', 'Action name (English)'),
+            '<input class="inp" data-mnt="en.action" value="' + v('en.action') +
+            '" placeholder="sign-up">') +
+      field(L('安全提示（中文）', 'Security notice (Chinese)'),
+            '<textarea class="inp" rows="2" data-mnt="zh.safety">' +
+            esc(mt['zh.safety'] || '') + '</textarea>') +
+      field(L('安全提示（英文）', 'Security notice (English)'),
+            '<textarea class="inp" rows="2" data-mnt="en.safety">' +
+            esc(mt['en.safety'] || '') + '</textarea>') +
+      '</div>' +
+      '<p class="dx-note">' +
+        esc(L('主题的实际格式是「验证码 + 主题后缀」，例如「123456 是你的 Mnemosyne OS 注册验证码」。只改后缀即可，不要把验证码写进来。',
+              'The subject is built as “code + suffix”, e.g. “123456 is your Mnemosyne OS verification code”. Change only the suffix.')) +
+      '</p>' +
+      '<div><button class="dx-btn" type="button" data-mnsave="mail">' +
+      esc(L('保存邮件模板', 'Save templates')) + '</button></div>';
+  };
+
   /* ---- ③ 页脚 ---- */
   MN.secFooter = function (d) {
     var s = ((d || {}).site || {}).footer || {};
@@ -12086,6 +12124,23 @@ function docsOpen(open) {
         fetchCfg(true).then(function () { applyAnnounce(); applyFooter(); });
         if (kind !== 'announce') doReload();
       }
+    }
+
+    /* 邮件模板：与 content 同构的扁平键（zh.subject / en.action …），
+       服务端 mail_templates 段要的就是扁平结构，不能过 readForm 转嵌套。 */
+    if (kind === 'mail') {
+      var mt = {};
+      Array.prototype.forEach.call(scope.querySelectorAll('[data-mnt]'), function (el) {
+        mt[el.getAttribute('data-mnt')] = el.value;
+      });
+      api('/api/dash/site', { site: { mail_templates: mt } }).then(function (r) {
+        if (r.ok) {
+          done(true, L('邮件模板已保存，下一封邮件生效。', 'Templates saved — applies to the next message.'));
+        } else {
+          done(false, (r.body && (r.body.message_zh || r.body.message)) || L('保存失败。', 'Could not save.'));
+        }
+      });
+      return;
     }
 
     /* 页面文案走的是扁平键（zh.hero.l1 / en.hero.l1），不是 readForm 的点路径
