@@ -250,6 +250,11 @@
       '<button class="up" data-act="go" data-to="billing">' + esc(dz('升级套餐', 'Upgrade')) + '</button>' +
       '</div>';
   }
+  function refreshRail() {
+    var f = document.querySelector('.mc-plan');
+    if (f) f.outerHTML = planHTML();
+  }
+
   function planLabel() {
     var p = (MC.planName || 'starter');
     return ({ starter: dz('入门版', 'Starter'), pro: dz('专业版', 'Pro'),
@@ -330,6 +335,7 @@
     paint();
 
     if (first) ensureContext().then(function () {
+      refreshRail();
       /* 首次接入向导对**所有**账号强制弹出 —— 这是产品的主路径：
          注册 → 进控制台 → 立刻把 Agent 接上 → 看到自己的记忆。
          管理员与成员没有区别；只有用户自己点「稍后再说」才跳过本次会话。 */
@@ -342,6 +348,11 @@
 
   function ensureContext() {
     var jobs = [];
+    /* 侧栏配额卡要在任何页面都显示真实条数。这里先取一次 30 天分析
+       （URL 与概览页一致，会命中同一份缓存，不产生第二次请求）。 */
+    jobs.push(get('/api/dash/analytics' + nsq({ days: 30 })).then(function (d) {
+      MC.overview = d;
+    }));
     jobs.push(get('/api/dash/setup').then(function (d) {
       MC.setup = d;
       /* 套餐名从服务端取：侧栏配额卡与「套餐与用量」页必须说同一件事，
@@ -412,8 +423,7 @@
       MC.overview = a;
       /* 侧栏的配额条是在数据到达之前画的（那时只有 0）。这里补一次，
          否则概览说 12 条、侧栏说 0/500，用户会以为两个数字有一个是错的。 */
-      var foot = document.querySelector('.mc-plan');
-      if (foot) foot.outerHTML = planHTML();
+      refreshRail();
       var t = a.totals || {};
       var pv = d.preview || {};
       var series = a.series || [];
@@ -1125,13 +1135,14 @@
               'display:grid;place-items:center;font-size:10.5px;font-weight:650">' + esc(initials(u.display_name || u.email)) + '</span>' +
               '<span><div style="font-size:12px">' + esc(u.display_name || u.email) + '</div>' +
               '<div style="font-size:10.5px;color:var(--fg3)">' + esc(u.email) + '</div></span></div></td>' +
-              '<td>' + (u.role === 'admin' ? '<span class="mc-tag pri">ADMIN</span>' : '<span class="mc-tag">member</span>') + '</td>' +
+              '<td>' + (u.role === 'admin' ? '<span class="mc-tag pri">ADMIN</span>' : '<span class="mc-tag">member</span>') +
+                (u.account_source === 'profile_only' ? ' <span class="mc-tag" style="opacity:.7">' + esc(dz('仅资料', 'profile only')) + '</span>' : '') + '</td>' +
               '<td class="num">' + n0(u.memories) + '</td>' +
               '<td>' + (u.onboarded ? '<span class="mc-pill ok"><i></i>' + esc(dz('已接通', 'On')) + '</span>'
                                     : '<span class="mc-pill"><i></i>' + esc(dz('未配置', 'Off')) + '</span>') + '</td>' +
               '<td>' + esc(u.plan) + (u.plan_expires ? '<div style="font-size:10px;color:var(--fg3)">' +
                 esc(dz('至 ', 'to ') + u.plan_expires.slice(0, 10)) + '</div>' : '') + '</td>' +
-              '<td style="white-space:nowrap;color:var(--fg3)">' + esc((u.created || '').slice(0, 10)) + '</td>' +
+              '<td style="white-space:nowrap;color:var(--fg3)">' + esc(u.created ? new Date(u.created * 1000).toLocaleDateString() : '—') + '</td>' +
               '<td style="white-space:nowrap;color:var(--fg3)">' + esc(u.last_write ? ago(u.last_write) : '—') + '</td>' +
               '<td><button class="mc-btn sm" data-act="view-user" data-email="' + esc(u.email) + '">' +
                 esc(dz('查看数据', 'Inspect')) + '</button></td></tr>';
