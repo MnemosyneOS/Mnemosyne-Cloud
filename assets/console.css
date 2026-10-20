@@ -40,6 +40,9 @@ html[data-theme="dark"] .mc { --mc-ok: #4ADE80; --mc-warn: #FBBF24; --mc-bad: #F
   width: var(--mc-rail); flex: none; display: flex; flex-direction: column;
   background: var(--surface); border-right: 1px solid var(--hair);
   transition: width .18s ease;
+  /* 账号下拉是 absolute 的，锚点必须是侧栏本身。少了这一行，它会以视口为
+     包含块铺满整屏（实测 1460px 宽），把正文全盖住。 */
+  position: relative;
 }
 .mc-who {
   display: flex; align-items: center; gap: 9px; padding: 11px 12px;
