@@ -8344,9 +8344,12 @@ function renderDash(path) {
   var rest = path.split('/')[1] || 'overview';
   /* keys / webhooks / settings 已经迁进「后台管理」，不再算控制台的页面 ——
      老书签会被兜回仪表盘，而不是渲染一个已经没有入口的页。 */
-  var known = ['install', 'highlights', 'copilot', 'overview', 'requests', 'entities',
-               'memories', 'dream', 'graph', 'exports', 'billing',
-               'docs', 'mcp', 'changelog'];
+  /* 白名单必须与 DX_NAV 一致。8.1.0 新增的 formation / tools / members / audit
+     漏在这里的后果是：点进这些页面会被静默兜回仪表盘 —— 导航高亮还在新页，
+     内容却是首页，看起来就是"功能是坏的"。新增页面时两处都要加。 */
+  var known = ['install', 'highlights', 'copilot', 'tools', 'overview', 'requests',
+               'entities', 'memories', 'dream', 'graph', 'formation', 'exports',
+               'billing', 'members', 'audit', 'docs', 'mcp', 'changelog'];
   if (known.indexOf(rest) < 0) rest = 'overview';
 
   /* 先问角色再画外壳：导航与页面都按角色分叉。 */
