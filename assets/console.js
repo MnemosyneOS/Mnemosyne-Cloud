@@ -1053,7 +1053,7 @@
     box.innerHTML = '<div class="mc-mask" data-act="close-pay"><div class="mc-modal" style="max-width:520px" ' +
       'onclick="event.stopPropagation()"><div class="mh"><div class="st">' + esc(dz('微信支付', 'WeChat Pay')) + '</div>' +
       '<h2>' + esc(dz('扫码支付 ¥', 'Scan to pay ¥') + Number(order.amount).toFixed(2)) + '</h2>' +
-      '<p>' + esc(dz('金额最后两位是订单校验位，请**按显示金额**付款，不要改动。',
+      '<p>' + esc(dz('金额最后两位是订单校验位，请按显示金额原样付款，不要改动。',
         'The last two decimals identify your order — pay the exact amount.')) + '</p></div>' +
       '<div class="mb" style="display:flex;gap:16px;align-items:flex-start">' +
         (qr ? '<img class="mc-qr" src="' + esc(qr) + '" alt="WeChat QR">'
