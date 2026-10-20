@@ -877,12 +877,24 @@
   .toolrow{ border-top:1px solid var(--hair); padding:11px 0; display:grid; gap:3px 18px; grid-template-columns:250px 1fr; }
   .toolrow:first-of-type{ border-top:0; }
   .toolrow .nm{ font-family:'DM Mono','JetBrains Mono',monospace; font-size:12.3px; color:var(--accent-ink); word-break:break-word; }
-  .toolrow .ds{ font-size:13px; line-height:1.65; color:var(--fg2); }
+  /* 这里的 .ds 与文档站主容器 .ds 同名，而后者写着 min-height:100vh。
+     不显式覆盖，每一个工具行的右列都会被撑成一整屏 —— 实测 about 页正文
+     高 14666px、每条数据之间隔着 1000px 空白。主容器 .ds 的 background /
+     color 也会一起漏过来，一并覆盖掉。 */
+  .toolrow .ds{ font-size:13px; line-height:1.65; color:var(--fg2);
+    min-height:0; height:auto; background:transparent; }
   @media (max-width:660px){ .toolrow{ grid-template-columns:1fr; gap:2px; } }
 
   .tiles{ display:grid; gap:12px; grid-template-columns:repeat(2,1fr); margin-top:26px; }
   @media (min-width:780px){ .tiles{ grid-template-columns:repeat(4,1fr); } }
-  .tile{ background:var(--fg); color:var(--canvas); border-radius:8px; padding:20px 17px; }
+  /* 原来写 background:var(--fg)——深色主题下恰好是白，浅色主题下直接变黑块，
+     与全站配色无关。改成品牌紫罗兰（取自 logo 节点色 #4C3A8F），
+     字色用极浅紫保对比（≥7:1）。 */
+  .tile{
+    background:linear-gradient(158deg,#5B41B8 0%,#3E2E8C 100%);
+    color:#F3EFFF; border-radius:8px; padding:20px 17px;
+    border:1px solid rgba(255,255,255,.10);
+  }
   .tile .n{ display:block; font-size:25px; font-weight:700; letter-spacing:-.035em; line-height:1.05; }
   .tile .l{ display:block; margin-top:9px; font-size:11.4px; line-height:1.4; opacity:.7; }
 
@@ -3554,11 +3566,11 @@ body.docs #view{ display:block !important; }
             p: 'Four commands create the store, the namespace and the token. No email address, no dashboard, no sign-up form — everything needed to start is in the repository.',
             code: { n: 'bash', b: [
               '# 1 · initialise the store (SQLite + SHA-256 hash-chain ledger)',
-              'python mnemosyne.py --dir ./mem init',
+              'mnemosyne --dir ./mem init',
               '',
               '# 2 · write, then read back',
-              'python mnemosyne.py --dir ./mem retain --content "Founded in 1976"',
-              'python mnemosyne.py --dir ./mem recall "founded" --k 5',
+              'mnemosyne --dir ./mem retain --content "Founded in 1976"',
+              'mnemosyne --dir ./mem recall "founded" --k 5',
               '',
               '# 3 · expose it over MCP with a tenant token',
               'export MNEMOSYNE_MCP_TOKEN="your-secret-token"',
@@ -3734,31 +3746,34 @@ body.docs #view{ display:block !important; }
         cta: [['Documentation', '#/docs', 'primary'], ['API reference', '#/api', 'ghost']],
         blocks: [
           { h: 'Everyday commands',
+            /* pip 安装后直接用 mnemosyne；源码树内等价于 python mnemosyne.py。
+               python -m mnemosyne 同样可用（包内有 __main__.py）。 */
+
             code: { n: 'bash', b: [
-              'python mnemosyne.py --dir ./mem init',
-              'python mnemosyne.py --dir ./mem retain --content "Apple Inc. was founded in 1976"',
-              'python mnemosyne.py --dir ./mem recall "Apple" --k 5',
-              'python mnemosyne.py --dir ./mem consolidate --dry-run'
+              'mnemosyne --dir ./mem init',
+              'mnemosyne --dir ./mem retain --content "Apple Inc. was founded in 1976"',
+              'mnemosyne --dir ./mem recall "Apple" --k 5',
+              'mnemosyne --dir ./mem consolidate --dry-run'
             ].join('\n') } },
 
           { h: 'Health, graph and audit',
             p: 'The three commands worth putting in a cron job or a CI step.',
             code: { n: 'bash', b: [
-              'python mnemosyne.py --dir ./mem status --json',
-              'python mnemosyne.py --dir ./mem doctor --json',
+              'mnemosyne --dir ./mem status --json',
+              'mnemosyne --dir ./mem doctor --json',
               '',
-              'python mnemosyne.py --dir ./mem graph-query "Steve Jobs" --depth 2 --json',
+              'mnemosyne --dir ./mem graph-query "Steve Jobs" --depth 2 --json',
               '',
-              'python mnemosyne.py --dir ./mem verify-integrity --json',
-              'python mnemosyne.py --dir ./mem ledger-audit <memory_id>'
+              'mnemosyne --dir ./mem verify-integrity --json',
+              'mnemosyne --dir ./mem ledger-audit <memory_id>'
             ].join('\n') } },
 
           { h: 'Move data in and out',
             code: { n: 'bash', b: [
-              'python mnemosyne.py --dir ./mem export --format json --out ./memories.json',
-              'python mnemosyne.py --dir ./mem import ./memories.json',
+              'mnemosyne --dir ./mem export --format json --out ./memories.json',
+              'mnemosyne --dir ./mem import ./memories.json',
               '# migrate only applies to the legacy JSONL backend:',
-              'python mnemosyne.py --dir ./old migrate --jsonl ./old/index.jsonl'
+              'mnemosyne --dir ./old migrate --jsonl ./old/index.jsonl'
             ].join('\n') } },
 
           { h: 'Local dashboard',
@@ -3786,10 +3801,10 @@ body.docs #view{ display:block !important; }
           { h: 'Tamper-evident by construction',
             p: 'Every write is chained into a SHA-256 ledger. Verification does not just tell you that something changed — it names the record that was altered, which turns tampering from deniable into detectable.',
             code: { n: 'bash', b: [
-              'python mnemosyne.py --dir ./mem verify-integrity --json',
+              'mnemosyne --dir ./mem verify-integrity --json',
               '# { "chain_valid": true, "records_checked": 10287 }',
               '',
-              'python mnemosyne.py --dir ./mem ledger-audit <memory_id>',
+              'mnemosyne --dir ./mem ledger-audit <memory_id>',
               '# walks the chain around one record'
             ].join('\n') } },
 
@@ -3818,13 +3833,13 @@ body.docs #view{ display:block !important; }
           { h: 'Check your own node',
             code: { n: 'bash', b: [
               '# process health: integrity, record count, disk, vector backend, graph edges',
-              'python mnemosyne.py --dir ./mem doctor --json',
+              'mnemosyne --dir ./mem doctor --json',
               '',
               '# runtime counters: writes, recalls, token savings',
-              'python mnemosyne.py --dir ./mem status --json',
+              'mnemosyne --dir ./mem status --json',
               '',
               '# ledger integrity — names the record if something was altered',
-              'python mnemosyne.py --dir ./mem verify-integrity --json'
+              'mnemosyne --dir ./mem verify-integrity --json'
             ].join('\n') } },
 
           { h: 'What recall_health reports',
@@ -4351,11 +4366,11 @@ body.docs #view{ display:block !important; }
             p: '四条命令建好存储、命名空间与令牌。不需要邮箱、不需要控制面板、不需要注册表单 —— 开跑所需的一切都在仓库里。',
             code: { n: 'bash', b: [
               '# 1 · 初始化存储（SQLite + SHA-256 哈希链账本）',
-              'python mnemosyne.py --dir ./mem init',
+              'mnemosyne --dir ./mem init',
               '',
               '# 2 · 写入，再读回来',
-              'python mnemosyne.py --dir ./mem retain --content "Founded in 1976"',
-              'python mnemosyne.py --dir ./mem recall "founded" --k 5',
+              'mnemosyne --dir ./mem retain --content "Founded in 1976"',
+              'mnemosyne --dir ./mem recall "founded" --k 5',
               '',
               '# 3 · 用租户令牌通过 MCP 暴露出去',
               'export MNEMOSYNE_MCP_TOKEN="your-secret-token"',
@@ -4531,31 +4546,32 @@ body.docs #view{ display:block !important; }
         cta: [['使用文档', '#/docs', 'primary'], ['API 参考', '#/api', 'ghost']],
         blocks: [
           { h: '日常命令',
+
             code: { n: 'bash', b: [
-              'python mnemosyne.py --dir ./mem init',
-              'python mnemosyne.py --dir ./mem retain --content "Apple Inc. was founded in 1976"',
-              'python mnemosyne.py --dir ./mem recall "Apple" --k 5',
-              'python mnemosyne.py --dir ./mem consolidate --dry-run'
+              'mnemosyne --dir ./mem init',
+              'mnemosyne --dir ./mem retain --content "Apple Inc. was founded in 1976"',
+              'mnemosyne --dir ./mem recall "Apple" --k 5',
+              'mnemosyne --dir ./mem consolidate --dry-run'
             ].join('\n') } },
 
           { h: '体检、图谱与审计',
             p: '这三条值得放进定时任务或 CI 步骤。',
             code: { n: 'bash', b: [
-              'python mnemosyne.py --dir ./mem status --json',
-              'python mnemosyne.py --dir ./mem doctor --json',
+              'mnemosyne --dir ./mem status --json',
+              'mnemosyne --dir ./mem doctor --json',
               '',
-              'python mnemosyne.py --dir ./mem graph-query "Steve Jobs" --depth 2 --json',
+              'mnemosyne --dir ./mem graph-query "Steve Jobs" --depth 2 --json',
               '',
-              'python mnemosyne.py --dir ./mem verify-integrity --json',
-              'python mnemosyne.py --dir ./mem ledger-audit <memory_id>'
+              'mnemosyne --dir ./mem verify-integrity --json',
+              'mnemosyne --dir ./mem ledger-audit <memory_id>'
             ].join('\n') } },
 
           { h: '数据进出',
             code: { n: 'bash', b: [
-              'python mnemosyne.py --dir ./mem export --format json --out ./memories.json',
-              'python mnemosyne.py --dir ./mem import ./memories.json',
+              'mnemosyne --dir ./mem export --format json --out ./memories.json',
+              'mnemosyne --dir ./mem import ./memories.json',
               '# migrate 只对旧版 JSONL 后端有效（SQLite 库没有 index.jsonl）:',
-              'python mnemosyne.py --dir ./old migrate --jsonl ./old/index.jsonl'
+              'mnemosyne --dir ./old migrate --jsonl ./old/index.jsonl'
             ].join('\n') } },
 
           { h: '本地控制台',
@@ -4583,10 +4599,10 @@ body.docs #view{ display:block !important; }
           { h: '篡改从一开始就可被发现',
             p: '每次写入都串进 SHA-256 账本。校验不只告诉你"有东西被改过"，而是指出是哪一条记录被改 —— 这让篡改从"可否认"变成"可检测"。',
             code: { n: 'bash', b: [
-              'python mnemosyne.py --dir ./mem verify-integrity --json',
+              'mnemosyne --dir ./mem verify-integrity --json',
               '# { "chain_valid": true, "records_checked": 10287 }',
               '',
-              'python mnemosyne.py --dir ./mem ledger-audit <memory_id>',
+              'mnemosyne --dir ./mem ledger-audit <memory_id>',
               '# 围绕某一条记录走一遍链'
             ].join('\n') } },
 
@@ -4615,13 +4631,13 @@ body.docs #view{ display:block !important; }
           { h: '检查你自己的节点',
             code: { n: 'bash', b: [
               '# 进程体检：完整性、记录数、磁盘、向量后端、图边规模',
-              'python mnemosyne.py --dir ./mem doctor --json',
+              'mnemosyne --dir ./mem doctor --json',
               '',
               '# 运行计数：写入、召回、节省的 token',
-              'python mnemosyne.py --dir ./mem status --json',
+              'mnemosyne --dir ./mem status --json',
               '',
               '# 账本完整性 —— 若被改过，会指出是哪一条',
-              'python mnemosyne.py --dir ./mem verify-integrity --json'
+              'mnemosyne --dir ./mem verify-integrity --json'
             ].join('\n') } },
 
           { h: 'recall_health 报什么',
