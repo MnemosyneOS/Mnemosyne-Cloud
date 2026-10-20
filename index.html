@@ -323,6 +323,13 @@
     background:var(--surface); border:1px solid var(--hair);
     box-shadow:var(--shadow); z-index:70;
   }
+  /* 按钮与面板之间有 8px 视觉间隙，鼠标从按钮移向面板必然经过它。
+     不填的话，指针在这 8px 里落在页头上，mouseout 就认为"离开了菜单"，
+     140ms 后面板关闭 —— 表现就是「一下拉就消失，根本点不到」。
+     这一条把空隙变成面板自己的命中区，视觉完全不变。 */
+  .menu::before{
+    content:''; position:absolute; left:0; right:0; top:-8px; height:8px;
+  }
   .menu.on{ display:block; }
   .menu a{
     display:block; padding:9px 12px; border-radius:8px; text-decoration:none;
@@ -1404,6 +1411,52 @@
   .brn-root, #brain-host canvas{ cursor:grab; }
   .brn-root:active, #brain-host canvas:active{ cursor:grabbing; }
   .brn-retry{ margin-left:10px; pointer-events:auto !important; }
+
+  /* ---------------- 图谱关系面板 ---------------- */
+  /* 三维画布点不开的关系，用二维列表补齐：左列节点（可搜），右列该节点的
+     出边与邻居。同一份 /api/graph 数据，只是换了一种读得清的排法。 */
+  .brn-rel{
+    margin-top:14px; border:1px solid var(--d-line); border-radius:10px;
+    background:var(--d-panel); overflow:hidden;
+  }
+  .brn-relbar{ display:flex; align-items:center; gap:10px; padding:10px 12px;
+    border-bottom:1px solid var(--d-line); }
+  .brn-relbar .inp{ max-width:280px; }
+  .brn-relc{ margin-left:auto; font-size:11px; color:var(--d-fg3);
+    font-family:'DM Mono',monospace; white-space:nowrap; }
+  .brn-relbody{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.35fr); }
+  @media (max-width:860px){ .brn-relbody{ grid-template-columns:1fr; } }
+  .brn-nodes{ max-height:280px; overflow-y:auto; padding:8px;
+    border-right:1px solid var(--d-line); }
+  @media (max-width:860px){ .brn-nodes{ border-right:0; border-bottom:1px solid var(--d-line); } }
+  .brn-node{
+    display:flex; align-items:baseline; gap:8px; width:100%; text-align:left;
+    padding:6px 9px; border:0; border-radius:6px; background:transparent;
+    color:var(--d-fg2); font:inherit; font-size:12.5px; cursor:pointer;
+  }
+  .brn-node:hover{ background:rgba(255,255,255,.05); color:var(--d-fg); }
+  .brn-node.on{ background:rgba(203,178,255,.14); color:var(--d-accent); }
+  .brn-node .t{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .brn-node .k{ margin-left:auto; flex:none; font-size:10px; color:var(--d-fg3);
+    font-family:'DM Mono',monospace; }
+  .brn-detail{ padding:12px 14px; min-height:150px; }
+  .brn-detailempty,.brn-empty{ font-size:12px; color:var(--d-fg3); line-height:1.7; }
+  .brn-dhead{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;
+    padding-bottom:9px; margin-bottom:9px; border-bottom:1px solid var(--d-line); }
+  .brn-dhead b{ font-size:14px; color:var(--d-fg); font-weight:600; }
+  .brn-dhead span{ margin-left:auto; font-size:11px; color:var(--d-accent);
+    font-family:'DM Mono',monospace; }
+  .brn-edges{ display:flex; flex-direction:column; gap:5px; max-height:150px; overflow-y:auto; }
+  .brn-edge{ display:flex; align-items:baseline; gap:8px; font-size:12px; }
+  .brn-edge .d{ flex:none; width:14px; color:var(--d-fg3); text-align:center; }
+  .brn-edge .n2{ color:var(--d-fg); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .brn-edge .r{ margin-left:auto; flex:none; font-size:10.5px; color:var(--d-fg3);
+    font-family:'DM Mono',monospace; }
+  .brn-dsub{ margin-top:12px; font-size:11px; color:var(--d-fg3); }
+  .brn-cloud{ display:flex; flex-wrap:wrap; gap:6px; margin-top:7px; }
+  .brn-chip{ font-size:11px; padding:3px 8px; border-radius:5px;
+    background:var(--d-panel2); border:1px solid var(--d-line); color:var(--d-fg2); }
+  .brn-chip i{ font-style:normal; color:var(--d-fg3); font-family:'DM Mono',monospace; }
 
   /* 工具台：一列工具 + 展开的参数面板 */
   .dx-tool{ padding:10px 12px; border-radius:8px; cursor:pointer;
@@ -2804,7 +2857,7 @@ body.docs #view{ display:block !important; }
     'how.sub': 'Three stages run on every write and every read. No configuration, no boilerplate, no pipeline to rewire.',
 
     'arch.eyebrow': 'Architecture',
-    'arch.h2': 'BEAM — bi-layer episodic and associative memory.',
+    'arch.h2': 'BEAM — bi-layer episodic + associative memory',
     'arch.sub': 'Things that happened in time and things that relate to each other are structurally different. BEAM stores them differently, then assembles a single injection under a token budget.',
     'arch.lgWrite': 'write path',
     'arch.lgRead': 'recall path',
@@ -2933,7 +2986,7 @@ body.docs #view{ display:block !important; }
     ],
     archCloud: {
       title: 'Cloud deployment, when you need it',
-      body: 'The same source runs unchanged on a server: Qdrant for the vector tier, BGE-M3 for multilingual embeddings, and an MCP over Streamable HTTP gateway as the single public port. Tokens map to tenants — each tenant gets its own SQLite file and vector collection, which is physical isolation rather than permission filtering. Optional numpy / transformers extras and the Qdrant plugin add true semantic embeddings when you want them, and a 100,000-record corpus stays around 298 MB resident.',
+      body: 'The same source runs unchanged on a server: multilingual embeddings come from Tencent\u2019s Hunyuan Hy-Memory-30B-A3B — the agent-memory model open-sourced on 16 October 2026, 30B total parameters with 3B active, built specifically for chat, work and code memory and ranked first among open-source frameworks on four memory benchmarks. Qdrant serves as the vector tier and an MCP over Streamable HTTP gateway is the single public port. Tokens map to tenants — each tenant gets its own SQLite file and vector collection, which is physical isolation rather than permission filtering. Optional numpy / transformers extras and the Qdrant plugin add true semantic embeddings when you want them, and a 100,000-record corpus stays around 298 MB resident.',
       stats: [['52', 'MCP tools'], ['1', 'Public port'], ['0', 'GPUs required']]
     },
 
@@ -3021,7 +3074,7 @@ body.docs #view{ display:block !important; }
           ['5,000 recalls / month', 0],
           ['1 project', 0],
           ['Everything in Hobby, plus:', 1],
-          ['Qdrant vector backend + BGE-M3 embeddings', 0],
+          ['Qdrant vector backend + Hunyuan Hy-Memory-30B-A3B embeddings', 0],
           ['MCP over Streamable HTTP with token auth', 0],
           ['Managed hosting on the free-tier deploy package', 0],
           ['One-command deploy + free HTTPS setup', 0],
@@ -3139,7 +3192,7 @@ body.docs #view{ display:block !important; }
     'how.sub': '三个阶段贯穿每一次写入与每一次读取。无需配置、无需样板代码、无需重接管线。',
 
     'arch.eyebrow': '架构',
-    'arch.h2': 'BEAM —— 双层「情景 + 联想」记忆。',
+    'arch.h2': 'BEAM —— 情景 × 联想双层记忆',
     'arch.sub': '「按时间发生的事」与「按关系相连的事」在结构上本就不同。BEAM 分别用各自合适的方式存储，再在 token 预算内合成一次注入。',
     'arch.lgWrite': '写入路径',
     'arch.lgRead': '召回路径',
@@ -3267,7 +3320,7 @@ body.docs #view{ display:block !important; }
     ],
     archCloud: {
       title: '需要时，再上云',
-      body: '同一份源码可原样跑在服务器上：Qdrant 承载向量层，BGE-M3 提供多语言嵌入，MCP over Streamable HTTP 网关作为唯一对外端口。令牌决定租户 —— 每个租户一个独立 SQLite 与向量集合，这是物理隔离，而不是权限过滤。可选的 numpy / transformers 扩展与 Qdrant 插件能补上真正的语义嵌入；10 万条记忆常驻内存约 298 MB。',
+      body: '同一份源码可原样跑在服务器上：多语言嵌入由腾讯混元 Hy-Memory-30B-A3B 提供 —— 混元团队 2026 年 10 月 16 日开源的智能体记忆专用模型，30B 总参数、3B 激活，专为聊天、工作、代码三类记忆设计，在 4 个记忆基准上拿到开源框架第一。Qdrant 承载向量层，MCP over Streamable HTTP 网关是唯一对外端口。令牌决定租户 —— 每个租户一个独立 SQLite 与向量集合，这是物理隔离，而不是权限过滤。可选的 numpy / transformers 扩展与 Qdrant 插件能补上真正的语义嵌入；10 万条记忆常驻内存约 298 MB。',
       stats: [['52', 'MCP 工具'], ['1', '对外端口'], ['0', '无需 GPU']]
     },
 
@@ -3355,7 +3408,7 @@ body.docs #view{ display:block !important; }
           ['每月 5,000 次检索请求', 0],
           ['1 个项目', 0],
           ['包含「爱好」全部功能，外加：', 1],
-          ['Qdrant 向量后端 + BGE-M3 嵌入模型', 0],
+          ['Qdrant 向量后端 + 混元 Hy-Memory-30B-A3B 嵌入', 0],
           ['MCP over Streamable HTTP + 令牌鉴权', 0],
           ['免费额度部署包托管', 0],
           ['一键上线 + 免费 HTTPS 接入', 0],
@@ -4781,7 +4834,7 @@ body.docs #view{ display:block !important; }
         lede: '每一个版本，包括它发现并修掉的缺陷。完整文档与代码一起做版本管理 —— 这里是摘要。',
         cta: [['完整 CHANGELOG.md', REPO + '/blob/main/CHANGELOG.md', 'primary'], ['已知缺陷', REPO + '/blob/main/docs/KNOWN_DEFECTS.md', 'ghost']],
         blocks: [
-          { h: '8.1.0 —— 2026 年 9 月 22 日',
+          { h: '8.1.0 —— 2026 年 10 月 20 日',
             p: '这一版把"零依赖"从口号变成可验证的架构约束，同时让 Mnemosyne 的记忆 API 能够与既有 Agent 记忆代码直接互操作 —— 改一行 import 即可切换。',
             ul: [
               '<b>记忆 API。</b> <code>Memory</code> / <code>AsyncMemory</code> / <code>MemoryClient</code>，包顶层直接可 import：<code>from mnemosyne import Memory</code>。参数名、默认值、关键字限定、返回信封与错误码均已固定为契约。',
@@ -5017,7 +5070,7 @@ body.docs #view{ display:block !important; }
           { h: '这些数字长什么样',
             p: '半年的工作，在公开场合被测量，而不是被声称。',
             tools: [
-              ['版本 8.1.0 —— 2026 年 9 月 22 日', '四周内四个版本，每一个都把自身发现的缺陷作为文档交付。'],
+              ['版本 8.1.0 —— 2026 年 10 月 20 日', '四周内四个版本，每一个都把自身发现的缺陷作为文档交付。'],
               ['52 个 MCP 工具', '每一项能力都可通过公开协议触达，包括免费档在内的所有档位。'],
               ['九种 README 语言', 'English、简体中文、繁體中文、Español、Русский、Deutsch、ไทย、한국어、日本語。'],
               ['0 个第三方依赖', 'install_requires 是空列表 —— 并且有一个回归测试，一旦它不再是空列表就会失败。'],
@@ -5330,7 +5383,15 @@ body.docs #view{ display:block !important; }
     var rel = t.closest('#mainnav .rel');
     if (!rel) return;
     var to = e.relatedTarget;
-    if (to && rel.contains(to)) return;
+    /* 判据从「指针是否还在这个按钮里」放大到「指针是否还在整条导航里」。
+       原来只看 rel.contains(to)：而按钮与它展开的面板之间有 1 个安全间隙，
+       指针从按钮移向面板时必然在间隙里经过一次 —— relatedTarget 落在
+       body/其他节点上，140ms 后面板就关了，表现就是「鼠标放上去菜单
+       立刻消失、根本点不到」。整个 #mainnav（含所有下拉面板）都算菜单，
+       离开导航条才计时关闭。 */
+    /* 判据用 #hdr 而不是 #mainnav：页头里除了导航条还有 logo 与按钮组，
+       指针在它们之间移动时不该收起菜单。真正离开页头才计时关闭。 */
+    if (to && to.closest && to.closest('#hdr')) return;
     if (menuTimer) clearTimeout(menuTimer);
     menuTimer = setTimeout(function () { closeMenus(); menuTimer = null; }, 140);
   });
@@ -6308,15 +6369,11 @@ body.docs #view{ display:block !important; }
     }
     return '<div class="authdiv">' + esc(A('ssoOr')) + '</div>' +
       '<div class="sso">' +
-        btn('wechat', 'WeChat',
-          '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.7 3C4.9 3 1.8 5.6 1.8 8.8c0 1.8 1 3.4 2.6 4.5l-.7 2.1 2.4-1.2c.8.2 1.6.4 2.5.4h.6a5.6 5.6 0 0 1-.2-1.5c0-3.1 3-5.6 6.7-5.6h.6C15.7 4.6 12.5 3 8.7 3Zm-2.3 3a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8Zm4.6 0a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8Z"/><path d="M22.2 13.1c0-2.7-2.6-4.9-5.9-4.9s-5.9 2.2-5.9 4.9 2.6 4.9 5.9 4.9c.7 0 1.4-.1 2-.3l2 1-.5-1.7c1.4-.9 2.4-2.3 2.4-3.9Zm-7.8-1.6a.8.8 0 1 1 0 1.5.8.8 0 0 1 0-1.5Zm3.8 0a.8.8 0 1 1 0 1.5.8.8 0 0 1 0-1.5Z"/></svg>') +
         btn('google', 'Google',
           '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.3-2.3H12v4.5h6.5a5.6 5.6 0 0 1-2.4 3.7v3h3.9c2.3-2.1 3.5-5.2 3.5-8.9Z"/><path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3.1A12 12 0 0 0 12 24Z"/><path fill="#FBBC05" d="M5.4 14.4a7.2 7.2 0 0 1 0-4.6V6.7H1.4a12 12 0 0 0 0 10.8l4-3.1Z"/><path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4A12 12 0 0 0 1.4 6.7l4 3.1C6.3 6.9 8.9 4.8 12 4.8Z"/></svg>') +
         btn('github', 'GitHub',
           '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>') +
-      '</div>' +
-      '<p class="hint" style="margin-top:12px;font-size:11.5px;line-height:1.6;color:var(--fg3)">' +
-        esc(A('ssoNote')) + '</p>';
+      '</div>';
   }
 
   /* The code field sits on the SAME screen as the address and the password.
@@ -8220,6 +8277,10 @@ function dxTopHTML() {
         '<button type="button" data-dx="lang-zh" class="' + (zh ? 'on' : '') + '">中文</button>' +
         '<button type="button" data-dx="lang-en" class="' + (zh ? '' : 'on') + '">EN</button>' +
       '</div>' +
+      /* 返回网站首页：控制台是整屏应用，进来之后没有任何回到官网的入口，
+         用户只能改地址栏。放在最左侧，与语言/升级/头像同排。 */
+      '<a class="ctrl" href="#top" title="' + esc(dz('返回网站首页', 'Back to the site')) + '" aria-label="' + esc(dz('返回网站首页', 'Back to the site')) + '">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.8V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.8"/></svg></a>' +
       '<button class="dx-up" type="button" data-dx="billing">' +
         '<i data-lucide="zap" style="width:13px;height:13px"></i>' + esc(dz('升级', 'Upgrade')) + '</button>' +
       '<a class="dx-ava" href="#/dashboard/settings" title="' +
@@ -9172,9 +9233,23 @@ function dxPageGraph(el) {
       '<div class="brn-note"><b>' + esc(dz('正在载入三维图谱…', 'Loading the 3D graph…')) + '</b>' +
       '<span>' + esc(dz('渲染组件约 1.1 MB，只会下载一次。',
                         'The renderer is about 1.1 MB and is fetched only once.')) + '</span></div>' +
+    '</div>' +
+    /* 关系面板：三维画布里逐点 hover 只有 1.1MB 的渲染组件自己知道命中，
+       而它没有暴露 tooltip 接口。所以这里用同一份 /api/graph 数据做一份
+       可读、可搜、可点的关联视图 —— 节点、它的出边、它的邻居，一眼看全。 */
+    '<div class="brn-rel" id="brn-rel">' +
+      '<div class="brn-relbar">' +
+        '<input class="inp" id="brn-q" placeholder="' + esc(dz('搜索节点…', 'Search nodes…')) + '">' +
+        '<span class="brn-relc" id="brn-count"></span>' +
+      '</div>' +
+      '<div class="brn-relbody">' +
+        '<div class="brn-nodes" id="brn-nodes"></div>' +
+        '<div class="brn-detail" id="brn-detail"></div>' +
+      '</div>' +
     '</div>';
   icons();
   dxLoadBrain();
+  brnRelBind();
   /* 数据侧失败（网关不可达时 /api/graph 返回 503）必须给出可操作的出口：
      bundle 只会把错误写成一行灰字，用户看到的是「一个空画布 + 一行报错」，
      既不知道是自己没数据还是服务挂了，也没有重试的地方。 */
@@ -9253,6 +9328,93 @@ function dxMountBrain() {
     return;
   }
   setTimeout(function () { if (window.BrainGraph) window.BrainGraph.ensure(); }, 80);
+}
+
+/* 图谱关系面板：与画布同一份数据，但它负责「看得清」。
+   节点列表可搜，选中一个就把它的出边与邻居逐条列出来 —— 关系不再需要
+   在三维空间里眯着眼找。数据不可达时安静退场，不报错。 */
+var BRN_REL = { nodes: [], edges: [], picked: null };
+
+function brnRelLoad() {
+  return api('/api/graph').then(function (r) {
+    if (!r || !r.ok) return null;
+    var b = r.body || {};
+    BRN_REL.nodes = (b.nodes || []).map(function (n) {
+      return { id: n.id || n.name || '', name: n.name || n.label || n.id || '', type: n.type || n.kind || '', raw: n };
+    }).filter(function (n) { return n.name; });
+    BRN_REL.edges = (b.edges || b.links || []).map(function (e) {
+      return { from: e.from || e.source || '', to: e.to || e.target || '', rel: e.rel || e.relation || e.type || '' };
+    });
+    return BRN_REL;
+  }).catch(function () { return null; });
+}
+
+function brnEscape(s2) { return String(s2).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); }
+
+function brnRelRender() {
+  var host = document.getElementById('brn-nodes');
+  if (!host) return;
+  var q = (document.getElementById('brn-q') || {}).value || '';
+  q = q.trim().toLowerCase();
+  var ns = BRN_REL.nodes;
+  if (q) ns = ns.filter(function (n) { return n.name.toLowerCase().indexOf(q) >= 0 || (n.type || '').toLowerCase().indexOf(q) >= 0; });
+  var cnt = document.getElementById('brn-count');
+  if (cnt) cnt.textContent = ns.length + ' / ' + BRN_REL.nodes.length;
+  host.innerHTML = ns.slice(0, 200).map(function (n) {
+    var on = BRN_REL.picked === n.name ? ' on' : '';
+    return '<button type="button" class="brn-node' + on + '" data-n="' + brnEscape(n.name) + '">' +
+             '<span class="t">' + brnEscape(n.name) + '</span>' +
+             (n.type ? '<span class="k">' + brnEscape(n.type) + '</span>' : '') +
+           '</button>';
+  }).join('') || '<div class="brn-empty">' + brnEscape(dz('没有匹配的节点', 'No matching nodes')) + '</div>';
+  brnDetail();
+}
+
+function brnDetail() {
+  var box = document.getElementById('brn-detail');
+  if (!box) return;
+  var n = BRN_REL.picked;
+  if (!n) {
+    box.innerHTML = '<div class="brn-detailempty">' + brnEscape(dz('点左侧任一节点，看它与谁相连。', 'Pick a node on the left to see what it links to.')) + '</div>';
+    return;
+  }
+  var out = BRN_REL.edges.filter(function (e) { return e.from === n || e.to === n; });
+  var deg = out.length;
+  var near = {};
+  out.forEach(function (e) {
+    var other = e.from === n ? e.to : e.from;
+    if (other) near[other] = (near[other] || 0) + 1;
+  });
+  var top = Object.keys(near).sort(function (a, b) { return near[b] - near[a]; }).slice(0, 12);
+  box.innerHTML =
+    '<div class="brn-dhead"><b>' + brnEscape(n) + '</b><span>' + deg + ' ' + brnEscape(dz('条关联', 'links')) + '</span></div>' +
+    '<div class="brn-edges">' + (out.slice(0, 60).map(function (e) {
+        var dir = e.from === n ? '→' : '←';
+        var other = e.from === n ? e.to : e.from;
+        return '<div class="brn-edge"><span class="d">' + dir + '</span>' +
+               '<span class="n2">' + brnEscape(other) + '</span>' +
+               (e.rel ? '<span class="r">' + brnEscape(e.rel) + '</span>' : '') + '</div>';
+      }).join('') || '<div class="brn-empty">' + brnEscape(dz('这个节点还没有关联边。', 'This node has no edges yet.')) + '</div>') + '</div>' +
+    (top.length ? '<div class="brn-dsub">' + brnEscape(dz('最常一起出现', 'Most co-occurring')) + '</div>' +
+      '<div class="brn-cloud">' + top.map(function (k) {
+        return '<span class="brn-chip">' + brnEscape(k) + ' <i>×' + near[k] + '</i></span>';
+      }).join('') + '</div>' : '');
+}
+
+function brnRelBind() {
+  var box = document.getElementById('brn-rel');
+  if (!box || box.__brnBound) return;
+  box.__brnBound = true;
+  box.addEventListener('input', function (e) { if (e.target && e.target.id === 'brn-q') brnRelRender(); });
+  box.addEventListener('click', function (e) {
+    var t = e.target;
+    while (t && t !== box && !(t.className && String(t.className).indexOf('brn-node') === 0)) t = t.parentElement;
+    if (t && t !== box) {
+      BRN_REL.picked = t.getAttribute('data-n');
+      brnRelRender();
+    }
+  });
+  brnRelLoad().then(function (ok) { if (ok) brnRelRender(); });
 }
 
 function dxPageWebhooks(el) {
