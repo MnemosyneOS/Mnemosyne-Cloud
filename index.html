@@ -2107,7 +2107,7 @@ body.docs #view{ display:block !important; }
 </style>
 <!-- 控制台 v9 样式：独立命名空间 .mc，颜色全部取自上面的设计令牌，
      所以自动跟随 白天 / 夜晚 / 跟随系统；必须排在页面样式之后才能覆盖 body.dash -->
-<link rel="stylesheet" href="assets/console.css" />
+<link rel="stylesheet" href="assets/console.css?v=9.1" />
 </head>
 
 <body>
@@ -2724,8 +2724,8 @@ body.docs #view{ display:block !important; }
 <!-- 控制台 v9：在站点主脚本之前加载。
      它只在被 renderDash() 调用时才取 window.MN，所以早加载不会有时序问题；
      晚加载反而会让「直达 #/dashboard/overview」白屏一次。 -->
-<script src="assets/console-graph.js"></script>
-<script src="assets/console.js"></script>
+<script src="assets/console-graph.js?v=9.1"></script>
+<script src="assets/console.js?v=9.1"></script>
 
 <script>
 /* ============================================================================
@@ -7219,10 +7219,16 @@ body.docs #view{ display:block !important; }
 
   function membersPanel(zh) {
     var body = CONSOLE.profiles.map(function (r) {
+      var srcTag = (r.account_source === 'registered')
+        ? (zh ? '注册账号' : 'account')
+        : (r.account_source === 'profile_only' ? (zh ? '仅资料' : 'profile') : '');
+      var roleTag = r.role === 'admin' ? (zh ? '管理员' : 'admin') : (zh ? '成员' : 'member');
       return '<tr>' +
         '<td class="strong">' + esc(r.display_name || '—') + '</td>' +
         '<td>' + esc(r.company || '—') + '</td>' +
         '<td>' + esc(r.plan || 'free') + '</td>' +
+        '<td>' + esc(roleTag) + '</td>' +
+        '<td>' + (srcTag ? esc(srcTag) : '—') + '</td>' +
         '<td class="mono" style="font-size:11.5px">' + esc(r.owner_id || '—') + '</td>' +
         '<td class="mono" style="white-space:nowrap">' + esc(when(r.created_at)) + '</td>' +
       '</tr>';
@@ -7233,7 +7239,8 @@ body.docs #view{ display:block !important; }
       : '';
     return tableOr(CONSOLE.profiles,
       '<th>' + (zh ? '名称' : 'Name') + '</th><th>' + (zh ? '公司' : 'Company') + '</th><th>' +
-      (zh ? '套餐' : 'Plan') + '</th><th>uid</th><th>' + (zh ? '注册时间' : 'Joined') + '</th>', body,
+      (zh ? '套餐' : 'Plan') + '</th><th>' + (zh ? '角色' : 'Role') + '</th><th>' +
+      (zh ? '来源' : 'Source') + '</th><th>uid</th><th>' + (zh ? '注册时间' : 'Joined') + '</th>', body,
       zh ? '还没有用户资料。' : 'No profiles yet.') + admins;
   }
 
@@ -7272,18 +7279,7 @@ body.docs #view{ display:block !important; }
       }
       if (!rows.length) { box.innerHTML = '<div class="kempty">还没有任何用户记忆库。</div>'; return; }
       var html = rows.map(function (r2) {
-        var cur = String(r2.namespace) === String(CONSOLE.nsCur);
-        var label = r2.namespace === 'default'
-          ? (lang === 'zh' ? 'default（站点自己的库）' : 'default (site\'s own)')
-          : (r2.owner ? String(r2.owner) : r2.namespace);
-        return '<button type="button" data-act="ns-open" data-v="' + esc(r2.namespace) + '"' +
-          ' style="display:block;width:100%;text-align:left;padding:9px 11px;border-radius:8px;margin-bottom:4px;' +
-          'border:1px solid ' + (cur ? 'var(--accent)' : 'transparent') + ';' +
-          'background:' + (cur ? 'var(--bg2,rgba(127,127,127,.08))' : 'transparent') + ';cursor:pointer">' +
-          '<div style="font-size:12.5px;word-break:break-all">' + esc(label) + '</div>' +
-          '<div class="mono" style="font-size:11px;color:var(--fg3);margin-top:2px">' +
-          esc(r2.namespace) + ' · ' + (r2.count || 0) + (lang === 'zh' ? ' 条 · ' : ' items · ') + esc(nmemBytes(r2.bytes)) + '</div>' +
-          '</button>';
+        return mnemRowHTML(r2, String(r2.namespace) === String(CONSOLE.nsCur));
       }).join('');
       box.innerHTML = html;
       /* 自动展开第一个用户库：点开 tab 即有数据可看，不用先猜要点谁 */
@@ -7363,19 +7359,42 @@ body.docs #view{ display:block !important; }
   function mnemPaintList(box) {
     if (!box || !CONSOLE.nsList.length) return;
     box.innerHTML = CONSOLE.nsList.map(function (r2) {
-      var cur = String(r2.namespace) === String(CONSOLE.nsCur);
-      var label = r2.namespace === 'default'
-        ? (lang === 'zh' ? 'default（站点自己的库）' : 'default (site own)')
-        : (r2.owner ? String(r2.owner) : r2.namespace);
-      return '<button type="button" data-act="ns-open" data-v="' + esc(r2.namespace) + '"' +
-        ' style="display:block;width:100%;text-align:left;padding:9px 11px;border-radius:8px;margin-bottom:4px;' +
-        'border:1px solid ' + (cur ? 'var(--accent)' : 'transparent') + ';' +
-        'background:' + (cur ? 'var(--bg2,rgba(127,127,127,.08))' : 'transparent') + ';cursor:pointer">' +
-        '<div style="font-size:12.5px;word-break:break-all">' + esc(label) + '</div>' +
-        '<div class="mono" style="font-size:11px;color:var(--fg3);margin-top:2px">' +
-        esc(r2.namespace) + ' · ' + (r2.count || 0) + (lang === 'zh' ? ' 条 · ' : ' items · ') + esc(nmemBytes(r2.bytes)) + '</div>' +
-        '</button>';
+      return mnemRowHTML(r2, String(r2.namespace) === String(CONSOLE.nsCur));
     }).join('');
+  }
+
+  /* 用户记忆左列的一行：除库名 / 条数 / 体积外，把账号来源、注册时间、
+     角色 / 套餐 / 提供商一并标出来 —— 管理员要的是「同一批人、信息全」，
+     而不是只看到几条有记忆的库。display_name 优先于 email 显示。 */
+  function mnemRowHTML(r2, cur) {
+    var label = r2.namespace === 'default'
+      ? (lang === 'zh' ? 'default（站点自己的库）' : 'default (site own)')
+      : (r2.display_name ? String(r2.display_name)
+                         : (r2.owner ? String(r2.owner) : r2.namespace));
+    var acctSrc = (r2.account_source === 'registered')
+      ? (lang === 'zh' ? '注册账号' : 'account')
+      : (r2.account_source === 'profile_only'
+          ? (lang === 'zh' ? '仅资料' : 'profile only') : '');
+    var meta = [];
+    if (r2.role && r2.role !== 'member') meta.push(esc(r2.role));
+    if (r2.plan) meta.push(esc(r2.plan));
+    if (r2.provider) meta.push(esc(r2.provider));
+    if (r2.created) meta.push(esc(when(r2.created)));
+    var parts = [];
+    if (r2.source) parts.push(esc(r2.source));
+    parts = parts.concat(meta);
+    var third = parts.join(' · ');
+    return '<button type="button" data-act="ns-open" data-v="' + esc(r2.namespace) + '"' +
+      ' style="display:block;width:100%;text-align:left;padding:9px 11px;border-radius:8px;margin-bottom:4px;' +
+      'border:1px solid ' + (cur ? 'var(--accent)' : 'transparent') + ';' +
+      'background:' + (cur ? 'var(--bg2,rgba(127,127,127,.08))' : 'transparent') + ';cursor:pointer">' +
+      '<div style="font-size:12.5px;word-break:break-all">' + esc(label) +
+        (acctSrc ? ' <span style="font-size:10.5px;color:var(--fg3)">[' + esc(acctSrc) + ']</span>' : '') + '</div>' +
+      '<div class="mono" style="font-size:11px;color:var(--fg3);margin-top:2px">' +
+        esc(r2.namespace || (lang === 'zh' ? '（无私有库）' : '(no store)')) + ' · ' +
+        (r2.count || 0) + (lang === 'zh' ? ' 条 · ' : ' items · ') + esc(nmemBytes(r2.bytes)) + '</div>' +
+      (third ? '<div style="font-size:10.5px;color:var(--fg3);margin-top:2px;line-height:1.5">' + third + '</div>' : '') +
+      '</button>';
   }
 
   function consoleHTML() {
@@ -8142,7 +8161,7 @@ function renderDash(path) {
   if (!window.__mnConsoleRetry) {
     window.__mnConsoleRetry = 1;
     var s = document.createElement('script');
-    s.src = 'assets/console.js';
+    s.src = 'assets/console.js?v=9.1';
     s.onload = function () { renderDash(path); };
     s.onerror = function () {
       var view = $('#view');
