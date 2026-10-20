@@ -11552,7 +11552,12 @@ function docsOpen(open) {
     var now = Date.now();
     if (!force && CFG && (now - CFG_AT) < CFG_TTL) return Promise.resolve(CFG);
     if (CFG_P) return CFG_P;
-    CFG_P = api('/api/site').then(function (r) {
+    /* 带时间戳：这份 JSON 决定登录页哪些第三方按钮是可点的。CDN 对
+       no-cache 会按 stale-while-revalidate 直接返旧副本（CF-Cache-Status:
+       REVALIDATED），后台刚保存的配置刷新后仍旧读不到，Google 按钮就一直灰着。
+       服务端已改成 no-store，这里再带一层 cache-bust 双保险 —— 几 KB 的
+       JSON 每次回源，换来「保存即生效」，这笔交换是值的。 */
+    CFG_P = api('/api/site?_=' + now).then(function (r) {
       CFG_P = null;
       if (r && r.ok && r.body && r.body.brand) {
         CFG = r.body; CFG_AT = Date.now();
