@@ -1843,10 +1843,33 @@ body.docs #view{ display:block !important; }
 .dx-btn.sm{ height:28px; padding:0 10px; font-size:12px; }
 
 /* --------------------------------------------------------------- cards */
-.dx-grid{ display:grid; gap:12px; }
-.dx-k4{ grid-template-columns:repeat(4,1fr); }
-.dx-k2{ grid-template-columns:repeat(2,1fr); }
-.dx-g3{ grid-template-columns:repeat(3,1fr); }
+/* min-width:0 + 子项 min-width:0：grid item 默认 min-width:auto，
+   列里的英文长句（"Unlimited end users"、"1,000 retrieval requests / month"）
+   会按最大内容撑宽列 —— 即使已经是单列，整个 dx-grid 照样溢出容器。
+   与首页 #res-grid 是同一个病。 */
+.dx-grid{ display:grid; gap:12px; min-width:0; }
+/* 兜底断行：英文长串（包名、URL、"Unlimited end users"、"1,000 retrieval
+   requests / month"）在 390 的单列里仍会溢出。逐个页面加规则治不住 ——
+   每加一段文案就复发一次，所以在 dx-body 顶层一次给齐。
+   anywhere 与 break-all 的区别：它只在行真的放不下时才断，正常单词不被拆开。 */
+.dx-body{ overflow-wrap:anywhere; }
+/* 中间容器也要 min-width:0：dx-chips / dx-field 本身已经是 flex-wrap 或
+   单列，但它们作为 flex/grid item 默认 min-width:auto，会被里面最长的
+   一个 chip / 一行英文撑宽，于是 wrap 无从发生。 */
+/* input 自带约 20 字符的默认 size，min-width:auto 下会把窄列撑破 58px */
+.dx-body input.inp{ min-width:0; width:100%; }
+.dx-body .dx-chips, .dx-body .dx-field, .dx-body .dx-f, .dx-body .f,
+.dx-body .dx-plan, .dx-body .dx-card, .dx-body .dx-kpi{ min-width:0; }
+
+.dx-k4{ grid-template-columns:repeat(4,minmax(0,1fr)); }
+.dx-k2{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+.dx-g3{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+/* KPI/表单栅格此前是固定 3/4 列，没有任何窄屏降级 —— 390 下 4 列每列只剩
+   82px，输入框与 KPI 直接把 dx-grid 撑破，实测 install 溢 41–54px、
+   billing 溢 37–160px。按容器宽度逐级收列。 */
+@media (max-width:1080px){ .dx-k4{ grid-template-columns:repeat(2,1fr); } }
+@media (max-width:640px){ .dx-g3{ grid-template-columns:1fr; } }
+@media (max-width:520px){ .dx-k4, .dx-k3{ grid-template-columns:1fr; } }
 @media (max-width:1100px){ .dx-k4{ grid-template-columns:repeat(2,1fr); } .dx-k2,.dx-g3{ grid-template-columns:1fr; } }
 .dx-card{ border:1px solid var(--d-line); border-radius:8px; background:var(--d-panel); padding:15px 16px; }
 .dx-card.pad0{ padding:0; }
