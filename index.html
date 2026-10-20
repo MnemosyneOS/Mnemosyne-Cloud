@@ -2823,6 +2823,7 @@ body.docs #view{ display:block !important; }
         { t: 'Documentation', d: 'Integrate Mnemosyne OS into your product', href: '#/docs' },
         { t: 'API Reference', d: 'The API for integrating memory', href: '#/api' },
         { t: 'MCP Integration', d: 'Connect Mnemosyne OS to Claude Code, Cursor and more', href: '#/mcp' },
+        { t: 'Memory formation', d: 'Summaries, conflict resolution, task and code memory', href: '#/docs/memory-formation' },
         { t: 'CLI', d: 'Manage memory from the terminal', href: '#/cli' },
         { t: 'Trust Center', d: 'Security, compliance and certification', href: '#/trust' },
         { t: 'Status', d: 'Runtime health and event history', href: '#/status' }
@@ -2953,7 +2954,7 @@ body.docs #view{ display:block !important; }
       ['Offline operation', 'Yes (FTS5 fallback)', 'No', 'No'],
       ['Tamper-evident audit', 'SHA-256 hash-chain ledger', 'None', 'None'],
       ['Temporal knowledge graph', 'Native TripleStore version chain', 'Limited', 'Assembled by hand'],
-      ['Agent integration', '40 MCP tools, out of the box', 'REST API', 'Custom tool layer required'],
+      ['Agent integration', '52 MCP tools, out of the box', 'REST API', 'Custom tool layer required'],
       ['License & cost', 'MIT · self-hosted $0', 'Usage-based', 'Vectors + seats']
     ],
 
@@ -2973,7 +2974,7 @@ body.docs #view{ display:block !important; }
           ['1,000 recalls / month', 0],
           ['1 project', 0],
           ['BEAM bi-layer memory + temporal TripleStore', 0],
-          ['All 40 MCP tools, no feature gating', 0],
+          ['All 52 MCP tools, no feature gating', 0],
           ['AIC compression capsule — capsule / expand / recall_health', 0],
           ['Pure SQLite, zero third-party dependencies', 0],
           ['SHA-256 hash-chain ledger + security notary redaction', 0],
@@ -3566,7 +3567,7 @@ body.docs #view{ display:block !important; }
 
       api: {
         eyebrow: 'API Reference', h1: 'The memory API, without the ceremony',
-        lede: 'One Python class, one CLI, one HTTP surface and 40 MCP tools — all backed by the same SQLite file. Nothing is a bespoke interface, so an agent can use the SDK and a dashboard can read the same store.',
+        lede: 'One Python class, one CLI, one HTTP surface and 52 MCP tools — all backed by the same SQLite file. Nothing is a bespoke interface, so an agent can use the SDK and a dashboard can read the same store.',
         cta: [['MCP Integration', '#/mcp', 'primary'], ['CLI reference', '#/cli', 'ghost']],
         blocks: [
           { h: 'Python — MemoryBrain',
@@ -3736,11 +3737,12 @@ body.docs #view{ display:block !important; }
             code: { n: 'bash', b: [
               'python mnemosyne.py --dir ./mem export --format json --out ./memories.json',
               'python mnemosyne.py --dir ./mem import ./memories.json',
-              'python mnemosyne.py --dir ./mem migrate --jsonl ./mem/index.jsonl'
+              '# migrate only applies to the legacy JSONL backend:',
+              'python mnemosyne.py --dir ./old migrate --jsonl ./old/index.jsonl'
             ].join('\n') } },
 
           { h: 'Local dashboard',
-            p: 'A dark admin interface served from the package itself — no external CDN, no telemetry, no account. Memory browser, graph view and runtime stats.',
+            p: 'A dark admin interface served from the package itself — no external CDN, no telemetry, no cloud dependency. Memory browser, graph view and runtime stats.',
             code: { n: 'bash', b: [
               'python -m mnemosyne.webui.web_server --port 9090',
               '# http://127.0.0.1:9090 — default account admin / mnemosyne'
@@ -3996,7 +3998,7 @@ body.docs #view{ display:block !important; }
       /* --------------------------------------------------------- Pricing */
       pricing: {
         eyebrow: 'Pricing', h1: 'Simple and affordable',
-        lede: 'The engine is MIT and the free tier is not crippled — all 40 MCP tools ship in it. Paid tiers buy hosting, multi-tenancy and compliance delivery, never a feature you already have.',
+        lede: 'The engine is MIT and the free tier is not crippled — all 52 MCP tools ship in it. Paid tiers buy hosting, multi-tenancy and compliance delivery, never a feature you already have.',
         plans: true,
         blocks: [
           { h: 'What you are actually paying for',
@@ -4187,7 +4189,7 @@ body.docs #view{ display:block !important; }
             p: 'Six months of work, measured in public rather than asserted.',
             tools: [
               ['Version 8.1.0 — 22 September 2026', 'Four releases in four weeks, each one shipping the defects it found as documentation.'],
-              ['40 MCP tools', 'Every capability reachable over the public protocol, on every tier including the free one.'],
+              ['52 MCP tools', 'Every capability reachable over the public protocol, on every tier including the free one.'],
               ['Nine README languages', 'English, 简体中文, 繁體中文, Español, Русский, Deutsch, ไทย, 한국어, 日本語.'],
               ['0 third-party dependencies', 'install_requires is an empty list — and a regression test that fails if it stops being one.'],
               ['298 MB at 100,000 records', 'The whole store resident in memory, which is what makes 0.21 ms recall possible without a vector service.']
@@ -4532,7 +4534,8 @@ body.docs #view{ display:block !important; }
             code: { n: 'bash', b: [
               'python mnemosyne.py --dir ./mem export --format json --out ./memories.json',
               'python mnemosyne.py --dir ./mem import ./memories.json',
-              'python mnemosyne.py --dir ./mem migrate --jsonl ./mem/index.jsonl'
+              '# migrate 只对旧版 JSONL 后端有效（SQLite 库没有 index.jsonl）:',
+              'python mnemosyne.py --dir ./old migrate --jsonl ./old/index.jsonl'
             ].join('\n') } },
 
           { h: '本地控制台',
@@ -10332,6 +10335,7 @@ function preloadAvatarData(data) {
 var DOCS_GROUPS = [
   { id: 'start', z: '开始使用', e: 'Get started', items: ['introduction', 'quickstart'] },
   { id: 'platform', z: '平台', e: 'Platform', items: ['open-source'] },
+  { id: 'formation', z: '记忆运行', e: 'Memory runtime', items: ['memory-formation'] },
   { id: 'integrations', z: '集成', e: 'Integrations', items: ['integrations', 'claude-code'] },
   { id: 'reference', z: '参考', e: 'Reference', items: ['cookbooks', 'api-reference', 'changelog'] }
 ];
@@ -10340,6 +10344,7 @@ var DOCS_META = {
   introduction: ['介绍', 'Introduction'],
   quickstart: ['快速开始', 'Quickstart'],
   'open-source': ['开源概览', 'Open source'],
+  'memory-formation': ['记忆形成层', 'Memory formation'],
   integrations: ['集成', 'Integrations'],
   'claude-code': ['Claude Code', 'Claude Code'],
   cookbooks: ['食谱', 'Cookbooks'],
@@ -10348,6 +10353,49 @@ var DOCS_META = {
 };
 
 var DOCS_ZH = {
+  'memory-formation': {
+    crumb: '平台', h1: '记忆形成层',
+    lead: '8.0.0 擅长把记忆找回来；8.1.0 补上「把经历变成记忆」。会话结束时自动沉淀摘要与事实，矛盾时按显式策略失效而非删除，任务与代码的演进各有一条可回溯的链路。',
+    blocks: [
+      { h: '会话摘要：七要素 + 抗漂移', id: 'summary', blocks: [
+        { p: '每轮对话结束时抽取一份摘要，必须覆盖七类信息 —— 目标、约束、决策及理由、未决项、产物、失败尝试、偏好信号。少于这七项，摘要三个月后就会退化成一本读不完的日记。' },
+        { p: '滚动摘要会漂移：每次用「上一版摘要 + 新对话」重写，误差会累积。三条约束压制它：用户原话、数字、路径以原文钉住不参与改写；新信息只追加，冲突时才改写并记录原因；每 20 轮丢弃旧摘要、直接从原文重建一次。' },
+        { code: 'session_summarize(turns, rebuild_every=20)\ntopic_summarize(project, window_days=30)' }
+      ] },
+      { h: '冲突消解：九类关系，默认保守', id: 'conflict', blocks: [
+        { p: '新事实进来先检索语义相近的既有记忆，判定九类关系之一，再决定动作。默认能并存就并存、能失效就不删除 —— 删掉的记忆无法回答「去年我在哪家公司」，失效的可以。' },
+        { table: [
+          ['关系', '动作'],
+          ['重复 / 细化', 'NOOP（只上调置信度、追加证据）'],
+          ['时间性更新 / 偏好变更', 'UPDATE（旧条打 t_invalid，与新条并存）'],
+          ['作用域不同（伪冲突）', 'ADD（靠 scope 隔离）'],
+          ['精度差异', 'NOOP（粗粒度版标 superseded）'],
+          ['逻辑矛盾 / 来源冲突', 'KEEP_BOTH（降权 + 待确认）']
+        ] },
+        { callout: '逻辑矛盾不自动选边。自动选一边必然错一半，而下次对话问一句的成本极低。' }
+      ] },
+      { h: '任务与经验：两个库，一条闭环', id: 'working', blocks: [
+        { p: '事实层只追加、不改写：这次任务做了什么、结果如何。经验层在同类任务成功两次后才归纳，且必须带适用条件 —— must / must_not / typical_env 三件套。' },
+        { p: '经验不带条件就会负迁移：条件不匹配时，Agent 会自信地把上一次的做法套到这一次。所以注入时只给 applicable=true 的条目，并且写成「参考建议」而不是「必须执行」。' },
+        { code: 'task_record(goal, goal_type, steps, outcome, rework_count)\nplaybook_save(pattern, preconditions, failure_modes)\nplaybook_save(memory_id=..., success=False, deviation="为什么没按它做")' }
+      ] },
+      { h: '代码演进：git 存不下的三件事', id: 'coding', blocks: [
+        { p: 'git 存了改了什么、谁改的，但存不下为什么改、试过什么不行、当时的约束是什么。变更事件补的正是这三块，外加一条 parent 链 —— 让 Agent 能回答「这段代码为什么长这样」。' },
+        { ul: [
+          'intent / intent_type —— 这次改动想解决什么',
+          'rejected_approaches —— 试过但放弃的方案，信息密度最高',
+          'outcome / reverted_by / regression —— 合并、回滚、回归',
+          'symbols / impact —— 符号级锚点，比文件级精准'
+        ] },
+        { code: 'code_change_record(repo, commit, intent, rejected_approaches)\ncode_archaeology(symbol)   # 最近三次意图 / 是否被回滚 / 已知约束' }
+      ] },
+      { h: '敏感度治理：写入前拦，不是事后清', id: 'policy', blocks: [
+        { p: '三级敏感度：normal 正常入库，private 入库但限制外泄，secret 直接拒写。身份证、银行卡、API 密钥、明文密码、Bearer Token 命中即拒。' },
+        { p: '来源也参与排序：用户显式陈述 > 工具返回 > 用户隐含 > 外部网页。外部内容默认最低权重，且不参与「用户偏好」类记忆的写入 —— 这是防记忆投毒的第一道防线。' },
+        { code: 'memory_policy(content)    # -> {level, reasons}\nmemory_trace(memory_id)   # 谁、何时、从哪条消息写入' }
+      ] }
+    ]
+  },
   introduction: {
     crumb: '开始使用', h1: '介绍',
     lead: 'Mnemosyne OS 是一个本地优先的 AI 记忆引擎：代理把值得留下的事实写进去，之后按语义取回来。数据、索引和审计链都在你自己的机器上。',
@@ -10614,6 +10662,49 @@ var DOCS_ZH = {
 };
 
 var DOCS_EN = {
+  'memory-formation': {
+    crumb: 'Platform', h1: 'Memory formation',
+    lead: '8.0.0 was good at finding memories again; 8.1.0 closes the other half — turning experience into memory. Sessions end with a summary and atomic facts, contradictions are invalidated rather than deleted, and both task and code history stay traceable.',
+    blocks: [
+      { h: 'Session summaries: seven elements, and drift control', id: 'summary', blocks: [
+        { p: 'Every session ends with a summary that must cover seven things: goal, constraints, decisions and why, open items, artifacts, failed attempts and preference signals. Miss any of them and the summary degrades into an unreadable diary within three months.' },
+        { p: 'Rolling summaries drift, because each version is written from the previous one plus new turns. Three constraints hold it back: quotes, numbers and paths are pinned verbatim and never rewritten; new information is appended, and old text is only rewritten on a direct conflict with the reason recorded; every 20 turns the summary is discarded and rebuilt from the raw turns.' },
+        { code: 'session_summarize(turns, rebuild_every=20)\ntopic_summarize(project, window_days=30)' }
+      ] },
+      { h: 'Conflict resolution: nine relations, conservative by default', id: 'conflict', blocks: [
+        { p: 'A new fact first retrieves semantically close memories, classifies the relation, then picks an action. When in doubt, keep both and invalidate rather than delete — a deleted memory cannot answer “where did I work last year”, an invalidated one still can.' },
+        { table: [
+          ['Relation', 'Action'],
+          ['Duplicate / refinement', 'NOOP (raise confidence, append evidence)'],
+          ['Temporal update / preference change', 'UPDATE (old row gets t_invalid, both kept)'],
+          ['Different scope (pseudo-conflict)', 'ADD (isolated by scope)'],
+          ['Precision difference', 'NOOP (coarse version marked superseded)'],
+          ['Logical contradiction / source conflict', 'KEEP_BOTH (down-weight, ask later)']
+        ] },
+        { callout: 'Logical contradictions are never auto-resolved. Picking a side is wrong half the time; asking once in the next session costs almost nothing.' }
+      ] },
+      { h: 'Tasks and playbooks: two stores, one loop', id: 'working', blocks: [
+        { p: 'The fact store is append-only: what was done, and how it turned out. The playbook store only abstracts after the same class of task succeeded twice, and every playbook must carry its applicability conditions — must, must_not and typical_env.' },
+        { p: 'An experience without conditions causes negative transfer: when the situation does not match, the agent confidently applies the wrong recipe. So only entries with applicable=true are injected, and they are phrased as suggestions rather than mandatory steps.' },
+        { code: 'task_record(goal, goal_type, steps, outcome, rework_count)\nplaybook_save(pattern, preconditions, failure_modes)\nplaybook_save(memory_id=..., success=False, deviation="why it was skipped")' }
+      ] },
+      { h: 'Code evolution: what git cannot store', id: 'coding', blocks: [
+        { p: 'git stores what changed and who changed it. It does not store why, what was tried and rejected, or which constraints applied at the time. A change event carries exactly those three, plus a parent chain — enough for an agent to answer “why does this code look like this”.' },
+        { ul: [
+          'intent / intent_type — what the change was trying to solve',
+          'rejected_approaches — approaches tried and abandoned, the highest-value field',
+          'outcome / reverted_by / regression — merged, reverted, regressed',
+          'symbols / impact — symbol-level anchors, sharper than file paths'
+        ] },
+        { code: 'code_change_record(repo, commit, intent, rejected_approaches)\ncode_archaeology(symbol)   # last three intents / reverted? / known constraints' }
+      ] },
+      { h: 'Sensitivity: stopped at write time, not cleaned up later', id: 'policy', blocks: [
+        { p: 'Three levels: normal is stored as-is, private is stored but never leaves the machine, secret is rejected outright. National IDs, card numbers, API keys, plaintext passwords and bearer tokens are refused on sight.' },
+        { p: 'Source also weighs in: explicit user statement > tool result > implicit user signal > external web. External content gets the lowest weight and never writes preference-type memories — the first line of defence against memory poisoning.' },
+        { code: 'memory_policy(content)    # -> {level, reasons}\nmemory_trace(memory_id)   # who, when, from which message' }
+      ] }
+    ]
+  },
   introduction: {
     crumb: 'Get started', h1: 'Introduction',
     lead: 'Mnemosyne OS is a local-first memory engine for AI agents: they write down what is worth keeping, then read it back by meaning. The data, the index and the audit chain stay on your machine.',
@@ -10736,7 +10827,7 @@ var DOCS_EN = {
         ] }
       ] },
       { h: 'The tool list', id: 'tools', blocks: [
-        { p: 'The gateway exposes 40 MCP tools today. The ones used most:' },
+        { p: 'The gateway exposes 52 MCP tools today. The ones used most:' },
         { ul: [
           '<code>retain</code> / <code>retain_batch</code> — write one memory, or many.',
           '<code>recall</code> — search by meaning, filterable by type and tags.',
