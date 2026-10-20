@@ -66,6 +66,13 @@
       var b = (r && r.ok && r.body) || {};
       MC.isAdmin = !!b.isAdmin;
       MC.me = b.me || {};
+      /* 未登录直达 #/dashboard/* 时不能画一个空壳控制台 —— 满屏 401、
+         侧栏还显示"未登录"，比直接回登录页更让人困惑。 */
+      if (!MC.me || MC.me.signedIn !== true) {
+        MC.signedOut = true;
+        location.hash = '#/login';
+        return false;
+      }
       return MC.isAdmin;
     }).catch(function () {
       MC.isAdmin = false;
@@ -299,7 +306,10 @@
       if (v0) { v0.hidden = false; v0.innerHTML = '<div style="padding:60px;display:flex;gap:10px;align-items:center;font-size:13px"><span class="mc-spin"></span>加载中…</div>'; }
       var home0 = document.getElementById('home');
       if (home0) home0.classList.add('off');
-      ensureRole().then(function () { render(path); });
+      ensureRole().then(function () {
+        if (MC.signedOut) return;      /* 已跳登录页，不再画壳 */
+        render(path);
+      });
       return;
     }
     if (!isAdmin() && (rest === 'users' || rest === 'tools' || rest === 'audit')) rest = 'overview';
