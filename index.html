@@ -1240,7 +1240,7 @@
     stroke:var(--logo-word); stroke-width:1.05px; paint-order:stroke fill; }
   /* OS 与前面反着来：字距从 4px 收到 1px（原来像两个不相干的字母），
      字重提到 900、描边加厚到 1.05，让它作为后缀站得住。 */
-  .logo .lg-os{ fill:var(--logo-os); font-size:22px; font-weight:900; letter-spacing:1px;
+  .logo .lg-os{ fill:var(--logo-os); font-size:32px; font-weight:900; letter-spacing:1px;
     stroke:var(--logo-os); stroke-width:1.05px; paint-order:stroke fill; }
 
   /* ----------------------------------------------------- integrations */
@@ -1969,11 +1969,31 @@ body.docs #view{ display:block !important; }
    display:flex + min-height:100vh（为「侧栏 + 主体」而写）。直接拼接会让
    四个块被横着排、还撑出一屏空白 —— 这就是错行的来源。这里只关掉整页行为，
    改成竖直堆叠的卡片，并让网格按可用宽度自适应换行。 */
-.site-cfg{ display:block; min-height:auto; background:transparent; }
+.site-cfg{
+  /* 这一页是长表单，深色面板读起来很累，而且一旦背景透明就会变成
+     「白底 + 深色主题的近白文字」—— 实测对比度接近 0，整页看不见字。
+     所以整套变量在这里就地换成浅色主题：深字、浅框、浅描边。
+     只作用于 .site-cfg 子树，不影响控制台其它页面。 */
+  display:block; min-height:auto;
+  --d-panel:#FFFFFF; --d-panel2:#F6F5FA;
+  --d-line:rgba(16,16,24,.10); --d-line2:rgba(16,16,24,.18);
+  --d-fg:#17151F; --d-fg2:#4A4757; --d-fg3:#75717F;
+  --d-accent:#6D4AE0; --d-accent2:#5B3FD6;
+  background:#FBFBFD; color:var(--d-fg);
+  border-radius:12px;
+}
 .site-cfg .site-sec{ background:transparent; border:1px solid var(--d-line);
   border-radius:12px; padding:18px 20px; margin-bottom:14px; }
 .site-cfg .dx-hrow{ margin-bottom:14px; }
 .site-cfg .dx-hrow .dx-h1{ font-size:16px; font-weight:600; }
+/* 深色主题里这两处是「浅紫字 + 淡紫底」和「无边框纯白按钮」——
+   搬到浅底上，前者读不清、后者看不出轮廓。只在本页子树内改。 */
+.site-cfg .dx-note{
+  background:#F4F1FE; border-color:rgba(109,74,224,.22); color:#463A66;
+}
+.site-cfg .dx-btn{ border:1px solid var(--d-line2); }
+.site-cfg .dx-btn.gh{ background:#fff; }
+.site-cfg .dx-btn:hover{ background:#EDEAF7; }
 /* 一条规则覆盖 dx-grid / dx-k2 / dx-g3 / dx-k4 的所有变体：
    特异性比单个 .dx-xx 高，窄容器里会自动落到单列，不再挤压错行。 */
 .site-cfg .dx-grid{ grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); }
@@ -2012,7 +2032,7 @@ body.docs #view{ display:block !important; }
   <div class="max-w-shell mx-auto h-full px-5 sm:px-8 flex items-center">
 
     <a href="#top" class="shrink-0" aria-label="Mnemosyne OS">
-      <svg class="logo" viewBox="4 14 310 68" role="img" aria-label="Mnemosyne OS">
+      <svg class="logo" viewBox="4 14 330 68" role="img" aria-label="Mnemosyne OS">
         <g transform="translate(4,16)">
           <g class="lg-line" fill="none" stroke-linecap="round">
             <line x1="32.0" y1="32.0" x2="47.40" y2="32.00"/><line x1="32.0" y1="32.0" x2="39.70" y2="45.34"/>
@@ -2038,7 +2058,7 @@ body.docs #view{ display:block !important; }
           <circle class="lg-core" cx="32.0" cy="32.0" r="6.6"/>
         </g>
         <text class="lg-word" x="90" y="59" textLength="184" lengthAdjust="spacingAndGlyphs">mnemosyne</text>
-        <text class="lg-os" x="284" y="58">OS</text>
+        <text class="lg-os" x="282" y="59">OS</text>
       </svg>
     </a>
 
@@ -2539,7 +2559,7 @@ body.docs #view{ display:block !important; }
 
       <div class="shrink-0 lg:w-[216px]">
         <a href="#top" aria-label="Mnemosyne OS" class="inline-block">
-          <svg class="logo logo-lg" viewBox="4 14 310 68" role="img" aria-label="Mnemosyne OS">
+          <svg class="logo logo-lg" viewBox="4 14 330 68" role="img" aria-label="Mnemosyne OS">
             <g transform="translate(4,16)">
               <g class="lg-line" fill="none" stroke-linecap="round">
                 <line x1="32.0" y1="32.0" x2="47.40" y2="32.00"/><line x1="32.0" y1="32.0" x2="39.70" y2="45.34"/>
@@ -2565,7 +2585,7 @@ body.docs #view{ display:block !important; }
               <circle class="lg-core" cx="32.0" cy="32.0" r="6.6"/>
             </g>
             <text class="lg-word" x="90" y="59" textLength="184" lengthAdjust="spacingAndGlyphs">mnemosyne</text>
-            <text class="lg-os" x="284" y="58">OS</text>
+            <text class="lg-os" x="282" y="59">OS</text>
           </svg>
         </a>
 
@@ -5249,7 +5269,9 @@ body.docs #view{ display:block !important; }
       var btn = $('[data-menu="' + id + '"]');
       if (btn) btn.setAttribute('aria-expanded', 'false');
       // 打开来源随面板一起清掉，否则下次 hover 展开会残留上一次的 click 标记
-      try { delete panel.dataset.openedBy; } catch (err) { /* 老浏览器无 dataset，忽略 */ }
+      // 注意这里必须用循环变量 m：写成 panel 会抛 ReferenceError，而它被
+      // catch 吞掉，症状就是「hover 展开后一点就消失」，且控制台看不到任何报错。
+      try { delete m.dataset.openedBy; } catch (err) { /* 老浏览器无 dataset，忽略 */ }
     });
   }
 
