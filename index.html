@@ -2107,7 +2107,7 @@ body.docs #view{ display:block !important; }
 </style>
 <!-- 控制台 v9 样式：独立命名空间 .mc，颜色全部取自上面的设计令牌，
      所以自动跟随 白天 / 夜晚 / 跟随系统；必须排在页面样式之后才能覆盖 body.dash -->
-<link rel="stylesheet" href="assets/console.css?v=10.0" />
+<link rel="stylesheet" href="assets/console.css?v=10.1" />
 </head>
 
 <body>
@@ -2724,10 +2724,10 @@ body.docs #view{ display:block !important; }
 <!-- 控制台 v9：在站点主脚本之前加载。
      它只在被 renderDash() 调用时才取 window.MN，所以早加载不会有时序问题；
      晚加载反而会让「直达 #/dashboard/overview」白屏一次。 -->
-<script src="assets/console-graph.js?v=10.0"></script>
-<script src="assets/console.js?v=10.0"></script>
+<script src="assets/console-graph.js?v=10.1"></script>
+<script src="assets/console.js?v=10.1"></script>
 <!-- 演示舞台：给商业合作伙伴看的 10 章剧本。独立文件，只在演示页被调用。 -->
-<script src="assets/console-demo.js?v=10.0"></script>
+<script src="assets/console-demo.js?v=10.1"></script>
 
 <script>
 /* ============================================================================
@@ -5505,9 +5505,13 @@ body.docs #view{ display:block !important; }
                 '<span class="d">' + (zh ? '留言、成员、管理员与站点配置'
                                           : 'Leads, members, administrators, site settings') + '</span></a>'
               : '') +
-            '<a href="#/admin" data-ctab="account"><span class="t">' +
-              (zh ? '账号设置' : 'Account settings') + '</span>' +
-              '<span class="d">' + (zh ? '头像、资料与密码' : 'Picture, profile and password') + '</span></a>' +
+            (DX_ROLE.loaded && isAdmin()
+              ? '<a href="#/admin" data-ctab="account"><span class="t">' +
+                (zh ? '账号设置' : 'Account settings') + '</span>' +
+                '<span class="d">' + (zh ? '头像、资料与密码' : 'Picture, profile and password') + '</span></a>'
+              : '<a href="#/dashboard/settings"><span class="t">' +
+                (zh ? '账号设置' : 'Account settings') + '</span>' +
+                '<span class="d">' + (zh ? '显示名与密码' : 'Display name and password') + '</span></a>') +
             '<button class="ma" type="button" data-act="signout">' +
               (zh ? '退出登录' : 'Sign out') + '</button>' +
           '</div>' +
@@ -7867,6 +7871,27 @@ body.docs #view{ display:block !important; }
       return;
     }
 
+    /* 后台管理只对管理员开放。
+       2026-10-21 审计：成员直接敲 #/admin 会看到一个"我的账号"精简版
+       （总览 / 留言 / 账号安全），虽然拿不到任何管理数据，但那是**后台的壳**，
+       客户/成员看到会以为自己进了管理端。成员的账号设置已经搬进
+       控制台「设置」，这里直接送回控制台。 */
+    if (path === 'admin' && !(DX_ROLE.loaded && isAdmin())) {
+      if (!DX_ROLE.loaded) { dxEnsureRole().then(function () { route(); }); return; }
+      view.innerHTML = '<div class="shell"><div style="max-width:520px;margin:12vh auto;text-align:center">' +
+        '<h1 style="font-size:20px;font-weight:600;margin:0 0 8px">' +
+        esc(lang === 'zh' ? '后台管理仅限管理员' : 'Admin only') + '</h1>' +
+        '<p style="font-size:13px;color:var(--fg2);line-height:1.8">' +
+        esc(lang === 'zh'
+            ? '你的账号设置与控制台都在「控制台」里。'
+            : 'Your account settings live in the console.') + '</p>' +
+        '<p style="margin-top:16px"><a class="btn btn-primary btn-sm" href="#/dashboard/overview">' +
+        esc(lang === 'zh' ? '进入控制台' : 'Open the console') + '</a></p></div></div>';
+      document.title = (lang === 'zh' ? '无权访问' : 'Not allowed') + ' — Mnemosyne OS';
+      icons();
+      return;
+    }
+
     view.innerHTML = consoleHTML();
     document.title = (lang === 'zh' ? '账号控制台' : 'Console') + ' — Mnemosyne OS';
     icons();
@@ -8457,7 +8482,7 @@ function renderDash(path) {
   if (!window.__mnConsoleRetry) {
     window.__mnConsoleRetry = 1;
     var s = document.createElement('script');
-    s.src = 'assets/console.js?v=10.0';
+    s.src = 'assets/console.js?v=10.1';
     s.onload = function () { renderDash(path); };
     s.onerror = function () {
       var view = $('#view');
