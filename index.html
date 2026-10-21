@@ -3765,7 +3765,7 @@ body.docs #view{ display:block !important; }
               '# first run creates admin / mnemosyne — change the password after login'
             ].join('\n') } },
 
-          { note: 'Protocol version 2024-11-05. The MCP surface stays backward compatible: 13 tools in 7.0.0, 14 in 7.0.1, 20 in 7.0.2, 31 in 8.1.0, with every addition purely additive.' }
+          { note: 'Protocol versions 2024-11-05 / 2025-03-26 / 2025-06-18, negotiated at initialize: the server echoes the client proposal when it supports it, otherwise answers with its own highest. The MCP surface stays backward compatible: 13 tools in 7.0.0, 14 in 7.0.1, 20 in 7.0.2, 31 in 8.0.0, 52 in 8.1.0, with every addition purely additive.' }
         ]
       },
 
@@ -4565,7 +4565,7 @@ body.docs #view{ display:block !important; }
               '# 首次运行会创建 admin / mnemosyne —— 登录后请改密码'
             ].join('\n') } },
 
-          { note: '协议版本 2024-11-05。MCP 工具面保持向后兼容：7.0.0 是 13 个，7.0.1 是 14 个，7.0.2 是 20 个，8.0.0 是 31 个，8.1.0 是 52 个，每次增加都是纯增量。' }
+          { note: '协议版本 2024-11-05 / 2025-03-26 / 2025-06-18 三档，在 initialize 时协商：客户端提议的版本在支持列表内就照它回，否则回服务端自己最高的那一档。MCP 工具面保持向后兼容：7.0.0 是 13 个，7.0.1 是 14 个，7.0.2 是 20 个，8.0.0 是 31 个，8.1.0 是 52 个，每次增加都是纯增量。' }
         ]
       },
 
