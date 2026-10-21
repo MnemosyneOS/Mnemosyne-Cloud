@@ -25,17 +25,18 @@
      /api/dash/* 会挂到网关超时才回来（十几秒）。前端如果不设上限，
      用户看到的就是"永远转圈" —— 这正是旧控制台被骂"菜单点不动"的成因之一。
      超时后返回一个可识别的失败，页面照常渲染骨架并显式说明"引擎没响应"。 */
-  function api(p, b) {
+  function api(p, b, timeoutMs) {
     var m = mn();
     if (!m.api) return Promise.resolve({ ok: false, status: 0, body: { __err: 'no api' } });
     return new Promise(function (resolve) {
       var done = false;
+      /* 默认 15 秒。演示里的"记忆抽取"要等模型，必须单独放宽（见 postSlow）。 */
       var timer = setTimeout(function () {
         if (done) return;
         done = true;
         MC.degraded = true;
         resolve({ ok: false, status: 0, body: { __timeout: true } });
-      }, 15000);
+      }, timeoutMs || 15000);
       m.api(p, b).then(function (r) {
         if (done) return;
         done = true; clearTimeout(timer);
@@ -2005,6 +2006,12 @@
   window.MCDemoHost = {
     api: api,
     post: post,
+    /* 慢接口：记忆抽取要等模型（最长 40 秒），15 秒超时会把"正在思考"误判成失败 */
+    postSlow: function (p, b) {
+      return api(p, { method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(b || {}) }, 70000);
+    },
     esc: esc,
     dz: dz,
     toast: toast,
