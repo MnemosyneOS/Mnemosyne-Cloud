@@ -1641,8 +1641,8 @@
           esc(dz('复制', 'Copy')) + '</span></div>' +
         '<div class="mc-note" style="margin-top:10px">' + esc(zhNow() ? (a.zh_how || '') : (a.en_how || '')) + '</div>' +
         (a.auto ? '' : '<div class="mc-note warn" style="margin-top:8px">' + esc(dz(
-          '这个客户端没有稳定的配置文件，脚本会打印两步点击路径，照着点即可。',
-          'This client has no stable config file; the script prints the two clicks you need.')) + '</div>') +
+          '这个客户端没有可自动写入的配置文件 —— 脚本会把该点的地方打印出来，照着做即可。',
+          'This client has no auto-writable config file; the script prints the clicks you need.')) + '</div>') +
         '<div class="mc-h2">' + esc(dz('不想跑脚本？手动填两行', 'Prefer manual? Two fields')) + '</div>' +
         '<div class="mc-code">URL: ' + esc(s.mcp_url || '') + '\nAuthorization: Bearer ' + esc(s.key || '') + '</div>' +
         '</div>';
