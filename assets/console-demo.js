@@ -29,7 +29,6 @@
     state: null,
     chat: { A: [], B: [] },
     busy: { A: false, B: false, flow: false },
-    mode: { A: 'remember', B: 'remember' },
     chapter: 0,
     done: {},
     full: false,
@@ -449,8 +448,11 @@
     var acc = account();
     return '' +
       (acc ? accountHTML(acc) : registerHTML()) +
-      chatHTML('A', dz('会话 A · 同会话', 'Session A'), '先说点你自己的事') +
-      chatHTML('B', dz('会话 B · 跨会话', 'Session B'), '这里没有历史消息，看它记不记得');
+      chatHTML('A', dz('会话 A · 同会话', 'Session A'),
+               dz('像平时一样说话：说的事会被记住，问的问题会被回答',
+                  'Just talk: statements are remembered, questions are answered')) +
+      chatHTML('B', dz('会话 B · 跨会话', 'Session B'),
+               dz('这里没有历史消息，直接问它试试', 'No history here — just ask'));
   }
 
   function registerHTML() {
@@ -486,7 +488,6 @@
 
   function chatHTML(session, title, ph) {
     var msgs = D.chat[session] || [];
-    var mode = D.mode[session];
     return '' +
       '<div class="sb-chat" data-session="' + session + '">' +
         '<div class="sb-chat-hd">' +
@@ -495,12 +496,6 @@
         '</div>' +
         '<div class="sb-msgs" id="sb-msgs-' + session + '">' + msgsHTML(session) + '</div>' +
         '<div class="sb-composer">' +
-          '<div class="sb-modes">' +
-            '<button class="' + (mode === 'remember' ? 'on' : '') + '" data-dm="mode" data-s="' + session +
-              '" data-m="remember">' + esc(dz('记住', 'Remember')) + '</button>' +
-            '<button class="' + (mode === 'ask' ? 'on' : '') + '" data-dm="mode" data-s="' + session +
-              '" data-m="ask">' + esc(dz('提问', 'Ask')) + '</button>' +
-          '</div>' +
           '<textarea class="sb-ta" id="sb-ta-' + session + '" rows="2" placeholder="' +
             esc(ph) + '"></textarea>' +
           '<button class="sb-send" data-dm="send" data-s="' + session + '"' +
@@ -528,11 +523,22 @@
         '<div class="bub-wrap">' +
           '<div class="bub">' + esc(m.text || '') + '</div>' +
           (m.facts && m.facts.length ? factsHTML(m.facts, m.source) : '') +
-          (m.hits && m.hits.length ? hitsHTML(m.hits) : '') +
-          (m.none ? '<div class="bub-note">' + esc(dz('没找到可记的事实', 'Nothing worth keeping')) + '</div>' : '') +
+          (showHits(m) ? hitsHTML(m.hits) : '') +
         '</div></div>';
     });
     return out;
+  }
+
+  /* 什么时候显示"命中"卡：
+       提问 —— 一律显示，这是"它能召回"的证据；
+       陈述 —— 只在相关度足够高时显示（比如你提到一个它早就记着的客户），
+               否则每说一句都挂一张"命中 0 条"，反而像测试台。 */
+  function showHits(m) {
+    if (!m || !m.hits || !m.hits.length) return false;
+    if (m.kind === 'question') return true;
+    var top = 0;
+    m.hits.forEach(function (h) { top = Math.max(top, Number(h.score) || 0); });
+    return top >= 0.6;
   }
 
   function factsHTML(facts, source) {
@@ -718,7 +724,6 @@
     if (!ta) return;
     var text = (ta.value || '').trim();
     if (!text) return;
-    var mode = D.mode[session];
     D.chat[session].push({ role: 'user', text: text, at: Date.now() });
     D.busy[session] = true;
     ta.value = '';
@@ -726,19 +731,16 @@
     var btn = document.querySelector('[data-dm="send"][data-s="' + session + '"]');
     if (btn) { btn.disabled = true; btn.innerHTML = '<span class="dm-spin"></span>'; }
 
-    postSlow('/api/demo/chat', { session: session, text: text, mode: mode }).then(function (r) {
+    /* 不传 mode：由服务端自己判断这是陈述还是提问 —— 真实聊天里没有模式开关 */
+    postSlow('/api/demo/chat', { session: session, text: text }).then(function (r) {
       var b = (r && r.ok && r.body) || {};
       if (!b.ok) {
         D.chat[session].push({ role: 'agent', text: String(b.message || b.error || '出错了'), at: Date.now() });
-      } else if (mode === 'remember') {
-        D.chat[session].push({
-          role: 'agent', text: b.reply || '', at: Date.now(),
-          facts: b.facts || [], source: b.source,
-          none: !(b.facts || []).length
-        });
       } else {
         D.chat[session].push({
-          role: 'agent', text: b.answer || '', at: Date.now(), hits: b.hits || []
+          role: 'agent', text: b.reply || '', at: Date.now(),
+          facts: b.facts || [], source: b.source, hits: b.hits || [],
+          kind: b.kind, top: b.top_score || 0
         });
       }
       D.busy[session] = false;
@@ -820,11 +822,6 @@
     var act = el.getAttribute('data-dm');
 
     if (act === 'send') { send(el.getAttribute('data-s')); return; }
-    if (act === 'mode') {
-      D.mode[el.getAttribute('data-s')] = el.getAttribute('data-m');
-      paintLeft();
-      return;
-    }
     if (act === 'register') { register(); return; }
     if (act === 'fill') {
       var n = Math.floor(Math.random() * 9000) + 1000;
