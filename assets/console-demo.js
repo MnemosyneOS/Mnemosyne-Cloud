@@ -96,26 +96,38 @@
     },
 
     {
-      id: 'deploy', zh: '接入', kicker: '一分钟接入',
-      title: '让 Agent 连上这套记忆',
-      lead: '客户不需要改代码。一条命令，安装器自己找到本机 Agent、写好 MCP 配置、' +
-            '真连一次、再写一条冒烟记忆。下面这次握手是真的。',
-      points: ['标准 MCP：Claude / Cursor / Codex / Hermes / 豆包… 共 55 个客户端',
-               'initialize → tools/list，和客户本机接完后的行为一模一样',
-               '返回 52 个工具，全部带 schema'],
+      id: 'deploy', zh: '握手', kicker: '接入 · 真实协议',
+      title: '握手：验证端点与工具面',
+      lead: '这一步做的是：从**服务器侧**用标准 MCP 协议连一次网关，验证端点可达、' +
+            '鉴权有效、52 个工具齐全。这就是客户在自己电脑上接完之后，客户端会看到的东西。',
+      points: ['真实 JSON-RPC：initialize → tools/list，不是模拟',
+               '协议版本是协商出来的：客户端提议、服务端接受，两边可以不同',
+               '它**不会**在你电脑上安装任何东西 —— 浏览器没有写你磁盘的权限；' +
+               '真正落地的是安装器命令，点下面的「在我电脑上真接一次」',
+               '接上之后你在自己 Agent 里写的东西，会出现在这个演示库和右侧「记忆流水」里'],
       cta: '执行一次真实握手',
       run: function () {
         return post('/api/demo/handshake', {}).then(function (r) {
           var b = (r && r.ok && r.body) || {};
           if (!b.ok) return { ok: false, title: '握手失败（网关不可达）', lines: [['原因', b.error || '']] };
-          return { ok: true, ms: b.ms, title: '握手成功',
-                   lines: [['协议版本', b.protocol || '—'],
-                           ['服务端', ((b.server || {}).name || '—') + ' · v' + ((b.server || {}).version || '')],
-                           ['可用工具', b.tools + ' 个'],
-                           ['命名空间', b.namespace || '—'],
-                           ['耗时', b.ms + ' ms']],
-                   note: '前几个工具：' + (b.names || []).slice(0, 6).join('、'),
-                   raw: b };
+          var same = (b.proposed === b.accepted);
+          return {
+            ok: true, ms: b.ms, title: '握手成功',
+            lines: [
+              ['客户端提议', b.proposed || '—'],
+              ['服务端接受', (b.accepted || '—') + (same ? '（一致）' : '（服务端不支持提议的版本，回退到自己最高支持的）')],
+              ['服务端支持', (b.supported || []).join(' / ') || '—'],
+              ['服务端', ((b.server || {}).name || '—') + ' · v' + ((b.server || {}).version || '')],
+              ['能力', (b.capabilities || []).join(' / ') || 'tools'],
+              ['可用工具', b.tools + ' 个'],
+              ['命名空间', b.namespace || '—'],
+              ['耗时', b.ms + ' ms']
+            ],
+            note: '这次握手是服务端发起的，所以它只证明"端点与工具面没问题"。' +
+                  '要在你自己的电脑上真接一次，点下面的按钮拿一条带密钥的安装命令。',
+            actions: [{ label: '在我电脑上真接一次', act: 'demo-key' }],
+            raw: b
+          };
         });
       }
     },
@@ -917,6 +929,49 @@
       });
   }
 
+  /* 「在我电脑上真接一次」：现场给这个沙盒账号签一把密钥，
+     给出一条带密钥的安装命令。客户在自己电脑上跑完，他的 Agent 就真的接上了 ——
+     之后他写的东西会出现在这个演示库和右侧「记忆流水」里。 */
+  function showDemoKey(btn) {
+    btn.disabled = true;
+    btn.textContent = dz('正在生成…', 'Generating…');
+    post('/api/demo/key', {}).then(function (r) {
+      btn.disabled = false;
+      btn.textContent = dz('在我电脑上真接一次', 'Connect from my machine');
+      var b = (r && r.ok && r.body) || {};
+      var host = document.getElementById('dm-key');
+      if (!host) {
+        var res = document.querySelector('.dm-result');
+        if (!res) return;
+        host = document.createElement('div');
+        host.id = 'dm-key';
+        res.appendChild(host);
+      }
+      if (!b.ok) {
+        host.innerHTML = '<div class="dm-note">' + esc(b.message || b.error || '生成失败') + '</div>';
+        return;
+      }
+      /* 用正斜杠写临时目录：Windows 的 Python 认，也省掉反斜杠转义 */
+      var win = 'curl.exe -fsSL "' + b.installer + '" -o "%TEMP%/mnemo-setup.py" && python "%TEMP%/mnemo-setup.py"';
+      var nix = 'curl -fsSL "' + b.installer + '" -o /tmp/mnemo-setup.py && python3 /tmp/mnemo-setup.py';
+      host.innerHTML =
+        '<div class="dm-note" style="margin-top:10px">' + esc(dz(
+          '这条命令带的是这个演示账号的密钥（' + b.account + '）。跑完你的 Agent 就接上了，' +
+          '它写的东西会出现在这个演示库和右侧「记忆流水」里。',
+          'This command carries this demo account key. Once it runs, your agent is connected — ' +
+          'whatever it writes shows up in this demo store and in the memory log.')) + '</div>' +
+        '<div class="mc-lab" style="margin-top:8px">Windows</div>' +
+        '<div class="mc-code">' + esc(win) + '<span class="cp" data-copy="' + esc(win) + '">' +
+          esc(dz('复制', 'Copy')) + '</span></div>' +
+        '<div class="mc-lab" style="margin-top:8px">macOS / Linux</div>' +
+        '<div class="mc-code">' + esc(nix) + '<span class="cp" data-copy="' + esc(nix) + '">' +
+          esc(dz('复制', 'Copy')) + '</span></div>' +
+        '<div class="mc-lab" style="margin-top:8px">' + esc(dz('手动填这两行也行', 'Or fill these two')) + '</div>' +
+        '<div class="mc-code">URL: ' + esc(b.mcp_url) + '<br>Authorization: Bearer ' + esc(b.key) + '</div>';
+      icons();
+    });
+  }
+
   function goto(page) {
     var h = host();
     var acc = account();
@@ -955,6 +1010,7 @@
     if (act === 'next') { if (D.chapter < CHAPTERS.length - 1) { D.chapter++; paintRight(); } return; }
     if (act === 'prev') { if (D.chapter > 0) { D.chapter--; paintRight(); } return; }
     if (act === 'goto') { goto(el.getAttribute('data-to')); return; }
+    if (act === 'demo-key') { showDemoKey(el); return; }
     if (act === 'full') {
       D.full = !D.full;
       var box = document.querySelector('.dm2');
