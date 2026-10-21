@@ -1157,6 +1157,13 @@
           '<p class="mc-p" style="margin-top:10px">' + esc(dz(
             '主题与语言已移到控制台右上角，和网站首页保持一致。',
             'Theme and language now live in the top-right corner, matching the site.')) + '</p>' +
+          /* 模型 / 邮件 / 品牌这些是**站点级**配置，属于后台管理，不在个人设置里。
+             之前我把入口说成"设置 → 模型"，用户找不到 —— 这里给一条直达链接。 */
+          (isAdmin() ? '<div class="mc-note" style="margin-top:12px">' + esc(dz(
+              '模型、邮件、品牌与文案属于站点级配置，在「后台管理 → 站点配置」里。',
+              'Model, mail, brand and copy are site-wide — they live in Admin → Site settings.')) +
+            '<div style="margin-top:8px"><a class="mc-btn sm" href="#/admin" data-ctab="site">' +
+            esc(dz('打开后台管理 · 站点配置', 'Open Admin · Site settings')) + ' →</a></div></div>' : '') +
         '</div>' +
       '</div>' +
       (isAdmin() ? '<div class="mc-card pad" style="margin-top:12px">' +

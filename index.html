@@ -2107,7 +2107,7 @@ body.docs #view{ display:block !important; }
 </style>
 <!-- 控制台 v9 样式：独立命名空间 .mc，颜色全部取自上面的设计令牌，
      所以自动跟随 白天 / 夜晚 / 跟随系统；必须排在页面样式之后才能覆盖 body.dash -->
-<link rel="stylesheet" href="assets/console.css?v=9.7" />
+<link rel="stylesheet" href="assets/console.css?v=9.8" />
 </head>
 
 <body>
@@ -2724,10 +2724,10 @@ body.docs #view{ display:block !important; }
 <!-- 控制台 v9：在站点主脚本之前加载。
      它只在被 renderDash() 调用时才取 window.MN，所以早加载不会有时序问题；
      晚加载反而会让「直达 #/dashboard/overview」白屏一次。 -->
-<script src="assets/console-graph.js?v=9.7"></script>
-<script src="assets/console.js?v=9.7"></script>
+<script src="assets/console-graph.js?v=9.8"></script>
+<script src="assets/console.js?v=9.8"></script>
 <!-- 演示舞台：给商业合作伙伴看的 10 章剧本。独立文件，只在演示页被调用。 -->
-<script src="assets/console-demo.js?v=9.7"></script>
+<script src="assets/console-demo.js?v=9.8"></script>
 
 <script>
 /* ============================================================================
@@ -7052,6 +7052,267 @@ body.docs #view{ display:block !important; }
     });
   }
 
+  /* ── 站点配置里的四个表单（一般 / 模型 / 邮件 / 危险区域）──────────────
+     2026-10-21：控制台重做时，这四个函数跟着控制台一起被删掉了，但
+     「后台管理 → 站点配置」仍在调用它们 —— 于是 loadSiteConfig() 抛
+     ReferenceError，整块永远停在"加载中…"。
+
+     注意作用域：这段代码在**第一个 IIFE**里（和 sitePanel / loadSiteConfig 同域），
+     所以只能用这里的 lang / esc / api / toast，不能调站点模块（window.MN）里的
+     docLang / L。api() 的第二个参数是 fetch init，不是 body —— 写操作统一走 admPost()。 */
+  function isZh() { return lang === 'zh'; }
+
+  function admPost(path, body) {
+    return api(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {})
+    });
+  }
+
+  function qv(id) { var el = document.getElementById(id); return el ? el.value : ''; }
+
+  function dxFactRow(label, value) {
+    return '<div style="display:flex;justify-content:space-between;gap:10px;padding:5px 0">' +
+      '<span style="color:var(--fg3);font-size:12px">' + esc(label) + '</span>' +
+      '<b style="font-weight:500">' + esc(value) + '</b></div>';
+  }
+
+  function dxSetGeneral(s, d) {
+    s = s || {};
+    var who = SESSION || {};
+    return '<div class="dx-hrow"><div><h1 class="dx-h1">' + esc(dz('一般设置', 'General')) + '</h1></div>' +
+      '<div class="sp"></div></div>' +
+      '<div class="dx-grid">' +
+        '<div class="dx-field"><label>' + esc(dz('项目名称', 'Project name')) + '</label>' +
+          '<input class="inp" id="dx-set-name" value="' + esc(s.project_name || '') + '"></div>' +
+        '<div class="dx-field"><label>' + esc(dz('项目 ID', 'Project ID')) + '</label>' +
+          '<input class="inp" value="' + esc((d && d.projectId) || '') + '" readonly></div>' +
+        '<div class="dx-field"><label>' + esc(dz('项目描述', 'Project description')) + '</label>' +
+          '<textarea class="inp" id="dx-set-desc" placeholder="' +
+            esc(dz('输入项目描述…', 'Describe this project…')) + '">' + esc(s.project_desc || '') + '</textarea></div>' +
+        '<div><button class="dx-btn" type="button" data-dx="set-save">' +
+          esc(dz('保存', 'Save')) + '</button></div>' +
+      '</div>' +
+      '<div class="dx-dsep"></div>' +
+      '<div class="dx-grid dx-g3">' +
+        dxFactRow(dz('记忆保留', 'Retention'),
+                  s.retention_days ? (s.retention_days + ' ' + dz('天', 'days')) : dz('永久', 'forever')) +
+        dxFactRow(dz('梦的合成', 'Dream synthesis'), s.dream_synth ? dz('开', 'on') : dz('关', 'off')) +
+        dxFactRow(dz('项目身份', 'Project identity'), who.email || who.login || '—') +
+      '</div>';
+  }
+
+  function dxSetModel(llm) {
+    llm = llm || {};
+    var zh = isZh();
+    return '<div class="dx-hrow"><div><h1 class="dx-h1">' + esc(dz('模型', 'Model')) + '</h1>' +
+      '<p class="dx-sub">' + esc(dz(
+        '副驾驶与演示沙盒用这个模型阅读记忆并作答，密钥只存在服务器上。',
+        'The Copilot and the demo sandbox use this model to read memories and answer. The key stays on the server.')) + '</p></div>' +
+      '<div class="sp"></div>' +
+      '<span class="dx-tag"' + (llm.ready ? ' style="background:rgba(113,220,200,.14);color:#0E9F6E"' : '') + '>' +
+        esc(llm.ready ? dz('已就绪', 'ready') : dz('未配置', 'not configured')) + '</span></div>' +
+      '<div class="dx-grid">' +
+        '<div class="dx-field"><label>' + esc(dz('接口地址', 'Base URL')) + '</label>' +
+          '<input class="inp" id="dx-llm-base" value="' +
+            esc(llm.baseUrl || 'https://api.siliconflow.cn/v1') + '"></div>' +
+        '<div class="dx-field"><label>' + esc(dz('模型名', 'Model')) + '</label>' +
+          '<input class="inp" id="dx-llm-model" value="' + esc(llm.model || '') + '"></div>' +
+        '<div class="dx-field"><label>' + esc(dz('API 密钥', 'API key')) + '</label>' +
+          '<input class="inp" id="dx-llm-key" type="password" placeholder="' +
+            esc(llm.hasKey
+                ? (zh ? '已设置（' + (llm.keyHint || '') + '），留空则不改'
+                      : 'Set (' + (llm.keyHint || '') + ') — leave empty to keep it')
+                : 'sk-…') + '"></div>' +
+        '<div style="display:flex;gap:9px;flex-wrap:wrap">' +
+          '<button class="dx-btn" type="button" data-dx="llm-save">' + esc(dz('保存', 'Save')) + '</button>' +
+          '<button class="dx-btn gh" type="button" data-dx="llm-test">' +
+            esc(dz('测试连通性', 'Test the connection')) + '</button>' +
+        '</div>' +
+      '</div>' +
+      '<div id="dx-llm-note" style="font-size:12px;color:var(--fg3);margin-top:12px;line-height:1.7">' +
+        esc((zh ? '配置来源：' : 'Configured by: ') +
+            ({ deploy: zh ? '部署时写入' : 'the deployment',
+               console: zh ? '在本页保存' : 'this page',
+               none: zh ? '尚未配置' : 'nothing yet' }[llm.source] || (zh ? '未知' : 'unknown'))) +
+      '</div>';
+  }
+
+  function dxSetMail(smtp) {
+    smtp = smtp || {};
+    var zh = isZh();
+    return '<div class="dx-hrow"><div><h1 class="dx-h1">' + esc(dz('邮件', 'Mail')) + '</h1>' +
+      '<p class="dx-sub">' + esc(dz(
+        '注册验证码由这个发信账号寄出。没有它，注册表单不会显示验证码输入框。',
+        'Sign-up codes are sent by this account. Without it the sign-up form hides the code field.')) + '</p></div>' +
+      '<div class="sp"></div>' +
+      '<span class="dx-tag"' + (smtp.ready ? ' style="background:rgba(113,220,200,.14);color:#0E9F6E"' : '') + '>' +
+        esc(smtp.ready ? dz('已就绪', 'ready') : dz('未配置', 'not configured')) + '</span></div>' +
+      '<div class="dx-grid">' +
+        '<div class="dx-field"><label>' + esc(dz('SMTP 主机', 'SMTP host')) + '</label>' +
+          '<input class="inp" id="dx-smtp-host" placeholder="smtp.qq.com" value="' + esc(smtp.host || '') + '"></div>' +
+        '<div class="dx-field"><label>' + esc(dz('端口', 'Port')) + '</label>' +
+          '<input class="inp" id="dx-smtp-port" value="' + esc(String(smtp.port || 465)) + '"></div>' +
+        '<div class="dx-field"><label>' + esc(dz('加密方式', 'Security')) + '</label>' +
+          '<select class="inp" id="dx-smtp-sec">' +
+            ['ssl', 'starttls', 'none'].map(function (v) {
+              return '<option value="' + v + '"' + (smtp.security === v ? ' selected' : '') + '>' +
+                v.toUpperCase() + '</option>';
+            }).join('') + '</select></div>' +
+        '<div class="dx-field"><label>' + esc(dz('账号', 'Username')) + '</label>' +
+          '<input class="inp" id="dx-smtp-user" placeholder="you@qq.com" value="' + esc(smtp.user || '') + '"></div>' +
+        '<div class="dx-field"><label>' + esc(dz('授权码 / 密码', 'Password / app code')) + '</label>' +
+          '<input class="inp" id="dx-smtp-pass" type="password" placeholder="' +
+            esc(smtp.hasPass ? (zh ? '已设置，留空则不改' : 'Set — leave empty to keep it')
+                             : (zh ? '邮箱授权码' : 'mail app password')) + '"></div>' +
+        '<div class="dx-field"><label>' + esc(dz('发件地址', 'From address')) + '</label>' +
+          '<input class="inp" id="dx-smtp-from" placeholder="Mnemosyne OS &lt;you@qq.com&gt;" value="' +
+            esc(smtp.from || '') + '"></div>' +
+        '<div style="display:flex;gap:9px;flex-wrap:wrap">' +
+          '<button class="dx-btn" type="button" data-dx="smtp-save">' + esc(dz('保存', 'Save')) + '</button>' +
+          '<button class="dx-btn gh" type="button" data-dx="smtp-test">' +
+            esc(dz('发一封测试邮件', 'Send a test message')) + '</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="dx-note" style="margin-top:14px">' +
+        esc(zh ? 'QQ 邮箱为例：主机 smtp.qq.com、端口 465、加密 SSL、账号填完整邮箱、密码填「授权码」（在邮箱设置的账户页生成，不是登录密码）。'
+               : 'For QQ Mail: host smtp.qq.com, port 465, security SSL, the full address as the username, and an app-specific code (not your login password) as the password.') +
+      '</div>' +
+      '<div id="dx-smtp-note" style="font-size:12px;color:var(--fg3);margin-top:12px;line-height:1.7"></div>';
+  }
+
+  function dangerRow(title, sub, action) {
+    return '<div class="rw"><span class="sp"><span class="t">' + esc(title) + '</span>' +
+      '<span class="s">' + esc(sub) + '</span></span>' +
+      '<button class="dx-btn dg sm" type="button" data-dx="danger" data-a="' + action + '">' +
+      esc(dz('执行', 'Run')) + '</button></div>';
+  }
+
+  function dxSetDanger() {
+    return '<div class="dx-hrow"><div><h1 class="dx-h1" style="color:#DC2626">' +
+      esc(dz('危险区域', 'Danger zone')) + '</h1>' +
+      '<p class="dx-sub">' + esc(dz('这里的操作不可撤销，需要输入项目名确认。',
+        'These cannot be undone, and require the project name to confirm.')) + '</p></div></div>' +
+      '<div class="dx-dz">' +
+        dangerRow(dz('删除所有记忆', 'Delete all memories'),
+          dz('永久删除此项目中的所有内容。此操作无法撤销。',
+             'Permanently remove every memory in this project. This cannot be undone.'),
+          'wipe-memories') +
+        dangerRow(dz('删除项目', 'Delete project'),
+          dz('永久删除此项目及其所有相关数据。',
+             'Permanently delete this project and everything attached to it.'),
+          'delete-project') +
+      '</div>';
+  }
+
+  /* 四个表单的事件处理。只认 #site-cfg 里的 [data-dx]，
+     不和页面上任何别的 data-dx 抢。 */
+  document.addEventListener('click', function (e) {
+    var el = e.target && e.target.closest ? e.target.closest('[data-dx]') : null;
+    if (!el) return;
+    var box = document.getElementById('site-cfg');
+    if (!box || !box.contains(el)) return;
+    var act = el.getAttribute('data-dx');
+    var zh = isZh();
+
+    if (act === 'set-save') {
+      el.disabled = true;
+      admPost('/api/dash/settings', { project_name: qv('dx-set-name'), project_desc: qv('dx-set-desc') })
+        .then(function (r) {
+          el.disabled = false;
+          toast(r.ok ? (zh ? '已保存。' : 'Saved.') : (zh ? '保存失败。' : 'Save failed.'));
+          if (r.ok) loadSiteConfig();
+        });
+      return;
+    }
+
+    if (act === 'llm-save') {
+      var payload = { baseUrl: qv('dx-llm-base'), model: qv('dx-llm-model') };
+      var k = qv('dx-llm-key');
+      if (k) payload.apiKey = k;
+      el.disabled = true;
+      admPost('/api/dash/llm', payload).then(function (r) {
+        el.disabled = false;
+        var ok = r.ok && r.body && r.body.llm;
+        toast(ok ? (zh ? '模型配置已保存。' : 'Model settings saved.')
+                 : (zh ? '保存失败。' : 'Could not save.'));
+        if (ok) loadSiteConfig();
+      });
+      return;
+    }
+
+    if (act === 'llm-test') {
+      var label = el.textContent;
+      el.disabled = true;
+      el.textContent = zh ? '测试中…' : 'Testing…';
+      admPost('/api/dash/llm/test', {}).then(function (r) {
+        el.disabled = false;
+        el.textContent = label;
+        var b = (r && r.body) || {};
+        var note = document.getElementById('dx-llm-note');
+        var msg = (r.ok && b.ok)
+          ? (zh ? '连通正常，模型 ' + (b.model || '') + ' 回复：' + (b.reply || '')
+                : 'OK — ' + (b.model || '') + ' replied: ' + (b.reply || ''))
+          : (zh ? '不通：' + (b.detail || b.error || '未知原因')
+                : 'Failed: ' + (b.detail || b.error || 'unknown'));
+        if (note) note.textContent = msg;
+        toast(String(msg).slice(0, 140));
+      });
+      return;
+    }
+
+    if (act === 'smtp-save') {
+      var sb = { host: qv('dx-smtp-host'), port: qv('dx-smtp-port'),
+                 security: qv('dx-smtp-sec'), user: qv('dx-smtp-user'),
+                 from: qv('dx-smtp-from') };
+      var sp = qv('dx-smtp-pass');
+      if (sp) sb.pass = sp;
+      el.disabled = true;
+      admPost('/api/dash/smtp', sb).then(function (r) {
+        el.disabled = false;
+        var ok = r.ok && r.body && r.body.smtp;
+        toast(ok ? (zh ? '邮件配置已保存。' : 'Mail settings saved.')
+                 : (zh ? '保存失败。' : 'Could not save.'));
+        if (ok) loadSiteConfig();
+      });
+      return;
+    }
+
+    if (act === 'smtp-test') {
+      var lb2 = el.textContent;
+      el.disabled = true;
+      el.textContent = zh ? '发送中…' : 'Sending…';
+      admPost('/api/dash/smtp/test', {}).then(function (r) {
+        el.disabled = false;
+        el.textContent = lb2;
+        var b = (r && r.body) || {};
+        var note = document.getElementById('dx-smtp-note');
+        var msg = (r.ok && b.ok)
+          ? (zh ? '已向 ' + (b.to || '') + ' 发出一封测试邮件。'
+                : 'A test message went to ' + (b.to || '') + '.')
+          : (zh ? '发送失败：' + (b.detail || b.error || '未知原因')
+                : 'Failed: ' + (b.detail || b.error || 'unknown'));
+        if (note) note.textContent = msg;
+        toast(String(msg).slice(0, 140));
+      });
+      return;
+    }
+
+    if (act === 'danger') {
+      var a = el.getAttribute('data-a');
+      var typed = window.prompt(zh ? '这是不可撤销的操作。请输入项目名称以确认：'
+                                   : 'This cannot be undone. Type the project name to confirm:');
+      if (typed === null) return;
+      admPost('/api/dash/danger', { action: a, confirm: typed }).then(function (r) {
+        var b = (r && r.body) || {};
+        if (b.refused) { window.alert(b.message || ''); return; }
+        toast(b.message || (zh ? '未执行。' : 'Not executed.'));
+      });
+      return;
+    }
+  });
+
   /* ── 站点配置：管理员管理「网站 + 控制台」的唯一入口 ──────────────
      复用控制台的 dx 控件。它们的点击处理挂在 document 上，靠 .dx
      容器放行，所以这里包一层 .dx 就能直接用，不必重写表单。 */
@@ -8196,7 +8457,7 @@ function renderDash(path) {
   if (!window.__mnConsoleRetry) {
     window.__mnConsoleRetry = 1;
     var s = document.createElement('script');
-    s.src = 'assets/console.js?v=9.7';
+    s.src = 'assets/console.js?v=9.8';
     s.onload = function () { renderDash(path); };
     s.onerror = function () {
       var view = $('#view');
