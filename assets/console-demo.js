@@ -978,27 +978,27 @@
       btn.disabled = false;
       btn.textContent = dz('在我电脑上真接一次', 'Connect from my machine');
       var b = (r && r.ok && r.body) || {};
-      var host = document.getElementById('dm-key');
-      if (!host) {
+      var box = document.getElementById('dm-key');
+      if (!box) {
         var res = document.querySelector('.dm-result');
         if (!res) return;
-        host = document.createElement('div');
-        host.id = 'dm-key';
-        res.appendChild(host);
+        box = document.createElement('div');
+        box.id = 'dm-key';
+        res.appendChild(box);
       }
       if (!b.ok) {
-        host.innerHTML = '<div class="dm-note">' + esc(b.message || b.error || '生成失败') + '</div>';
+        box.innerHTML = '<div class="dm-note">' + esc(b.message || b.error || '生成失败') + '</div>';
         return;
       }
       /* 三套 shell 各给一条：PowerShell 5.1 不认 `&&`、也不认 %TEMP%，
          2026-10-21 客户直接粘进 PowerShell 报 ParserError。 */
-      var h = host();
-      var C = (h && h.shellCmds) ? h.shellCmds(b.installer) : {
+      var H = host();
+      var C = (H && H.shellCmds) ? H.shellCmds(b.installer) : {
         ps: 'curl.exe -fsSL "' + b.installer + '" -o "$env:TEMP\\mnemo-setup.py"; python "$env:TEMP\\mnemo-setup.py"',
         cmd: 'curl -fsSL "' + b.installer + '" -o "%TEMP%\\mnemo-setup.py" && python "%TEMP%\\mnemo-setup.py"',
         nix: 'curl -fsSL "' + b.installer + '" -o /tmp/mnemo-setup.py && python3 /tmp/mnemo-setup.py'
       };
-      host.innerHTML =
+      box.innerHTML =
         '<div class="dm-note" style="margin-top:10px">' + esc(dz(
           '这条命令带的是这个演示账号的密钥（' + b.account + '）。跑完你的 Agent 就接上了，' +
           '它写的东西会出现在这个演示库和右侧「记忆流水」里。',
@@ -1018,7 +1018,7 @@
       icons();
       /* 结果卡很高，密钥块插在末尾时用户看不见 —— 主动滚过去，
          否则他点完按钮会觉得"什么都没发生"。 */
-      try { host.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+      try { box.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
     });
   }
 
