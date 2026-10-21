@@ -157,10 +157,33 @@
     if (d < 2592000) return Math.floor(d / 86400) + dz(' 天前', 'd ago');
     return String(s).slice(0, 10);
   }
+  /* 记忆库/用户详情要的是**确切时间**（"11 小时前"没法核对账）。
+     后端给的是 ISO 本地时间（2026-10-20T21:30:00），这里只做格式化。 */
+  function fmtTime(v) {
+    var s = String(v || '').replace('T', ' ');
+    if (!s) return '—';
+    return s.length >= 16 ? s.slice(0, 16) : s;
+  }
+
   function initials(name) {
     var s = String(name || '?').trim();
     return s ? s.slice(0, 1).toUpperCase() : '?';
   }
+  /* POST 必须自己拼 fetch init。
+     坑：站点的 api(path, opts) 第二个参数是 **fetch 的 init**，不是 body。
+     早先写成 api('/api/dash/dream/run', { paths: [...] }) —— 那个对象被当成
+     init，既没有 method 也没有 body，实际发出去的是一个 GET，
+     于是「开始一轮」永远只换来一句「执行失败」。所有写操作都走这个函数。 */
+  function post(p, body) {
+    var m = mn();
+    if (!m.api) return Promise.resolve({ ok: false, status: 0, body: {} });
+    return api(p, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {})
+    });
+  }
+
   function get(p, fallback) {
     if (MC.data[p]) return Promise.resolve(MC.data[p]);
     return api(p).then(function (r) {
@@ -199,14 +222,14 @@
               (isAdmin() ? dz('站点管理员', 'Site administrator') : dz('成员', 'Member'));
     return '<button class="mc-who" data-act="switch-user" aria-haspopup="true">' +
         '<span class="av">' + (me.avatar ? '<img src="' + esc(me.avatar) + '" alt="">' : esc(initials(name))) + '</span>' +
-        '<span class="txt"><span class="nm">' + esc(name) + '</span>' +
+        '<span class="txt"><span class="line1"><span class="nm">' + esc(name) + '</span>' +
+          (isAdmin() ? '<span class="badge-admin">ADMIN</span>' : '') + '</span>' +
           '<span class="sub">' + esc(sub) + '</span></span>' +
-        (isAdmin() ? '<span class="badge-admin">ADMIN</span>' : '') +
         '<svg class="chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>' +
       '</button>' +
       '<div id="mc-switch-slot"></div>' +
       '<nav class="mc-nav">' + navHTML() + '</nav>' +
-      '<div class="mc-foot">' + planHTML() + themeHTML() + '</div>';
+      '<div class="mc-foot">' + planHTML() + '</div>';
   }
 
   function navHTML() {
@@ -240,7 +263,8 @@
     var plan = (MC.users && MC.users.me) || {};
     var used = (MC.overview && MC.overview.totals && MC.overview.totals.memories) || 0;
     /* 配额按套餐算，不写死 500：升级完还显示 500 条上限，用户会以为没生效。 */
-    var LIM = { starter: 500, pro: 20000, team: 200000 };
+    var LIM = { starter: 500, pro: 20000, max: 100000, plus: 500000,
+                enterprise: 1000000, team: 500000 };
     var lim = LIM[MC.planName] || 500;
     var pct = Math.min(100, Math.round(used * 100 / lim));
     return '<div class="mc-plan">' +
@@ -257,8 +281,11 @@
 
   function planLabel() {
     var p = (MC.planName || 'starter');
-    return ({ starter: dz('入门版', 'Starter'), pro: dz('专业版', 'Pro'),
-              team: dz('团队版', 'Team') })[p] || p;
+    return ({ starter: dz('入门版', 'Starter'), pro: dz('PRO 版', 'Pro'),
+              max: dz('MAX 版', 'Max'), plus: dz('PLUS 版', 'Plus'),
+              enterprise: dz('企业版', 'Enterprise'),
+              /* 老账号可能还挂着 team，保留映射不至于显示成 team 这个英文 id */
+              team: dz('PLUS 版', 'Plus') })[p] || p;
   }
 
   var THEME_ICON = {
@@ -266,9 +293,10 @@
     dark: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>',
     system: '<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>'
   };
-  function themeHTML() {
+  function themeHTML(extra) {
     var cur = document.documentElement.getAttribute('data-theme-pref') || 'system';
-    return '<div class="mc-theme" role="group" aria-label="' + esc(dz('主题', 'Theme')) + '">' +
+    return '<div class="mc-theme' + (extra ? ' ' + extra : '') + '" role="group" aria-label="' +
+      esc(dz('主题', 'Theme')) + '">' +
       ['light', 'dark', 'system'].map(function (k) {
         return '<button data-theme-set="' + k + '" class="' + (cur === k ? 'on' : '') +
           '" title="' + k + '" aria-label="' + k + '">' +
@@ -284,6 +312,11 @@
       (MC.view ? '<span class="mc-viewns"><i data-lucide="eye" style="width:12px;height:12px"></i>' +
         esc(dz('查看', 'Viewing')) + ' <b>' + esc(scopeName()) + '</b></span>' : '') +
       '<span class="sp"></span>' +
+      themeHTML('top') +
+      '<div class="mc-lang" role="group" aria-label="Language">' +
+        '<button data-act="lang" data-l="zh" class="' + (zhNow() ? 'on' : '') + '">中文</button>' +
+        '<button data-act="lang" data-l="en" class="' + (zhNow() ? '' : 'on') + '">EN</button>' +
+      '</div>' +
       (MC.page === 'graph' || MC.page === 'memories'
         ? '<label class="mc-search"><i data-lucide="search" style="width:13px;height:13px"></i>' +
           '<input id="mc-q" placeholder="' + esc(dz('搜索记忆、实体…', 'Search memories, entities…')) + '" value="' +
@@ -535,8 +568,13 @@
       var s = r[0] || {}, ag = r[1] || {};
       MC.setup = s;
       MC.agents = ag;
-      var winCmd = 'powershell -NoProfile -Command "irm ' + s.installer + ' | python -"';
-      var nixCmd = 'curl -fsSL ' + s.installer + ' | python3 -';
+      /* 不用 `irm ... | python -` 的原因有两个，都会让中文用户直接报错：
+         ① Windows 上 `python -` 按控制台代码页（中文系统 cp936）读 stdin，
+            脚本里的 UTF-8 字节会被解错 → SyntaxError；
+         ② 老客户端对未知 charset 的文本会退回 ISO-8859-1 解码。
+         改成「先落盘、再执行」，两个坑一起绕开；脚本本身也已做成纯 ASCII。 */
+      var winCmd = 'curl.exe -fsSL "' + s.installer + '" -o "%TEMP%\\mnemo-setup.py" && python "%TEMP%\\mnemo-setup.py"';
+      var nixCmd = 'curl -fsSL "' + s.installer + '" -o /tmp/mnemo-setup.py && python3 /tmp/mnemo-setup.py';
       el.innerHTML = head(dz('接入配置', 'Setup'),
         dz('选你的 Agent，复制一条命令，剩下的它自己做完 —— 包括验证。',
            'Pick your agent, copy one command, and it does the rest — including verification.'),
@@ -549,7 +587,7 @@
             '<p class="mc-p" style="margin-bottom:10px">' + esc(dz(
               '这段命令已经带上了你的密钥。它会：检测本机 Agent → 写入 MCP 配置 → 真连一次 → 写一条冒烟记忆。',
               'The command already carries your key. It detects local agents, writes the MCP config, tests the link and writes a smoke memory.')) + '</p>' +
-            '<div class="mc-lab">Windows（PowerShell）</div>' +
+            '<div class="mc-lab">Windows（命令提示符 / 终端均可）</div>' +
             '<div class="mc-code">' + esc(winCmd) + '<span class="cp" data-copy="' + esc(winCmd) + '">' + esc(dz('复制', 'Copy')) + '</span></div>' +
             '<div class="mc-lab" style="margin-top:10px">macOS / Linux</div>' +
             '<div class="mc-code">' + esc(nixCmd) + '<span class="cp" data-copy="' + esc(nixCmd) + '">' + esc(dz('复制', 'Copy')) + '</span></div>' +
@@ -663,7 +701,8 @@
               '<td><span class="mc-tag pri">' + esc(m.kind || '—') + '</span></td>' +
               '<td>' + (m.tags || []).slice(0, 3).map(function (t) {
                 return '<span class="mc-tag">' + esc(t) + '</span>'; }).join('') + '</td>' +
-              '<td style="white-space:nowrap;color:var(--fg3)">' + esc(ago(m.created)) + '</td>' +
+              '<td style="white-space:nowrap;color:var(--fg3);font-variant-numeric:tabular-nums">' +
+                esc(fmtTime(m.created)) + '</td>' +
               '<td class="num">' + n0(m.accessed) + '</td></tr>';
           }).join('') + '</tbody></table></div></div>' +
           pager(d) +
@@ -710,7 +749,7 @@
             n0(m.access_count) + '</span></div>' +
         '</div>' +
         '<div class="mc-note" style="margin-top:10px">' + esc(dz('写入 ', 'Written ') +
-          String(m.created_at || '').slice(0, 19) + ' · ' + (m.status || '')) + '</div>' +
+          fmtTime(m.created_at) + ' · ' + (m.status || '')) + '</div>' +
         '</div>';
     });
   }
@@ -887,9 +926,11 @@
             return '<tr><td style="white-space:nowrap">' + esc(ago(run.at)) + '</td>' +
               '<td class="num">' + n0(run.ms) + ' ms</td>' +
               '<td class="num">' + n0(run.total) + '</td>' +
-              '<td>' + (run.steps || []).map(function (s) {
-                return '<span class="mc-tag' + (s.ok ? ' pri' : '') + '">' + esc(s.path) +
-                  (s.count ? ' · ' + s.count : '') + '</span>';
+              '<td>' + (run.steps || []).map(function (st) {
+                return '<span class="mc-tag' + (st.ok ? ' pri' : '') + '" title="' +
+                  esc((st.tool || st.path) + ' · ' + (st.ms || 0) + 'ms' +
+                      (st.reason ? ' · ' + st.reason : '')) + '">' + esc(st.path) +
+                  (st.count ? ' · ' + st.count : '') + (st.ok ? '' : ' ✗') + '</span>';
               }).join('') + '</td></tr>';
           }).join('') + '</tbody></table></div></div>'
           : '<div class="mc-card">' + empty('moon', dz('还没跑过', 'No cycles yet'),
@@ -987,8 +1028,8 @@
   /* ---- 套餐与用量 ------------------------------------------------------- */
   PAGES.billing = function (el) {
     el.innerHTML = head(dz('套餐与用量', 'Plan & usage'),
-      dz('按需升级。当前是个人微信收款，扫码后由管理员一键确认到账。',
-         'Upgrade when you need it. Paid by WeChat QR, confirmed by the admin.')) + loading();
+      dz('你的记忆、你的额度。升级后额度立即生效。',
+         'Your memory, your quota. Upgrades take effect immediately.')) + loading();
     Promise.all([api('/api/billing/plans'), api('/api/billing/order')]).then(function (r) {
       if (MC.page !== 'billing') return;
       var plans = ((r[0] && r[0].ok && r[0].body) || {});
@@ -996,26 +1037,39 @@
       var cur = (MC.planName || 'starter');
       var qr = plans.qr || '';
       el.innerHTML = head(dz('套餐与用量', 'Plan & usage'),
-        dz('按需升级。当前是个人微信收款，扫码后由管理员一键确认到账。',
-           'Upgrade when you need it. Paid by WeChat QR, confirmed by the admin.')) +
-        '<div class="mc-grid mc-g3">' + (plans.plans || []).map(function (p) {
+        dz('你的记忆、你的额度。升级后额度立即生效。',
+           'Your memory, your quota. Upgrades take effect immediately.')) +
+        '<div class="mc-grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">' +
+        (plans.plans || []).map(function (p) {
           var on = p.id === cur;
-          return '<div class="mc-card pad" style="' + (on ? 'border-color:var(--accent-line)' : '') + '">' +
-            '<div class="mc-row" style="justify-content:space-between">' +
+          var price = p.contact ? dz('面议', 'Talk to us')
+                    : (p.price ? '¥' + p.price : dz('免费', 'Free'));
+          var period = p.contact ? '' : (p.price ? dz(' / ' + p.days + ' 天', ' / ' + p.days + ' days') : '');
+          var feats = (zhNow() ? p.feats_zh : p.feats_en) || [];
+          var btn;
+          if (p.contact) {
+            btn = '<a class="mc-btn" style="width:100%;justify-content:center" href="mailto:hello@ai-memory.net">' +
+                  esc(dz('联系我们', 'Contact us')) + '</a>';
+          } else if (p.price) {
+            btn = '<button class="mc-btn ' + (on ? '' : 'pri') + '" style="width:100%" data-act="buy" data-plan="' +
+                  esc(p.id) + '">' + esc(on ? dz('续费', 'Renew') : dz('选择 ' + p.zh, 'Choose ' + p.en)) + '</button>';
+          } else {
+            btn = '<div class="mc-note" style="text-align:center;border:0;background:none;padding:6px 0">' +
+                  esc(dz('当前免费档', 'Free tier')) + '</div>';
+          }
+          return '<div class="mc-card pad" style="display:flex;flex-direction:column;' +
+              (on ? 'border-color:var(--accent-deep);box-shadow:0 0 0 1px var(--accent-line)' : '') + '">' +
+            '<div class="mc-row" style="justify-content:space-between;align-items:center">' +
               '<b style="font-size:14px">' + esc(zhNow() ? p.zh : p.en) + '</b>' +
-              (on ? '<span class="mc-pill ok"><i></i>' + esc(dz('当前', 'Current')) + '</span>' : '') + '</div>' +
-            '<div style="font-size:26px;font-weight:700;margin:6px 0 2px">' +
-              (p.price ? '¥' + p.price : dz('免费', 'Free')) +
-              (p.price ? '<span style="font-size:12px;font-weight:400;color:var(--fg3)"> / ' +
-                esc(dz(p.days + ' 天', p.days + ' days')) + '</span>' : '') + '</div>' +
-            '<div style="font-size:11.5px;color:var(--fg3);min-height:34px">' +
+              (on ? '<span class="mc-pill ok"><i></i>' + esc(dz('当前', 'Current')) + '</span>'
+                  : '<span class="mc-tag">' + esc(p.badge || '') + '</span>') + '</div>' +
+            '<div style="font-size:24px;font-weight:700;margin:8px 0 2px;letter-spacing:-.02em">' + esc(price) +
+              '<span style="font-size:11.5px;font-weight:400;color:var(--fg3)">' + esc(period) + '</span></div>' +
+            '<div style="font-size:11.5px;color:var(--fg3);min-height:48px;line-height:1.6">' +
               esc(zhNow() ? p.zh_desc : p.en_desc) + '</div>' +
-            '<div style="margin:10px 0">' + (zhNow() ? p.feats_zh : p.feats_en).map(function (f) {
+            '<div style="margin:10px 0 12px;flex:1">' + feats.map(function (f) {
               return '<div style="font-size:11.5px;color:var(--fg2);padding:2px 0">✓ ' + esc(f) + '</div>';
-            }).join('') + '</div>' +
-            (p.price ? '<button class="mc-btn ' + (on ? '' : 'pri') + '" style="width:100%" data-act="buy" data-plan="' +
-              esc(p.id) + '">' + esc(on ? dz('续费', 'Renew') : dz('升级到' + p.zh, 'Choose ' + p.en)) + '</button>' : '') +
-            '</div>';
+            }).join('') + '</div>' + btn + '</div>';
         }).join('') + '</div>' +
 
         '<div class="mc-h2">' + esc(dz('我的订单', 'My orders')) + '</div>' +
@@ -1090,13 +1144,16 @@
             esc(me.display_name || me.name || '') + '"></div>' +
           '<button class="mc-btn pri" data-act="save-profile">' + esc(dz('保存', 'Save')) + '</button>' +
         '</div>' +
-        '<div class="mc-card pad"><div class="mc-h2" style="margin-top:0">' + esc(dz('外观', 'Appearance')) + '</div>' +
-          '<p class="mc-p">' + esc(dz('控制台跟随站点主题，这里改的是全站。',
-            'The console follows the site theme; this switch changes the whole site.')) + '</p>' +
-          themeHTML() +
-          '<div class="mc-h2">' + esc(dz('语言', 'Language')) + '</div>' +
-          '<div class="mc-row"><button class="mc-btn" data-act="lang" data-l="zh">中文</button>' +
-          '<button class="mc-btn" data-act="lang" data-l="en">English</button></div>' +
+        '<div class="mc-card pad"><div class="mc-h2" style="margin-top:0">' + esc(dz('关于这个账号', 'About this account')) + '</div>' +
+          '<div class="mc-kv"><span class="k">' + esc(dz('角色', 'Role')) + '</span><span class="v">' +
+            esc(isAdmin() ? dz('站点管理员', 'Administrator') : dz('成员', 'Member')) + '</span></div>' +
+          '<div class="mc-kv"><span class="k">' + esc(dz('命名空间', 'Namespace')) + '</span><span class="v" style="font-family:monospace;font-size:11px">' +
+            esc((MC.setup && MC.setup.namespace) || '—') + '</span></div>' +
+          '<div class="mc-kv"><span class="k">' + esc(dz('套餐', 'Plan')) + '</span><span class="v">' +
+            esc(planLabel()) + '</span></div>' +
+          '<p class="mc-p" style="margin-top:10px">' + esc(dz(
+            '主题与语言已移到控制台右上角，和网站首页保持一致。',
+            'Theme and language now live in the top-right corner, matching the site.')) + '</p>' +
         '</div>' +
       '</div>' +
       (isAdmin() ? '<div class="mc-card pad" style="margin-top:12px">' +
@@ -1140,42 +1197,61 @@
               '<td class="num">' + n0(u.memories) + '</td>' +
               '<td>' + (u.onboarded ? '<span class="mc-pill ok"><i></i>' + esc(dz('已接通', 'On')) + '</span>'
                                     : '<span class="mc-pill"><i></i>' + esc(dz('未配置', 'Off')) + '</span>') + '</td>' +
-              '<td>' + esc(u.plan) + (u.plan_expires ? '<div style="font-size:10px;color:var(--fg3)">' +
-                esc(dz('至 ', 'to ') + u.plan_expires.slice(0, 10)) + '</div>' : '') + '</td>' +
-              '<td style="white-space:nowrap;color:var(--fg3)">' + esc(u.created ? new Date(u.created * 1000).toLocaleDateString() : '—') + '</td>' +
+              '<td>' + esc(u.plan_zh || u.plan) +
+                '<div style="font-size:10px;color:var(--fg3)">' +
+                esc(u.plan_price > 0 ? ('¥' + u.plan_price + ' / 30 天') :
+                    (u.plan_price === -1 ? dz('面议', 'quoted') : dz('免费', 'free'))) + '</div>' +
+                (u.plan_expires ? '<div style="font-size:10px;color:var(--fg3)">' +
+                  esc(dz('至 ', 'to ') + u.plan_expires.slice(0, 10)) + '</div>' : '') + '</td>' +
+              '<td style="white-space:nowrap;color:var(--fg3);font-variant-numeric:tabular-nums">' +
+                esc(u.created ? fmtTime(u.created) : '—') + '</td>' +
               '<td style="white-space:nowrap;color:var(--fg3)">' + esc(u.last_write ? ago(u.last_write) : '—') + '</td>' +
               '<td><button class="mc-btn sm" data-act="view-user" data-email="' + esc(u.email) + '">' +
                 esc(dz('查看数据', 'Inspect')) + '</button></td></tr>';
           }).join('') + '</tbody></table></div></div>' +
-        '<div id="mc-userdetail" style="margin-top:12px"></div>';
+        '';
       icons();
     });
   };
 
+  /* 「查看数据」用弹窗而不是行内展开：
+     行内展开会把表格推得很长，一次只能看一个人，也没法边看边对照；
+     弹窗与「扫码支付」「接入向导」的交互也保持一致。 */
   function openUser(email) {
-    var box = document.getElementById('mc-userdetail');
-    if (!box) return;
-    box.innerHTML = '<div class="mc-card pad">' + loading() + '</div>';
+    var host = document.getElementById('mc-usermodal');
+    if (!host) {
+      document.body.insertAdjacentHTML('beforeend', '<div id="mc-usermodal"></div>');
+      host = document.getElementById('mc-usermodal');
+    }
+    host.innerHTML = '<div class="mc-mask" data-act="close-user"><div class="mc-modal" style="max-width:820px" ' +
+      'onclick="event.stopPropagation()"><div class="mb">' + loading() + '</div></div></div>';
     api('/api/dash/user?email=' + encodeURIComponent(email)).then(function (r) {
       var d = (r && r.ok && r.body) || {};
       var u = d.user || {}, m = d.memory || {};
-      if (!u.email) { box.innerHTML = '<div class="mc-note bad">' + esc(dz('读取失败', 'Failed')) + '</div>'; return; }
+      if (!u.email) {
+        host.innerHTML = '<div class="mc-mask" data-act="close-user"><div class="mc-modal" style="max-width:420px">' +
+          '<div class="mb"><div class="mc-note bad">' + esc(dz('读取失败', 'Failed')) + '</div></div></div></div>';
+        return;
+      }
       var max = Math.max(1, Math.max.apply(null, (m.days || []).map(function (x) { return x.n; }).concat([1])));
-      box.innerHTML = '<div class="mc-card pad">' +
-        '<div class="mc-row" style="justify-content:space-between">' +
-          '<div><b style="font-size:15px">' + esc(u.display_name || u.email) + '</b>' +
-            '<div style="font-size:11.5px;color:var(--fg3)">' + esc(u.email) + ' · ' + esc(u.provider) + '</div></div>' +
-          '<div class="mc-row"><button class="mc-btn sm" data-act="as-user" data-email="' + esc(u.email) +
+      host.innerHTML = '<div class="mc-mask" data-act="close-user"><div class="mc-modal" style="max-width:820px" ' +
+        'onclick="event.stopPropagation()"><div class="mh"><div class="st">' + esc(dz('用户档案', 'User record')) +
+        '</div><h2>' + esc(u.display_name || u.email) + '</h2><p>' + esc(u.email) + ' · ' + esc(u.provider) + '</p></div>' +
+        '<div class="mb">' +
+        '<div class="mc-row" style="justify-content:flex-end;margin-bottom:8px">' +
+          '<button class="mc-btn sm pri" data-act="as-user" data-email="' + esc(u.email) +
             '" data-ns="' + esc(u.namespace) + '">' + esc(dz('以该用户视角浏览', 'View as this user')) + '</button>' +
-          '<button class="mc-btn sm" data-act="close-user">' + esc(dz('关闭', 'Close')) + '</button></div>' +
         '</div>' +
         '<div class="mc-grid mc-g4" style="margin-top:12px">' +
           '<div class="mc-kv"><span class="k">' + esc(dz('注册时间', 'Joined')) + '</span><span class="v">' +
-            esc(u.created || '—') + '</span></div>' +
+            esc(u.created ? fmtTime(u.created) : '—') + '</span></div>' +
           '<div class="mc-kv"><span class="k">' + esc(dz('注册 IP', 'IP')) + '</span><span class="v">' +
             esc(u.ip || '—') + '</span></div>' +
           '<div class="mc-kv"><span class="k">' + esc(dz('套餐', 'Plan')) + '</span><span class="v">' +
-            esc(u.plan) + '</span></div>' +
+            esc((u.plan_zh || u.plan) +
+                (u.plan_price > 0 ? ' · ¥' + u.plan_price + ' / 30 天'
+                                  : (u.plan_price === -1 ? ' · ' + dz('面议', 'quoted') : ' · ' + dz('免费', 'free')))) +
+            '</span></div>' +
           '<div class="mc-kv"><span class="k">' + esc(dz('命名空间', 'Namespace')) + '</span><span class="v" style="font-family:monospace;font-size:11px">' +
             esc(u.namespace) + '</span></div>' +
         '</div>' +
@@ -1201,7 +1277,7 @@
               esc(x.excerpt) + '</div></td><td><span class="mc-tag pri">' + esc(x.kind) + '</span></td>' +
               '<td style="white-space:nowrap;color:var(--fg3)">' + esc(ago(x.created)) + '</td></tr>';
           }).join('') + '</tbody></table></div>' +
-        '</div>';
+        '</div></div></div>';
       icons();
     });
   }
@@ -1505,12 +1581,17 @@
         esc(dz('下一步', 'Next')) + '</button></div>';
     } else if (step === 2) {
       var a = ((MC.agents && MC.agents.agents) || []).filter(function (x) { return x.id === MC.wizard.agent; })[0] || {};
-      var winCmd = 'powershell -NoProfile -Command "irm ' + s.installer + ' | python -"';
-      var nixCmd = 'curl -fsSL ' + s.installer + ' | python3 -';
+      /* 不用 `irm ... | python -` 的原因有两个，都会让中文用户直接报错：
+         ① Windows 上 `python -` 按控制台代码页（中文系统 cp936）读 stdin，
+            脚本里的 UTF-8 字节会被解错 → SyntaxError；
+         ② 老客户端对未知 charset 的文本会退回 ISO-8859-1 解码。
+         改成「先落盘、再执行」，两个坑一起绕开；脚本本身也已做成纯 ASCII。 */
+      var winCmd = 'curl.exe -fsSL "' + s.installer + '" -o "%TEMP%\\mnemo-setup.py" && python "%TEMP%\\mnemo-setup.py"';
+      var nixCmd = 'curl -fsSL "' + s.installer + '" -o /tmp/mnemo-setup.py && python3 /tmp/mnemo-setup.py';
       body2 = '<div class="mb">' +
         '<div class="mc-note ok">' + esc(dz('已选择：', 'Selected: ') + (zhNow() ? a.zh : a.name)) + '</div>' +
         '<div class="mc-h2">' + esc(dz('复制这一条命令，在你的电脑上运行', 'Copy this command and run it')) + '</div>' +
-        '<div class="mc-lab">Windows（PowerShell）</div>' +
+        '<div class="mc-lab">Windows（命令提示符 / 终端均可）</div>' +
         '<div class="mc-code">' + esc(winCmd) + '<span class="cp" data-copy="' + esc(winCmd) + '">' +
           esc(dz('复制', 'Copy')) + '</span></div>' +
         '<div class="mc-lab" style="margin-top:10px">macOS / Linux</div>' +
@@ -1709,18 +1790,32 @@
         if (!paths.length) { toast(dz('至少选一项', 'Pick at least one')); return; }
         act.setAttribute('disabled', 'disabled');
         act.innerHTML = '<span class="mc-spin"></span>' + esc(dz('正在巩固…', 'Running…'));
-        api('/api/dash/dream/run', { paths: paths }).then(function (r) {
-          var ok = r && r.ok && r.body && r.body.ok;
-          toast(ok ? dz('这一轮完成', 'Cycle finished') : dz('执行失败', 'Failed'));
+        post('/api/dash/dream/run', { paths: paths }).then(function (r) {
+          var b = (r && r.ok && r.body) || {};
+          if (!b.ok || !b.run) {
+            toast(dz('这一轮没有跑起来：', 'Cycle failed: ') +
+                  ((b.error || b.detail || ('HTTP ' + (r && r.status))) + '').slice(0, 80));
+            paint();
+            return;
+          }
+          MC.lastDream = b.run;
+          var failed = (b.run.steps || []).filter(function (x) { return !x.ok; });
+          toast(failed.length
+            ? dz('这一轮完成，但有 ' + failed.length + ' 步没跑通（原因见下方）',
+                 'Finished with ' + failed.length + ' step(s) failed — see details')
+            : dz('这一轮完成，共改动 ' + (b.run.total || 0) + ' 条', 'Done — ' + (b.run.total || 0) + ' changed'));
           bust('/api/dash/dream' + nsq());
           bust('/api/dash/analytics' + nsq({ days: MC.ui.range || 30 }));
           paint();
-        }).catch(function () { paint(); });
+        }).catch(function (e) {
+          toast(dz('请求失败：', 'Request failed: ') + String(e && e.message || e).slice(0, 60));
+          paint();
+        });
         break;
       }
       case 'buy': {
         var plan = act.getAttribute('data-plan');
-        api('/api/billing/order', { plan: plan }).then(function (r) {
+        post('/api/billing/order', { plan: plan }).then(function (r) {
           var b = (r && r.ok && r.body) || {};
           if (!b.order) { toast(dz('下单失败', 'Order failed')); return; }
           showPay(b.order, b.qr || '');
@@ -1742,7 +1837,7 @@
       }
       case 'paid': {
         var id2 = act.getAttribute('data-id');
-        api('/api/billing/order/paid', { id: id2 }).then(function () {
+        post('/api/billing/order/paid', { id: id2 }).then(function () {
           toast(dz('已提交，等待管理员确认到账', 'Submitted — awaiting confirmation'));
           bust('/api/billing/order');
           paint();
@@ -1751,7 +1846,7 @@
       }
       case 'confirm': {
         var id3 = act.getAttribute('data-id');
-        api('/api/billing/order/confirm', { id: id3 }).then(function () {
+        post('/api/billing/order/confirm', { id: id3 }).then(function () {
           toast(dz('已确认，套餐生效', 'Confirmed — plan activated'));
           bust('/api/billing/order');
           paint();
@@ -1764,7 +1859,7 @@
       case 'save-profile': {
         var dn = document.getElementById('mc-dn');
         if (!dn) return;
-        api('/api/profile', { display_name: dn.value }).then(function () {
+        post('/api/profile', { display_name: dn.value }).then(function () {
           toast(dz('已保存', 'Saved'));
         });
         break;
@@ -1774,7 +1869,7 @@
         if (!f || !f.files || !f.files[0]) { toast(dz('先选一张图', 'Pick an image')); return; }
         var fr = new FileReader();
         fr.onload = function () {
-          api('/api/dash/payqr', { qr: String(fr.result) }).then(function (r) {
+          post('/api/dash/payqr', { qr: String(fr.result) }).then(function (r) {
             var prev = document.getElementById('mc-qrprev');
             if (prev && r && r.ok) prev.innerHTML = '<img class="mc-qr" src="' + esc(fr.result) + '" alt="QR">';
             toast(dz('收款码已保存', 'QR saved'));
@@ -1794,7 +1889,7 @@
         pickUser(act.getAttribute('data-email'), act.getAttribute('data-ns'));
         break;
       case 'close-user': {
-        var ud = document.getElementById('mc-userdetail');
+        var ud = document.getElementById('mc-usermodal');
         if (ud) ud.innerHTML = '';
         break;
       }
@@ -1825,7 +1920,7 @@
         });
         var res = document.getElementById('mc-toolres');
         if (res) res.innerHTML = loading(dz('执行中…', 'Running…'));
-        api('/api/dash/tools/call', { name: name, args: args }).then(function (r) {
+        post('/api/dash/tools/call', { name: name, args: args }).then(function (r) {
           var b = (r && r.ok && r.body) || {};
           if (res) res.innerHTML = '<div class="mc-code" style="max-height:320px">' +
             esc(JSON.stringify(b, null, 2)) + '</div>';

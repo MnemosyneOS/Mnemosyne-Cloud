@@ -2107,7 +2107,7 @@ body.docs #view{ display:block !important; }
 </style>
 <!-- 控制台 v9 样式：独立命名空间 .mc，颜色全部取自上面的设计令牌，
      所以自动跟随 白天 / 夜晚 / 跟随系统；必须排在页面样式之后才能覆盖 body.dash -->
-<link rel="stylesheet" href="assets/console.css?v=9.2" />
+<link rel="stylesheet" href="assets/console.css?v=9.3" />
 </head>
 
 <body>
@@ -2724,8 +2724,8 @@ body.docs #view{ display:block !important; }
 <!-- 控制台 v9：在站点主脚本之前加载。
      它只在被 renderDash() 调用时才取 window.MN，所以早加载不会有时序问题；
      晚加载反而会让「直达 #/dashboard/overview」白屏一次。 -->
-<script src="assets/console-graph.js?v=9.2"></script>
-<script src="assets/console.js?v=9.2"></script>
+<script src="assets/console-graph.js?v=9.3"></script>
+<script src="assets/console.js?v=9.3"></script>
 
 <script>
 /* ============================================================================
@@ -7260,8 +7260,8 @@ body.docs #view{ display:block !important; }
         '<div id="memn-detail"><div class="kempty">' + (zh ? '从左侧选择一个用户，查看其全部记忆。' : 'Pick a user on the left.') + '</div></div>' +
       '</div>' +
       '<p class="sub" style="margin-top:16px;font-size:12.5px">' +
-        (zh ? '每个「u_」库是用户在 /auth/keys 自助领取密钥后绑定的私有记忆库；「default」是站点自己的库。'
-            : 'Each "u_" store is a user private library bound to their self-issued key; "default" is the site\'s own store.') +
+        (zh ? '这里列出全部注册用户（含尚未领取密钥、零记忆的成员，与「成员 / 控制台成员」人数一致）；每个「u_」库是用户在 /auth/keys 自助领取密钥后绑定的私有记忆库。站点自己的库与孤立库归在下方「其他库」。'
+            : 'All registered users are listed here — including members who have not claimed a key and have zero memories, matching the member/console counts. Each "u_" store is a user private library bound to their self-issued key; the site\'s own store and orphan stores are grouped under "Other stores" below.') +
       '</p></div>';
   }
 
@@ -7271,21 +7271,20 @@ body.docs #view{ display:block !important; }
     api('/api/dash/namespaces').then(function (r) {
       var b = (r.ok && r.body) ? r.body : {};
       var rows = b.namespaces || [];
+      var system = b.system || [];
       CONSOLE.nsList = rows;
+      CONSOLE.nsSystem = system;
       if (!document.getElementById('memn-list')) return;
       if (!r.ok) {
         box.innerHTML = '<div class="kempty">' + esc(apiErr(r, lang === 'zh' ? '无法读取记忆库列表。' : 'Could not load stores.')) + '</div>';
         return;
       }
-      if (!rows.length) { box.innerHTML = '<div class="kempty">还没有任何用户记忆库。</div>'; return; }
-      var html = rows.map(function (r2) {
-        return mnemRowHTML(r2, String(r2.namespace) === String(CONSOLE.nsCur));
-      }).join('');
-      box.innerHTML = html;
-      /* 自动展开第一个用户库：点开 tab 即有数据可看，不用先猜要点谁 */
+      if (!rows.length && !system.length) { box.innerHTML = '<div class="kempty">还没有任何记忆库。</div>'; return; }
+      box.innerHTML = mnemListHTML(rows, system);
+      /* 自动展开第一个有私有库的用户（default 已不在用户行里） */
       var first = null;
       for (var i = 0; i < rows.length; i++) {
-        if (rows[i].namespace !== 'default') { first = rows[i]; break; }
+        if (rows[i].namespace) { first = rows[i]; break; }
       }
       if (first && !CONSOLE.nsCur) loadNsMemories(first.namespace);
     })['catch'](function (e) {
@@ -7357,10 +7356,24 @@ body.docs #view{ display:block !important; }
   }
 
   function mnemPaintList(box) {
-    if (!box || !CONSOLE.nsList.length) return;
-    box.innerHTML = CONSOLE.nsList.map(function (r2) {
+    if (!box) return;
+    box.innerHTML = mnemListHTML(CONSOLE.nsList || [], CONSOLE.nsSystem || []);
+  }
+
+  /* 用户记忆左列：先列全部用户（含零记忆 / 未领密钥），再把站点自己的库与
+     孤立库单独归到「其他库」分组，不计入用户人数。 */
+  function mnemListHTML(rows, system) {
+    var h = (rows || []).map(function (r2) {
       return mnemRowHTML(r2, String(r2.namespace) === String(CONSOLE.nsCur));
     }).join('');
+    if (system && system.length) {
+      h += '<div style="font-size:10.5px;color:var(--fg3);margin:10px 2px 4px;letter-spacing:.04em">' +
+        esc(lang === 'zh' ? '其他库（站点 / 孤立）' : 'Other stores (site / orphan)') + '</div>' +
+        system.map(function (r2) {
+          return mnemRowHTML(r2, String(r2.namespace) === String(CONSOLE.nsCur));
+        }).join('');
+    }
+    return h;
   }
 
   /* 用户记忆左列的一行：除库名 / 条数 / 体积外，把账号来源、注册时间、
@@ -8147,10 +8160,30 @@ body.docs #view{ display:block !important; }
 
 function dz(zh, en) { return lang === 'zh' ? zh : en; }
 
-/* 顶栏账号菜单（renderAccountNav）与站点其它地方还在读 DX_ROLE.loaded。
-   控制台已经搬走，但这两个符号是"站点壳"的一部分，必须留着 ——
-   删掉它们的后果是整页抛 ReferenceError，登录态都渲染不出来。 */
-var DX_ROLE = { loaded: true, loading: null };
+/* 顶栏账号菜单（renderAccountNav）与站点其它地方还在读 DX_ROLE / dxEnsureRole。
+   控制台虽然搬走了，但"角色"这件事属于**站点壳**：右上角账号菜单里的
+   「后台管理」只有在拿到 isAdmin 之后才允许出现。
+   2026-10-21 的教训：把 dxEnsureRole 一起删掉、并把 loaded 直接置 true，
+   结果 isAdmin() 永远返回 false —— 登录后「后台管理」入口整个消失。 */
+var DX_ROLE = { loaded: false, loading: null };
+
+function dxEnsureRole() {
+  if (DX_ROLE.loaded) return Promise.resolve(isAdmin());
+  if (DX_ROLE.loading) return DX_ROLE.loading;
+  DX_ROLE.loading = api('/api/console').then(function (r) {
+    var b = (r.ok && r.body) || {};
+    if (b.me) SESSION = b.me;
+    CONSOLE.isAdmin = !!b.isAdmin;
+    DX_ROLE.loaded = true;
+    return CONSOLE.isAdmin;
+  })['catch'](function () {
+    /* 失败按非管理员处理：画一个必然被拒的入口，比不画更糟 */
+    DX_ROLE.loaded = true;
+    CONSOLE.isAdmin = false;
+    return false;
+  });
+  return DX_ROLE.loading;
+}
 
 function renderDash(path) {
   if (window.MNConsole && typeof window.MNConsole.render === 'function') {
@@ -8161,7 +8194,7 @@ function renderDash(path) {
   if (!window.__mnConsoleRetry) {
     window.__mnConsoleRetry = 1;
     var s = document.createElement('script');
-    s.src = 'assets/console.js?v=9.2';
+    s.src = 'assets/console.js?v=9.3';
     s.onload = function () { renderDash(path); };
     s.onerror = function () {
       var view = $('#view');

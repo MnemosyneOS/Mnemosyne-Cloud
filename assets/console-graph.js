@@ -32,6 +32,9 @@
     this.hidden = {};
     this.query = '';
     this.dragNode = null;
+    this.progress = 1;      /* 1 = 全部可见；播放时从 0 涨到 1 */
+    this.speed = 0.8;
+    this._playRaf = null;
     this.pan = null;
     this.dpr = Math.min(2, global.devicePixelRatio || 1);
     this.build();
@@ -46,6 +49,13 @@
     wrap.innerHTML =
       '<canvas></canvas>' +
       '<div class="mc-gtools"></div>' +
+      '<div class="mc-gplay">' +
+        '<button class="mc-gchip" data-play="1" title="从中心缓慢展开">' +
+          '<svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>' +
+          '<span>播放</span></button>' +
+        '<button class="mc-gchip on" data-speed="0.8">0.8×</button>' +
+        '<button class="mc-gchip" data-speed="0.5">0.5×</button>' +
+      '</div>' +
       '<div class="mc-gzoom">' +
         '<button data-z="in" title="放大">+</button>' +
         '<button data-z="out" title="缩小">−</button>' +
@@ -94,11 +104,38 @@
       (self.adj[e.s] = self.adj[e.s] || []).push(e);
       (self.adj[e.t] = self.adj[e.t] || []).push(e);
     });
+    this.order();          /* 算出每个节点的出场顺序，供"播放"用 */
     this.alpha = 1;
     this.filters();
     this.legend(data.stats || {});
     this.fit();
     this.tick();
+  };
+
+  /* 出场顺序：从度最高的节点做 BFS，一层一层向外。
+     这样点"播放"看到的是"中心先亮、关系逐圈展开"，而不是随机闪。 */
+  Graph.prototype.order = function () {
+    var self = this;
+    var nodes = this.nodes.slice().sort(function (a, b) { return b.degree - a.degree; });
+    var seen = {}, queue = [], seq = [];
+    if (nodes.length) { seen[nodes[0].id] = 1; queue.push(nodes[0]); }
+    while (queue.length) {
+      var cur = queue.shift();
+      seq.push(cur);
+      (this.adj[cur.id] || []).forEach(function (e) {
+        var other = self.byId[e.s === cur.id ? e.t : e.s];
+        if (other && !seen[other.id]) { seen[other.id] = 1; queue.push(other); }
+      });
+    }
+    /* 图可能不连通：剩下的按度补在后面，保证每个点都有出场时间 */
+    nodes.forEach(function (n) { if (!seen[n.id]) { seen[n.id] = 1; seq.push(n); } });
+    var total = Math.max(1, seq.length - 1);
+    seq.forEach(function (n, i) { n.reveal = i / total; });
+    this.edges.forEach(function (e) {
+      var a = self.byId[e.s], b = self.byId[e.t];
+      e.reveal = Math.max(a ? a.reveal : 0, b ? b.reveal : 0);
+    });
+    return seq.length;
   };
 
   Graph.prototype.filters = function () {
@@ -115,10 +152,11 @@
   };
 
   Graph.prototype.legend = function (stats) {
+    /* 图例只放计数：操作提示已经在页面副标题里写过一次，
+       重复一遍会和底部的播放控件挤在一起。 */
     this.wrap.querySelector('.mc-glegend').innerHTML =
       '<span>节点 ' + (stats.nodes || this.nodes.length) + '</span>' +
-      '<span>关系 ' + (stats.edges || this.edges.length) + '</span>' +
-      '<span>· 悬停看内容，点击看关系，滚轮缩放，拖空白处平移</span>';
+      '<span>关系 ' + (stats.edges || this.edges.length) + '</span>';
   };
 
   Graph.prototype.resize = function () {
@@ -133,6 +171,8 @@
 
   Graph.prototype.visible = function (n) {
     if (this.hidden[n.kind]) return false;
+    /* 播放中：还没到出场时间的点先不画 */
+    if (n.reveal !== undefined && n.reveal > this.progress) return false;
     return true;
   };
 
@@ -237,6 +277,7 @@
       var a = self.byId[e.s], b = self.byId[e.t];
       if (!a || !b || !self.visible(a) || !self.visible(b)) return;
       var pa = self.toScreen(a), pb = self.toScreen(b);
+      if (e.reveal !== undefined && e.reveal > self.progress) return;
       var on = hi && (e.s === hi.id || e.t === hi.id);
       var dim = hi && !on;
       ctx.beginPath();
@@ -467,6 +508,17 @@
         self.draw();
         return;
       }
+      var pl = t.closest ? t.closest('[data-play]') : null;
+      if (pl) { self.play(); return; }
+      var sp = t.closest ? t.closest('[data-speed]') : null;
+      if (sp) {
+        self.speed = parseFloat(sp.getAttribute('data-speed')) || 0.8;
+        self.wrap.querySelectorAll('[data-speed]').forEach(function (b) {
+          b.classList.toggle('on', b === sp);
+        });
+        self.play(self.speed);
+        return;
+      }
       var z = t.closest ? t.closest('[data-z]') : null;
       if (z) {
         var mode = z.getAttribute('data-z');
@@ -501,8 +553,33 @@
     return !!hit;
   };
 
+  /* 播放：progress 0 → 1。基准 8 秒走完，0.8× 约 10 秒、0.5× 约 16 秒。 */
+  Graph.prototype.play = function (speed) {
+    var self = this;
+    if (speed) this.speed = speed;
+    if (this._playRaf) global.cancelAnimationFrame(this._playRaf);
+    this.progress = 0;
+    var last = 0;
+    var step = function (ts) {
+      if (!last) last = ts;
+      var dt = (ts - last) / 1000;
+      last = ts;
+      /* 基准时长 8 秒：0.8× → 10 秒，0.5× → 16 秒。够慢，能看清结构。 */
+      self.progress = Math.min(1, self.progress + dt * self.speed / 8);
+      self.draw();
+      if (self.progress < 1) {
+        self._playRaf = global.requestAnimationFrame(step);
+      } else {
+        self._playRaf = null;
+      }
+    };
+    this._playRaf = global.requestAnimationFrame(step);
+    return this;
+  };
+
   Graph.prototype.destroy = function () {
     if (this._raf) global.cancelAnimationFrame(this._raf);
+    if (this._playRaf) global.cancelAnimationFrame(this._playRaf);
     this.host.innerHTML = '';
   };
 

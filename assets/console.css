@@ -58,14 +58,19 @@ html[data-theme="dark"] .mc { --mc-ok: #4ADE80; --mc-warn: #FBBF24; --mc-bad: #F
   font-weight: 650; font-size: 12px;
 }
 .mc-who .av img { width: 100%; height: 100%; object-fit: cover; }
-.mc-who .txt { min-width: 0; flex: 1; }
-.mc-who .nm { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mc-who .sub { font-size: 10.5px; color: var(--fg3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mc-who .txt { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 1px; }
+/* 名字与 ADMIN 徽章同一行：徽章早先是 absolute 压在副标题上，
+   长名字（如 "Mnemosyne OS"）时两行叠在一起，看起来就是"错行"。 */
+.mc-who .line1 { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.mc-who .nm { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; flex: 0 1 auto; min-width: 0; }
+.mc-who .sub { font-size: 10.5px; color: var(--fg3); white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; }
 .mc-who .chev { color: var(--fg3); flex: none; }
 .mc-who .badge-admin {
-  position: absolute; right: 26px; top: 9px; font-size: 9px; letter-spacing: .06em;
-  padding: 1px 5px; border-radius: 4px; background: var(--accent-bg);
-  color: var(--accent-ink); border: 1px solid var(--accent-line); font-weight: 600;
+  flex: none; font-size: 8.5px; letter-spacing: .06em; line-height: 1.5;
+  padding: 0 4px; border-radius: 4px; background: var(--accent-bg);
+  color: var(--accent-ink); border: 1px solid var(--accent-line); font-weight: 700;
 }
 
 /* 账号下拉：管理员在这里切换"看谁的记忆" */
@@ -117,6 +122,14 @@ html[data-theme="dark"] .mc { --mc-ok: #4ADE80; --mc-warn: #FBBF24; --mc-bad: #F
   background: var(--accent-solid); color: var(--accent-solid-ink); font-weight: 650; font-size: 11.5px; }
 .mc-plan .up:hover { filter: brightness(1.06); }
 
+.mc-theme.top { margin: 0; height: 30px; width: 108px; flex: none; }
+.mc-theme.top button { height: 24px; }
+.mc-lang { display: inline-flex; height: 30px; border: 1px solid var(--hair); border-radius: 8px;
+  overflow: hidden; flex: none; }
+.mc-lang button { border: 0; background: var(--surface); color: var(--fg3); font-size: 11.5px;
+  padding: 0 9px; cursor: pointer; }
+.mc-lang button.on { background: var(--accent-bg); color: var(--accent-ink); font-weight: 650; }
+.mc-lang button + button { border-left: 1px solid var(--hair); }
 .mc-theme { display: flex; gap: 2px; margin-top: 8px; padding: 2px; border-radius: 8px;
   background: var(--surface-2); border: 1px solid var(--hair); }
 .mc-theme button { flex: 1; height: 24px; border: 0; border-radius: 6px; background: none;
@@ -252,6 +265,9 @@ html[data-theme="dark"] .mc { --mc-ok: #4ADE80; --mc-warn: #FBBF24; --mc-bad: #F
   color: var(--fg2); backdrop-filter: blur(8px); display: inline-flex; align-items: center; gap: 5px; }
 .mc-gchip.on { background: var(--accent-solid); color: var(--accent-solid-ink); border-color: transparent; font-weight: 600; }
 .mc-gchip i { width: 7px; height: 7px; border-radius: 50%; }
+.mc-gplay { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%);
+  display: flex; gap: 5px; z-index: 4; }
+.mc-gplay .mc-gchip { backdrop-filter: blur(8px); }
 .mc-gzoom { position: absolute; right: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 5px; z-index: 3; }
 .mc-gzoom button { width: 28px; height: 28px; border-radius: 7px; border: 1px solid var(--hair);
   background: color-mix(in srgb, var(--surface) 90%, transparent); cursor: pointer; color: var(--fg2);
