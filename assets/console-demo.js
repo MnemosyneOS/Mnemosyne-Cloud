@@ -35,6 +35,7 @@
     mine: false,          /* 本浏览器是否已经注册过沙盒账号 */
     turns: [],            /* 每一轮：用户说了什么、形成几条、召回几条 */
     full: false,
+    wait: { A: 0, B: 0 },  /* 这一轮已经等了几秒：气泡里显示，避免看起来像卡死 */
     ui: { q: '', fix: '', target: '', reg: { email: '', password: '' } }
   };
 
@@ -163,7 +164,8 @@
       id: 'recall', zh: '同会话召回', kicker: '基础能力',
       title: '问一句话，取回该取回的',
       lead: '召回不是关键词搜索：BM25 关键词、向量语义、知识图谱边、时间衰减、置信度加权' +
-            '五路并行，融合成 top-k。左边点「提问」走的也是这条路。',
+            '五路并行，融合成 top-k。你在左边随口问一句，走的就是这条路 —— 没有开关，' +
+            '系统自己判断该不该查。',
       points: ['每条命中带相似度分数，不是黑盒',
                '同时返回上下文预算用了多少 token',
                '检索只在这个账号的库里进行'],
@@ -584,6 +586,16 @@
           turnFold(m) +
         '</div></div>';
     });
+    /* 正在等模型：给一个会走秒的"正在想"，而不是一个转圈让人以为卡死。
+       云端模型单次 5~40 秒都正常，客户看得见秒数就不会以为坏了。 */
+    if (D.busy[session]) {
+      out += '<div class="bub-row ai bub-wait" id="sb-think-' + session + '">' +
+        '<span class="bub-av">M</span>' +
+        '<div class="bub-wrap"><div class="bub bub-dots">' +
+          '<span class="d1"></span><span class="d2"></span><span class="d3"></span>' +
+          '<em class="sb-sec">' + (D.wait[session] || 0) + 's</em>' +
+        '</div></div></div>';
+    }
     return out;
   }
 
@@ -754,9 +766,14 @@
   /* 需要用户输入的章节，输入框直接放在讲解下面（而不是让他去别处填） */
   function extraInputs(c) {
     if (c.id === 'recall') {
+      /* 用 textarea 而不是 input：客户发的那句话往往很长（一整个会员规则），
+         input 是单行，超出部分直接被切掉 —— 客户会以为系统只拿到半句。
+         行数按字数估，最多 6 行，整句话看得见。 */
+      var qv = D.ui.q || lastUserText('A') || '';
+      var rows = Math.min(6, Math.max(2, Math.ceil(String(qv).length / 40)));
       return '<div class="dm2-field"><label>' + esc(dz('用这句话去召回（默认是你左边最后一句）', 'Query')) + '</label>' +
-        '<input class="sb-inp" id="dm-q" value="' + esc(D.ui.q || lastUserText('A')) + '" placeholder="' +
-        esc(dz('例如：张女士喝什么', 'e.g. what does she drink')) + '"></div>';
+        '<textarea class="sb-inp dm-q" id="dm-q" rows="' + rows + '" placeholder="' +
+        esc(dz('例如：张女士喝什么', 'e.g. what does she drink')) + '">' + esc(qv) + '</textarea></div>';
     }
     if (c.id === 'correct' || c.id === 'forget') {
       var rows = recent();
@@ -850,8 +867,10 @@
     if (!text) return;
     D.chat[session].push({ role: 'user', text: text, at: Date.now() });
     D.busy[session] = true;
+    D.wait[session] = 0;
     ta.value = '';
     paintChat(session);
+    tickWait(session);
     var btn = document.querySelector('[data-dm="send"][data-s="' + session + '"]');
     if (btn) { btn.disabled = true; btn.innerHTML = '<span class="dm-spin"></span>'; }
 
@@ -873,15 +892,31 @@
         });
       }
       D.busy[session] = false;
+      stopWait(session);
       var btn2 = document.querySelector('[data-dm="send"][data-s="' + session + '"]');
       if (btn2) { btn2.disabled = false; btn2.innerHTML = esc(dz('发送', 'Send')); }
       paintChat(session);
       refreshState();
     })['catch'](function (e) {
       D.busy[session] = false;
+      stopWait(session);
       D.chat[session].push({ role: 'agent', text: '请求失败：' + (e && e.message || e), at: Date.now() });
       paintChat(session);
     });
+  }
+
+  /* 等待计时器：只改那个小数字，不重绘整个列表（重绘会丢滚动位置） */
+  var WAIT_TIMERS = {};
+  function tickWait(session) {
+    stopWait(session);
+    WAIT_TIMERS[session] = setInterval(function () {
+      D.wait[session] = (D.wait[session] || 0) + 1;
+      var el = document.querySelector('#sb-think-' + session + ' .sb-sec');
+      if (el) el.textContent = D.wait[session] + 's';
+    }, 1000);
+  }
+  function stopWait(session) {
+    if (WAIT_TIMERS[session]) { clearInterval(WAIT_TIMERS[session]); WAIT_TIMERS[session] = null; }
   }
 
   function register() {

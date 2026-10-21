@@ -2013,11 +2013,13 @@
   window.MCDemoHost = {
     api: api,
     post: post,
-    /* 慢接口：记忆抽取要等模型（最长 40 秒），15 秒超时会把"正在思考"误判成失败 */
+    /* 慢接口：一轮对话要等两次云端模型（抽取 + 回复并行，线上实测 26~41 秒）。
+       95 秒上限：低于 Cloudflare 回源 100 秒，高于服务端自己的 75 秒预算 —— 
+       宁可服务端先返回降级结果，也不要浏览器先超时。 */
     postSlow: function (p, b) {
       return api(p, { method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(b || {}) }, 70000);
+                      body: JSON.stringify(b || {}) }, 95000);
     },
     esc: esc,
     dz: dz,

@@ -33,7 +33,7 @@
     this.query = '';
     this.dragNode = null;
     this.progress = 1;      /* 1 = 全部可见；播放时从 0 涨到 1 */
-    this.speed = 0.8;
+    this.speed = 0.5;       /* 固定 0.5×：点播放就慢慢展开，不再让用户选倍速 */
     this._playRaf = null;
     this.pan = null;
     this.dpr = Math.min(2, global.devicePixelRatio || 1);
@@ -50,11 +50,9 @@
       '<canvas></canvas>' +
       '<div class="mc-gtools"></div>' +
       '<div class="mc-gplay">' +
-        '<button class="mc-gchip" data-play="1" title="从中心缓慢展开">' +
+        '<button class="mc-gchip" data-play="1" title="从中心以 0.5× 缓慢展开">' +
           '<svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>' +
           '<span>播放</span></button>' +
-        '<button class="mc-gchip on" data-speed="0.8">0.8×</button>' +
-        '<button class="mc-gchip" data-speed="0.5">0.5×</button>' +
       '</div>' +
       '<div class="mc-gzoom">' +
         '<button data-z="in" title="放大">+</button>' +
@@ -510,15 +508,6 @@
       }
       var pl = t.closest ? t.closest('[data-play]') : null;
       if (pl) { self.play(); return; }
-      var sp = t.closest ? t.closest('[data-speed]') : null;
-      if (sp) {
-        self.speed = parseFloat(sp.getAttribute('data-speed')) || 0.8;
-        self.wrap.querySelectorAll('[data-speed]').forEach(function (b) {
-          b.classList.toggle('on', b === sp);
-        });
-        self.play(self.speed);
-        return;
-      }
       var z = t.closest ? t.closest('[data-z]') : null;
       if (z) {
         var mode = z.getAttribute('data-z');
@@ -553,10 +542,10 @@
     return !!hit;
   };
 
-  /* 播放：progress 0 → 1。基准 8 秒走完，0.8× 约 10 秒、0.5× 约 16 秒。 */
-  Graph.prototype.play = function (speed) {
+  /* 播放：progress 0 → 1。固定 0.5×，基准 8 秒 → 约 16 秒慢慢展开。 */
+  Graph.prototype.play = function () {
     var self = this;
-    if (speed) this.speed = speed;
+    this.speed = 0.5;
     if (this._playRaf) global.cancelAnimationFrame(this._playRaf);
     this.progress = 0;
     var last = 0;
@@ -564,7 +553,7 @@
       if (!last) last = ts;
       var dt = (ts - last) / 1000;
       last = ts;
-      /* 基准时长 8 秒：0.8× → 10 秒，0.5× → 16 秒。够慢，能看清结构。 */
+      /* 0.5× 固定：8 秒的基准拉成 16 秒，够慢，能看清结构。 */
       self.progress = Math.min(1, self.progress + dt * self.speed / 8);
       self.draw();
       if (self.progress < 1) {
