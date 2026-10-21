@@ -98,11 +98,11 @@
     {
       id: 'deploy', zh: '握手', kicker: '接入 · 真实协议',
       title: '握手：验证端点与工具面',
-      lead: '这一步做的是：从**服务器侧**用标准 MCP 协议连一次网关，验证端点可达、' +
+      lead: '这一步做的是：从服务器侧用标准 MCP 协议连一次网关，验证端点可达、' +
             '鉴权有效、52 个工具齐全。这就是客户在自己电脑上接完之后，客户端会看到的东西。',
       points: ['真实 JSON-RPC：initialize → tools/list，不是模拟',
                '协议版本是协商出来的：客户端提议、服务端接受，两边可以不同',
-               '它**不会**在你电脑上安装任何东西 —— 浏览器没有写你磁盘的权限；' +
+               '它不会在你电脑上安装任何东西 —— 浏览器没有写你磁盘的权限；' +
                '真正落地的是安装器命令，点下面的「在我电脑上真接一次」',
                '接上之后你在自己 Agent 里写的东西，会出现在这个演示库和右侧「记忆流水」里'],
       cta: '执行一次真实握手',
@@ -973,6 +973,9 @@
         '<div class="mc-lab" style="margin-top:8px">' + esc(dz('手动填这两行也行', 'Or fill these two')) + '</div>' +
         '<div class="mc-code">URL: ' + esc(b.mcp_url) + '<br>Authorization: Bearer ' + esc(b.key) + '</div>';
       icons();
+      /* 结果卡很高，密钥块插在末尾时用户看不见 —— 主动滚过去，
+         否则他点完按钮会觉得"什么都没发生"。 */
+      try { host.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
     });
   }
 
