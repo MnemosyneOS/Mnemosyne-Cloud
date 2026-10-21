@@ -113,6 +113,7 @@
      { id: 'billing', zh: '套餐与用量', en: 'Plan & usage', ic: 'credit-card' },
      { id: 'settings', zh: '设置', en: 'Settings', ic: 'settings' }],
     [{ g: 'admin', admin: 1 },
+     { id: 'demo', zh: '演示 & 测试', en: 'Demo & test', ic: 'presentation', badge: 'NEW' },
      { id: 'users', zh: '注册用户信息', en: 'Users', ic: 'users' },
      { id: 'tools', zh: '工具台（52）', en: 'Tools (52)', ic: 'wrench' },
      { id: 'audit', zh: '审计日志', en: 'Audit', ic: 'scroll-text' }],
@@ -131,6 +132,7 @@
     formation: ['记忆运行层', 'Formation layer'], dream: ['梦 · 离线巩固', 'Dreams'],
     analytics: ['使用分析', 'Analytics'], exports: ['导出与迁移', 'Export'],
     billing: ['套餐与用量', 'Plan & usage'], settings: ['设置', 'Settings'],
+    demo: ['演示 & 测试', 'Demo & test'],
     users: ['注册用户信息', 'Registered users'], tools: ['工具台', 'Toolbox'],
     audit: ['审计日志', 'Audit log'], docs: ['文档', 'Docs'], mcp: ['MCP 接入', 'MCP'],
     changelog: ['更新日志', 'Changelog']
@@ -350,7 +352,7 @@
       });
       return;
     }
-    if (!isAdmin() && (rest === 'users' || rest === 'tools' || rest === 'audit')) rest = 'overview';
+    if (!isAdmin() && (rest === 'users' || rest === 'tools' || rest === 'audit' || rest === 'demo')) rest = 'overview';
 
     document.body.classList.add('dash');
     var home = document.getElementById('home');
@@ -1164,6 +1166,20 @@
         '<button class="mc-btn pri" data-act="save-qr">' + esc(dz('上传', 'Upload')) + '</button></div>' +
         '<div id="mc-qrprev" style="margin-top:10px"></div></div>' : '');
     icons();
+  };
+
+  /* ---- 演示 & 测试 ----------------------------------------------------- */
+
+  /* 演示舞台在独立文件里（assets/console-demo.js）：它有自己的 10 章剧本、
+     自己的状态机，塞进这个文件只会让两边都难改。这里只负责挂载。 */
+  PAGES.demo = function (el) {
+    if (window.MCDemo && typeof window.MCDemo.render === 'function') {
+      window.MCDemo.render(el);
+      return;
+    }
+    el.innerHTML = '<div class="mc-note bad">' +
+      esc(dz('演示模块未加载（assets/console-demo.js）。刷新页面重试。',
+             'Demo module not loaded (assets/console-demo.js). Reload the page.')) + '</div>';
   };
 
   /* ---- 注册用户信息 ----------------------------------------------------- */
@@ -1983,6 +1999,20 @@
   });
 
   /* ------------------------------------------------------------------ boot */
+
+  /* 演示模块（console-demo.js）只通过这个口子用控制台能力。
+     暴露的是**函数**不是对象：它拿到的永远是当前状态，不会拿到旧快照。 */
+  window.MCDemoHost = {
+    api: api,
+    post: post,
+    esc: esc,
+    dz: dz,
+    toast: toast,
+    icons: icons,
+    fmtTime: fmtTime,
+    go: function (page) { location.hash = '#/dashboard/' + page; },
+    setView: function (email, ns) { pickUser(email, ns); }
+  };
 
   window.MNConsole = { render: render, MC: MC };
   MC.render = render;
