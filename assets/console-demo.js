@@ -522,7 +522,7 @@
         '<span class="bub-av">' + (me ? esc(dz('我', 'Me')) : 'M') + '</span>' +
         '<div class="bub-wrap">' +
           '<div class="bub">' + esc(m.text || '') + '</div>' +
-          (m.facts && m.facts.length ? factsHTML(m.facts, m.source) : '') +
+          memoryHTML(m) +
           (showHits(m) ? hitsHTML(m.hits) : '') +
         '</div></div>';
     });
@@ -541,11 +541,40 @@
     return top >= 0.6;
   }
 
-  function factsHTML(facts, source) {
+  /* 这一句到底是谁抽的：模型、还是规则。
+     用户配了模型却看到"规则切分"会以为没生效，所以这里把模型名也写出来。 */
+  function extractLabel(m) {
+    var ex = m.extract || {};
+    if (m.source === 'llm') {
+      return ex.model ? ('LLM 抽取 · ' + ex.model) : 'LLM 抽取';
+    }
+    if (ex.parse_failed) return dz('规则切分（模型输出无法解析）', 'rules (model output unparsable)');
+    return dz('规则切分', 'rules');
+  }
+
+  function memoryHTML(m) {
+    var facts = m.facts || [];
+    var ex = m.extract || {};
+    if (facts.length) return factsHTML(facts, m.source, ex);
+    if (m.source === 'llm') {
+      /* 模型明确判断"没有可记的内容" —— 这是结论，不是失败 */
+      return '<div class="mem-card none"><div class="mem-hd">' +
+        esc(dz('模型判断：这句没有需要长期记住的内容', 'The model saw nothing worth keeping')) +
+        '<span class="mem-src">' + esc(extractLabel(m)) + '</span></div></div>';
+    }
+    if (ex.reason) {
+      return '<div class="mem-card none"><div class="mem-hd">' +
+        esc(dz('没形成记忆', 'Nothing stored')) +
+        '<span class="mem-src">' + esc(String(ex.reason).slice(0, 40)) + '</span></div></div>';
+    }
+    return '';
+  }
+
+  function factsHTML(facts, source, ex) {
     var ok = facts.filter(function (f) { return f.ok !== false; });
     return '<div class="mem-card">' +
       '<div class="mem-hd">' + esc(dz('形成 ', 'Formed ')) + ok.length + esc(dz(' 条记忆', ' memories')) +
-        '<span class="mem-src">' + (source === 'llm' ? 'LLM 抽取' : dz('规则切分', 'rules')) + '</span></div>' +
+        '<span class="mem-src">' + esc(extractLabel({ source: source, extract: ex })) + '</span></div>' +
       ok.map(function (f) {
         return '<div class="mem-it">' +
           '<span class="mem-type">' + esc(TYPE_ZH[f.type] || f.type) + '</span>' +
@@ -740,7 +769,7 @@
         D.chat[session].push({
           role: 'agent', text: b.reply || '', at: Date.now(),
           facts: b.facts || [], source: b.source, hits: b.hits || [],
-          kind: b.kind, top: b.top_score || 0
+          extract: b.extract || {}, kind: b.kind, top: b.top_score || 0
         });
       }
       D.busy[session] = false;

@@ -676,3 +676,7 @@ body.dm-full { overflow: hidden; }
     border-bottom: 1px solid var(--hair); }
   .sb-chat { min-height: 240px; }
 }
+
+/* 抽取失败 / 模型判断"无可记内容"时的灰卡：要看得见，但不抢戏 */
+.mem-card.none { border-color: var(--hair); background: var(--surface-2); }
+.mem-card.none .mem-hd { color: var(--fg3); font-weight: 500; }
