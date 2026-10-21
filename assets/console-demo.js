@@ -788,7 +788,11 @@
       }).join('') + '</div>' : '') +
       (res.note ? '<div class="dm-note">' + esc(res.note) + '</div>' : '') +
       (res.actions ? '<div class="dm-actions">' + res.actions.map(function (a) {
-        return '<button class="dm-ghost" data-dm="goto" data-to="' + esc(a.to) + '">' + esc(a.label) + '</button>';
+        /* a.act 决定点击行为：goto 跳页（要 a.to），demo-key 现场签发密钥。
+           早先这里把每个动作都写死成 goto，于是「在我电脑上真接一次」渲染出来
+           是个指向 undefined 的按钮，点了没反应 —— 客户会以为整套是假的。 */
+        return '<button class="dm-ghost" data-dm="' + esc(a.act || 'goto') + '"' +
+          (a.to ? ' data-to="' + esc(a.to) + '"' : '') + '>' + esc(a.label) + '</button>';
       }).join('') + '</div>' : '') +
       (raw ? '<details class="dm-raw"><summary>' + esc(dz('原始返回（可给技术方看）', 'Raw response')) +
              '</summary><pre>' + esc(raw) + '</pre></details>' : '') +
