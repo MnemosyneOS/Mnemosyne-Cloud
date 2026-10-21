@@ -25,6 +25,19 @@
      /api/dash/* 会挂到网关超时才回来（十几秒）。前端如果不设上限，
      用户看到的就是"永远转圈" —— 这正是旧控制台被骂"菜单点不动"的成因之一。
      超时后返回一个可识别的失败，页面照常渲染骨架并显式说明"引擎没响应"。 */
+  /* 安装命令要按 shell 分开给 —— 2026-10-21 用户实测踩坑：
+     Windows PowerShell 5.1 不认 `&&`（那是 CMD 的分隔符），会直接
+     ParserError: 标记"&&"不是此版本中的有效语句分隔符；
+     它也不认 %TEMP%（那是 CMD 的变量写法），要写 $env:TEMP。
+     所以 PowerShell / CMD / macOS·Linux 三套，各给一条能原样粘的。 */
+  function shellCmds(installer) {
+    return {
+      ps: 'curl.exe -fsSL "' + installer + '" -o "$env:TEMP\\mnemo-setup.py"; python "$env:TEMP\\mnemo-setup.py"',
+      cmd: 'curl -fsSL "' + installer + '" -o "%TEMP%\\mnemo-setup.py" && python "%TEMP%\\mnemo-setup.py"',
+      nix: 'curl -fsSL "' + installer + '" -o /tmp/mnemo-setup.py && python3 /tmp/mnemo-setup.py'
+    };
+  }
+
   function api(p, b, timeoutMs) {
     var m = mn();
     if (!m.api) return Promise.resolve({ ok: false, status: 0, body: { __err: 'no api' } });
@@ -576,8 +589,8 @@
             脚本里的 UTF-8 字节会被解错 → SyntaxError；
          ② 老客户端对未知 charset 的文本会退回 ISO-8859-1 解码。
          改成「先落盘、再执行」，两个坑一起绕开；脚本本身也已做成纯 ASCII。 */
-      var winCmd = 'curl.exe -fsSL "' + s.installer + '" -o "%TEMP%\\mnemo-setup.py" && python "%TEMP%\\mnemo-setup.py"';
-      var nixCmd = 'curl -fsSL "' + s.installer + '" -o /tmp/mnemo-setup.py && python3 /tmp/mnemo-setup.py';
+      var C = shellCmds(s.installer);
+      var winCmd = C.ps, nixCmd = C.nix;
       el.innerHTML = head(dz('接入配置', 'Setup'),
         dz('选你的 Agent，复制一条命令，剩下的它自己做完 —— 包括验证。',
            'Pick your agent, copy one command, and it does the rest — including verification.'),
@@ -590,8 +603,10 @@
             '<p class="mc-p" style="margin-bottom:10px">' + esc(dz(
               '这段命令已经带上了你的密钥。它会：检测本机 Agent → 写入 MCP 配置 → 真连一次 → 写一条冒烟记忆。',
               'The command already carries your key. It detects local agents, writes the MCP config, tests the link and writes a smoke memory.')) + '</p>' +
-            '<div class="mc-lab">Windows（命令提示符 / 终端均可）</div>' +
-            '<div class="mc-code">' + esc(winCmd) + '<span class="cp" data-copy="' + esc(winCmd) + '">' + esc(dz('复制', 'Copy')) + '</span></div>' +
+            '<div class="mc-lab">Windows · PowerShell（推荐，Win+X 里的那个）</div>' +
+            '<div class="mc-code">' + esc(C.ps) + '<span class="cp" data-copy="' + esc(C.ps) + '">' + esc(dz('复制', 'Copy')) + '</span></div>' +
+            '<div class="mc-lab" style="margin-top:10px">Windows · 命令提示符（CMD）</div>' +
+            '<div class="mc-code">' + esc(C.cmd) + '<span class="cp" data-copy="' + esc(C.cmd) + '">' + esc(dz('复制', 'Copy')) + '</span></div>' +
             '<div class="mc-lab" style="margin-top:10px">macOS / Linux</div>' +
             '<div class="mc-code">' + esc(nixCmd) + '<span class="cp" data-copy="' + esc(nixCmd) + '">' + esc(dz('复制', 'Copy')) + '</span></div>' +
             '<div class="mc-note" style="margin-top:10px">' + esc(dz(
@@ -1610,13 +1625,16 @@
             脚本里的 UTF-8 字节会被解错 → SyntaxError；
          ② 老客户端对未知 charset 的文本会退回 ISO-8859-1 解码。
          改成「先落盘、再执行」，两个坑一起绕开；脚本本身也已做成纯 ASCII。 */
-      var winCmd = 'curl.exe -fsSL "' + s.installer + '" -o "%TEMP%\\mnemo-setup.py" && python "%TEMP%\\mnemo-setup.py"';
-      var nixCmd = 'curl -fsSL "' + s.installer + '" -o /tmp/mnemo-setup.py && python3 /tmp/mnemo-setup.py';
+      var C = shellCmds(s.installer);
+      var winCmd = C.ps, nixCmd = C.nix;
       body2 = '<div class="mb">' +
         '<div class="mc-note ok">' + esc(dz('已选择：', 'Selected: ') + (zhNow() ? a.zh : a.name)) + '</div>' +
         '<div class="mc-h2">' + esc(dz('复制这一条命令，在你的电脑上运行', 'Copy this command and run it')) + '</div>' +
-        '<div class="mc-lab">Windows（命令提示符 / 终端均可）</div>' +
-        '<div class="mc-code">' + esc(winCmd) + '<span class="cp" data-copy="' + esc(winCmd) + '">' +
+        '<div class="mc-lab">Windows · PowerShell（推荐，Win+X 里的那个）</div>' +
+        '<div class="mc-code">' + esc(C.ps) + '<span class="cp" data-copy="' + esc(C.ps) + '">' +
+          esc(dz('复制', 'Copy')) + '</span></div>' +
+        '<div class="mc-lab" style="margin-top:10px">Windows · 命令提示符（CMD）</div>' +
+        '<div class="mc-code">' + esc(C.cmd) + '<span class="cp" data-copy="' + esc(C.cmd) + '">' +
           esc(dz('复制', 'Copy')) + '</span></div>' +
         '<div class="mc-lab" style="margin-top:10px">macOS / Linux</div>' +
         '<div class="mc-code">' + esc(nixCmd) + '<span class="cp" data-copy="' + esc(nixCmd) + '">' +
@@ -2013,6 +2031,8 @@
   window.MCDemoHost = {
     api: api,
     post: post,
+    /* 安装命令按 shell 分开生成（PowerShell 不认 && 和 %TEMP%） */
+    shellCmds: shellCmds,
     /* 慢接口：一轮对话要等两次云端模型（抽取 + 回复并行，线上实测 26~41 秒）。
        95 秒上限：低于 Cloudflare 回源 100 秒，高于服务端自己的 75 秒预算 —— 
        宁可服务端先返回降级结果，也不要浏览器先超时。 */
