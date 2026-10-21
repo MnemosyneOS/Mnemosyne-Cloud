@@ -31,6 +31,9 @@
     busy: { A: false, B: false, flow: false },
     chapter: 0,
     done: {},
+    rightTab: 'flow',     /* flow = 讲解流程；mem = 记忆流水 */
+    mine: false,          /* 本浏览器是否已经注册过沙盒账号 */
+    turns: [],            /* 每一轮：用户说了什么、形成几条、召回几条 */
     full: false,
     ui: { q: '', fix: '', target: '', reg: { email: '', password: '' } }
   };
@@ -44,7 +47,10 @@
 
   function recent() { return (D.state && D.state.recent) || []; }
   function memCount() { return (D.state && D.state.memories) || 0; }
-  function account() { return D.state && D.state.account; }
+  /* 只有本浏览器注册过的账号才算"我的"。
+     沙盒是单租户的（服务端只记一个当前账号），如果直接返回 state.account，
+     新访客一进来就会看到上一位访客的账号和聊天记录 —— 销售现场很尴尬。 */
+  function account() { return (D.mine && D.state && D.state.account) || null; }
   function lastUserText(s) {
     var arr = D.chat[s] || [];
     for (var i = arr.length - 1; i >= 0; i--) if (arr[i].role === 'user') return arr[i].text;
@@ -473,6 +479,47 @@
       '</div>';
   }
 
+  /* 右侧「记忆流水」：每一轮形成了什么、召回了什么。
+     客户要看的是"它到底记住了什么"，这些数据放在这里，而不是塞进聊天气泡。 */
+  function memStreamHTML() {
+    var turns = (D.turns || []).slice().reverse();
+    if (!turns.length) {
+      return '<div class="dm2-flow"><div class="dm2-stage in">' +
+        '<div class="dm-kicker">' + esc(dz('记忆流水', 'Memory log')) + '</div>' +
+        '<h2 class="dm-title">' + esc(dz('左边每聊一句，这里就多一条', 'Every turn shows up here')) + '</h2>' +
+        '<p class="dm-lead">' + esc(dz(
+          '这里只放两样东西：这句话形成了哪些记忆、回答时召回了几条。聊天本身在左边，正常进行。',
+          'Two things only: what got stored, and what got recalled. The chat itself stays on the left.')) + '</p>' +
+        '</div></div>';
+    }
+    return '<div class="dm2-flow"><div class="ms">' + turns.map(function (t, i) {
+      var facts = (t.facts || []).filter(function (f) { return f.ok !== false; });
+      var hits = t.hits || [];
+      return '<div class="ms-turn">' +
+        '<div class="ms-q"><span class="who">' + esc(dz('顾客', 'Customer')) + '</span>' +
+          esc(t.text) + '<span class="at">' + esc(t.at || '') + '</span></div>' +
+        (facts.length
+          ? '<div class="ms-sec">' + esc(dz('形成 ' + facts.length + ' 条记忆', facts.length + ' stored')) +
+            '<span class="src">' + esc(extractLabel({ source: t.source, extract: t.extract })) + '</span></div>' +
+            facts.map(function (f) {
+              return '<div class="ms-it"><span class="ty">' + esc(TYPE_ZH[f.type] || f.type) + '</span>' +
+                '<span class="tx">' + esc(f.content) + '</span>' +
+                '<span class="id">' + esc(String(f.id || '').slice(0, 8)) + '</span></div>';
+            }).join('')
+          : '<div class="ms-sec muted">' + esc(dz('未形成记忆（问句/寒暄不存）', 'nothing stored')) +
+            (t.extract && t.extract.model ? '<span class="src">' + esc(t.extract.model) + '</span>' : '') + '</div>') +
+        (hits.length
+          ? '<div class="ms-sec">' + esc(dz('召回 ' + hits.length + ' 条', hits.length + ' recalled')) + '</div>' +
+            hits.slice(0, 3).map(function (h) {
+              return '<div class="ms-it"><span class="sc">' +
+                (h.score != null ? Number(h.score).toFixed(2) : '—') + '</span>' +
+                '<span class="tx">' + esc(String(h.content || '').slice(0, 60)) + '</span></div>';
+            }).join('')
+          : '') +
+        '</div>';
+    }).join('') + '</div></div>';
+  }
+
   function accountHTML(acc) {
     return '' +
       '<div class="sb-card sb-acc">' +
@@ -522,8 +569,7 @@
         '<span class="bub-av">' + (me ? esc(dz('我', 'Me')) : 'M') + '</span>' +
         '<div class="bub-wrap">' +
           '<div class="bub">' + esc(m.text || '') + '</div>' +
-          memoryHTML(m) +
-          (showHits(m) ? hitsHTML(m.hits) : '') +
+          turnFold(m) +
         '</div></div>';
     });
     return out;
@@ -539,6 +585,28 @@
     var top = 0;
     m.hits.forEach(function (h) { top = Math.max(top, Number(h.score) || 0); });
     return top >= 0.6;
+  }
+
+  /* 记忆是**背后的动作**：气泡里只留一行小字，想看细节再展开。
+     上一版把"形成了哪几条记忆"直接铺在气泡下面，一眼就是测试台。 */
+  function turnFold(m) {
+    var facts = (m.facts || []).filter(function (f) { return f.ok !== false; });
+    var hits = m.hits || [];
+    if (!facts.length && !hits.length && !(m.extract && m.extract.parse_failed)) return '';
+    var bits = [];
+    if (facts.length) bits.push(dz('已存入 ' + facts.length + ' 条', facts.length + ' stored'));
+    if (hits.length) bits.push(dz('召回 ' + hits.length + ' 条', hits.length + ' recalled'));
+    if (!bits.length) bits.push(dz('记忆未形成', 'nothing stored'));
+    return '<details class="turn-fold">' +
+      '<summary>' + esc(bits.join(' · ')) + '</summary>' +
+      '<div class="turn-body">' +
+        (facts.length ? factsHTML(facts, m.source, m.extract) : '') +
+        (hits.length ? hitsHTML(hits) : '') +
+        (m.extract && m.extract.parse_failed
+          ? '<div class="mem-card none"><div class="mem-hd">' +
+            esc(dz('模型输出无法解析，已退回规则切分', 'Model output unparsable — fell back to rules')) +
+            '</div></div>' : '') +
+      '</div></details>';
   }
 
   /* 这一句到底是谁抽的：模型、还是规则。
@@ -630,12 +698,20 @@
     var res = D.done[c.id];
     var doneCount = Object.keys(D.done).filter(function (k) { return D.done[k].ok; }).length;
     return '' +
+      '<div class="dm2-rtabs">' +
+        '<button data-rtab="flow" class="' + (D.rightTab === 'flow' ? 'on' : '') + '">' +
+          esc(dz('讲解流程', 'Walkthrough')) + '</button>' +
+        '<button data-rtab="mem" class="' + (D.rightTab === 'mem' ? 'on' : '') + '">' +
+          esc(dz('记忆流水', 'Memory log')) +
+          '<span class="n">' + D.turns.length + '</span></button>' +
+      '</div>' +
       '<div class="dm2-steps">' + CHAPTERS.map(function (ch, i) {
         var st = D.done[ch.id];
         var cls = i === D.chapter ? ' on' : (st && st.ok ? ' done' : '');
         return '<button class="dm2-step' + cls + '" data-ch="' + i + '" title="' + esc(ch.title) + '">' +
           (st && st.ok ? '✓' : (i + 1)) + '</button>';
       }).join('') + '</div>' +
+      (D.rightTab === 'mem' ? memStreamHTML() :
       '<div class="dm2-flow" id="dm2-flow">' +
         '<div class="dm2-stage in">' +
           '<div class="dm-kicker">STEP ' + String(D.chapter + 1).padStart(2, '0') + ' / ' +
@@ -660,7 +736,7 @@
               esc(dz('下一步', 'Next')) + ' →</button>' +
           '</div>' +
         '</div>' +
-      '</div>';
+      '</div>');
   }
 
   /* 需要用户输入的章节，输入框直接放在讲解下面（而不是让他去别处填） */
@@ -736,9 +812,12 @@
     return api('/api/demo/state').then(function (r) {
       var s = (r && r.ok && r.body) || {};
       D.state = s;
-      // 服务端存了最近 12 条对话，刷新页面也能接上
+      var mineEmail = '';
+      try { mineEmail = sessionStorage.getItem('mn-demo-account') || ''; } catch (e) {}
+      D.mine = !!(s.account && mineEmail && s.account.email === mineEmail);
+      // 只在"这是我的账号"时恢复对话；否则新访客会看到上一位的记录
       ['A', 'B'].forEach(function (k) {
-        if (!(D.chat[k] || []).length && s.transcript && s.transcript[k]) {
+        if (D.mine && !(D.chat[k] || []).length && s.transcript && s.transcript[k]) {
           D.chat[k] = s.transcript[k].map(function (m) {
             return { role: m.role, text: m.text, at: Date.parse((m.at || '').replace(' ', 'T')) || Date.now() };
           });
@@ -771,6 +850,11 @@
           facts: b.facts || [], source: b.source, hits: b.hits || [],
           extract: b.extract || {}, kind: b.kind, top: b.top_score || 0
         });
+        D.turns.push({
+          text: text, at: fmtClock(Date.now()),
+          facts: b.facts || [], hits: b.hits || [],
+          source: b.source, extract: b.extract || {}, session: session
+        });
       }
       D.busy[session] = false;
       var btn2 = document.querySelector('[data-dm="send"][data-s="' + session + '"]');
@@ -795,6 +879,9 @@
       D.chat = { A: [], B: [] };
       D.done = {};
       D.chapter = 0;
+      D.turns = [];
+      D.mine = true;
+      try { sessionStorage.setItem('mn-demo-account', b.account.email); } catch (e) {}
       toast(dz('注册成功，记忆库从 0 条开始', 'Registered — memory starts at zero'));
       refreshState();
     });
@@ -846,6 +933,9 @@
     var ch = t.closest('[data-ch]');
     if (ch) { D.chapter = parseInt(ch.getAttribute('data-ch'), 10) || 0; paintRight(); return; }
 
+    var rt = t.closest('[data-rtab]');
+    if (rt) { D.rightTab = rt.getAttribute('data-rtab') || 'flow'; paintRight(); return; }
+
     var el = t.closest('[data-dm]');
     if (!el) return;
     var act = el.getAttribute('data-dm');
@@ -887,6 +977,9 @@
         D.chat = { A: [], B: [] };
         D.done = {}; D.chapter = 0;
         D.ui = { q: '', fix: '', target: '', reg: { email: '', password: '' } };
+        D.turns = [];
+        D.mine = false;
+        try { sessionStorage.removeItem('mn-demo-account'); } catch (e) {}
         toast(dz('沙盒已重置', 'Sandbox reset'));
         refreshState();
       });

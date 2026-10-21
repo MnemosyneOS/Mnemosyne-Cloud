@@ -680,3 +680,45 @@ body.dm-full { overflow: hidden; }
 /* 抽取失败 / 模型判断"无可记内容"时的灰卡：要看得见，但不抢戏 */
 .mem-card.none { border-color: var(--hair); background: var(--surface-2); }
 .mem-card.none .mem-hd { color: var(--fg3); font-weight: 500; }
+
+/* ---- 右侧页签 + 记忆流水 ------------------------------------------------ */
+.dm2-rtabs { display: flex; gap: 4px; padding: 8px 14px 0; border-bottom: 1px solid var(--hair);
+  background: var(--surface); flex: none; }
+.dm2-rtabs button {
+  position: relative; height: 30px; padding: 0 11px; border: 0; background: none; cursor: pointer;
+  font-size: 12.5px; color: var(--fg3); border-bottom: 2px solid transparent; margin-bottom: -1px;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.dm2-rtabs button.on { color: var(--fg); border-bottom-color: var(--accent-deep); font-weight: 650; }
+.dm2-rtabs .n { font-size: 9.5px; padding: 0 5px; border-radius: 8px;
+  background: var(--surface-3); color: var(--fg3); font-variant-numeric: tabular-nums; }
+.dm2-rtabs button.on .n { background: var(--accent-bg); color: var(--accent-ink); }
+
+.ms { display: flex; flex-direction: column; gap: 10px; max-width: 720px; margin: 0 auto; }
+.ms-turn { border: 1px solid var(--hair); border-radius: 10px; padding: 10px 12px; background: var(--surface); }
+.ms-q { font-size: 12.5px; color: var(--fg); line-height: 1.7; display: flex; gap: 7px; align-items: baseline; }
+.ms-q .who { flex: none; font-size: 10px; color: var(--accent-ink); background: var(--accent-bg);
+  border: 1px solid var(--accent-line); border-radius: 4px; padding: 0 5px; }
+.ms-q .at { margin-left: auto; flex: none; font-size: 10px; color: var(--fg3); font-variant-numeric: tabular-nums; }
+.ms-sec { margin-top: 8px; font-size: 11px; color: var(--fg2); font-weight: 600;
+  display: flex; align-items: center; gap: 6px; }
+.ms-sec.muted { color: var(--fg3); font-weight: 400; }
+.ms-sec .src { margin-left: auto; font-size: 9.5px; font-weight: 400; color: var(--fg3); }
+.ms-it { display: flex; gap: 7px; align-items: baseline; padding: 3px 0; font-size: 11.5px; }
+.ms-it .ty { flex: none; font-size: 9px; padding: 0 5px; border-radius: 4px;
+  background: var(--surface-2); border: 1px solid var(--hair); color: var(--fg2); }
+.ms-it .sc { flex: none; font-family: "DM Mono", monospace; font-size: 10px; color: var(--accent-ink); }
+.ms-it .tx { flex: 1; min-width: 0; color: var(--fg); line-height: 1.6; }
+.ms-it .id { flex: none; font-family: "DM Mono", monospace; font-size: 9px; color: var(--fg3); }
+
+/* 气泡里那条折叠的记忆摘要 */
+.turn-fold { margin-top: 2px; }
+.turn-fold summary {
+  list-style: none; cursor: pointer; font-size: 10.5px; color: var(--fg3);
+  display: inline-flex; align-items: center; gap: 5px; padding: 2px 0;
+}
+.turn-fold summary::-webkit-details-marker { display: none; }
+.turn-fold summary::before { content: "▸"; font-size: 9px; }
+.turn-fold[open] summary::before { content: "▾"; }
+.turn-fold summary:hover { color: var(--fg2); }
+.turn-body { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
