@@ -164,8 +164,17 @@
   }
   function ago(s) {
     if (!s) return '—';
-    var t = Date.parse(String(s).replace(' ', 'T'));
-    if (isNaN(t)) return s;
+    /* epoch 数字串（后端历史字段里有 str(time.time())）也接：
+       Date.parse('1792640820') 在多数引擎里是 NaN，会原样返回那串数字。 */
+    var str = String(s).trim();
+    var t = NaN;
+    if (/^\d+(\.\d+)?$/.test(str)) {
+      var n = Number(str);
+      t = n > 0 && n < 1e11 ? n * 1000 : n;
+    } else {
+      t = Date.parse(str.replace(' ', 'T'));
+    }
+    if (isNaN(t)) return String(s);
     var d = Math.floor((Date.now() - t) / 1000);
     if (d < 60) return dz('刚刚', 'just now');
     if (d < 3600) return Math.floor(d / 60) + dz(' 分钟前', 'm ago');
@@ -174,10 +183,25 @@
     return String(s).slice(0, 10);
   }
   /* 记忆库/用户详情要的是**确切时间**（"11 小时前"没法核对账）。
-     后端给的是 ISO 本地时间（2026-10-20T21:30:00），这里只做格式化。 */
+     后端给的是 ISO 本地时间（2026-10-20T21:30:00），这里只做格式化。
+
+     2026-10-22 补：纯数字串按 epoch 秒/毫秒转一次。
+     用户档案的 `created` 历史上是 str(time.time())（'1792640820.987307'），
+     直接切片会原样吐出那串数字。后端已改成发 ISO，这里兜住旧形状。 */
   function fmtTime(v) {
-    var s = String(v || '').replace('T', ' ');
-    if (!s) return '—';
+    var s = String(v == null ? '' : v).replace('T', ' ');
+    if (!s || s === '—') return '—';
+    if (/^\d+(\.\d+)?$/.test(s.trim())) {
+      var n = Number(s);
+      var d2 = new Date(n > 0 && n < 1e11 ? n * 1000 : n);
+      if (!isNaN(d2.getTime())) {
+        /* 必须按**本地**时间拼，不能用 toISOString() —— 那个是 UTC，
+           在东八区会平白早 8 小时，和 when() 的口径对不上。 */
+        var p2 = function (x) { return (x < 10 ? '0' : '') + x; };
+        s = d2.getFullYear() + '-' + p2(d2.getMonth() + 1) + '-' + p2(d2.getDate()) +
+            ' ' + p2(d2.getHours()) + ':' + p2(d2.getMinutes()) + ':' + p2(d2.getSeconds());
+      }
+    }
     return s.length >= 16 ? s.slice(0, 16) : s;
   }
 
