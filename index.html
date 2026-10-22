@@ -7591,7 +7591,7 @@ body.docs #view{ display:block !important; }
     if (!box) return;
     box.innerHTML = '<div class="kempty">正在读取 ' + esc(ns) + ' …</div>';
     if (listBox) mnemPaintList(listBox);
-    api('/api/dash/memories?ns=' + encodeURIComponent(ns)).then(function (r) {
+    api('/api/dash/memories?ns=' + encodeURIComponent(ns) + '&size=300').then(function (r) {
       if (String(CONSOLE.nsCur) !== String(ns)) return;   /* 已切换到别的库 */
       var b = (r.ok && r.body) ? r.body : {};
       var items = b.items || [];
@@ -7603,30 +7603,107 @@ body.docs #view{ display:block !important; }
         box.innerHTML = '<div class="kempty">' + esc(ns) + (lang === 'zh' ? '：这个库是空的。' : ' is empty.') + '</div>';
         return;
       }
-      var body = items.map(function (m) {
-        return '<tr>' +
-          '<td class="mono" style="font-size:11.5px;white-space:nowrap">' + esc(m.id || '—') + '</td>' +
-          '<td>' + esc(m.kind || '—') + '</td>' +
-          '<td class="mono" style="white-space:nowrap">' + esc(when(m.createdAt || m.day)) + '</td>' +
-          '<td style="max-width:520px">' + esc(String(m.excerpt || '').slice(0, 300) || '—') + '</td>' +
-          '<td style="max-width:200px;word-break:break-all">' + esc((m.tags || []).join(', ')) + '</td>' +
-          '<td class="mu" style="white-space:nowrap">' + esc(nmemBytes(m.size)) + '</td>' +
-          '</tr>';
-      }).join('');
-      box.innerHTML =
-        '<div class="sub" style="font-size:12.5px;margin-bottom:8px">' +
-          esc(ns) + ' · <span class="mono">' + (b.total || items.length) + (lang === 'zh' ? ' 条' : ' items') + '</span>' +
-        '</div>' +
-        '<div class="card" style="overflow:hidden"><div style="overflow-x:auto">' +
-          '<table class="ltable"><thead><tr>' +
-            '<th>id</th><th>' + (lang === 'zh' ? '类型' : 'Kind') + '</th><th>' + (lang === 'zh' ? '时间' : 'When') + '</th>' +
-            '<th>' + (lang === 'zh' ? '内容' : 'Content') + '</th><th>' + (lang === 'zh' ? '标签' : 'Tags') + '</th>' +
-            '<th>' + (lang === 'zh' ? '大小' : 'Size') + '</th>' +
-          '</tr></thead><tbody>' + body + '</tbody></table>' +
-        '</div></div>';
+      CONSOLE.nsItems = items;
+      box.innerHTML = mnemDetailHTML(ns, b, items);
     })['catch'](function (e) {
       box.innerHTML = '<div class="kempty">加载失败：' + esc(String(e && e.message || e)) + '</div>';
     });
+  }
+
+  /* 记忆类型中英对照 —— 与服务端 console_ext.KIND_ZH 同一份枚举。
+     服务端已经下发 kind_zh，这里保留本地表是为了「切语言不用重新请求」：
+     用户点中文/英文切换时，表格要立刻跟着变。 */
+  var KIND_NAMES = {
+    semantic: ['语义', 'Semantic'], episodic: ['情景', 'Episodic'],
+    procedural: ['程序', 'Procedural'], preference: ['偏好', 'Preference'],
+    identity: ['身份', 'Identity'], lesson: ['教训', 'Lesson'],
+    strategy: ['策略', 'Strategy'], reflective: ['反思', 'Reflective'],
+    fact: ['事实', 'Fact'], rule: ['规则', 'Rule'], todo: ['待办', 'To-do'],
+    working: ['工作', 'Working'], resource: ['资源', 'Resource'],
+    anti_pattern: ['反模式', 'Anti-pattern'], meta: ['元信息', 'Meta'],
+    relational: ['关系', 'Relational'], session: ['会话', 'Session'],
+    task: ['任务', 'Task'], playbook: ['经验', 'Playbook'], code: ['代码', 'Code'],
+    chat: ['对话', 'Chat']
+  };
+
+  /* 类型名：中文界面优先翻成中文，词典里没有的原样显示（不吞掉未知类型，
+     否则新类型上线时这里会变成空白，反而更难排查）。 */
+  function kindName(k) {
+    var e = KIND_NAMES[String(k || '').toLowerCase()];
+    if (!e) return String(k || '—');
+    return lang === 'zh' ? e[0] : e[1];
+  }
+
+  /* 单条记忆的完整内容单元格。
+     默认折叠到 4 行，点「展开全文」看全部 —— 直接全量铺开会把 6200 字的长
+     记忆一次撑满整页，管理员反而找不到下一行。但**数据是全的**，只是视觉
+     上默认收着，这与之前"只给 300 字、剩下的根本取不到"是两件事。 */
+  function memContentCell(m) {
+    var full = String(m.content != null ? m.content : (m.excerpt || ''));
+    var chars = m.chars || full.length;
+    var id = String(m.id || '');
+    var collapsed = chars > 260;
+    var html =
+      '<div class="memtxt" id="memtxt-' + esc(id) + '"' +
+        (collapsed ? ' style="max-height:5.6em;overflow:hidden"' : '') + '>' +
+        esc(full) +
+      '</div>';
+    if (collapsed) {
+      html += '<button type="button" class="btn btn-ghost btn-sm" style="margin-top:6px" ' +
+        'data-act="mem-toggle" data-v="' + esc(id) + '" data-n="' + chars + '">' +
+        esc(lang === 'zh' ? '展开全文（' + chars + ' 字）' : 'Show all (' + chars + ' chars)') +
+        '</button>';
+    }
+    return html;
+  }
+
+  function mnemDetailHTML(ns, b, items) {
+    var zh = lang === 'zh';
+    var totalBytes = 0;
+    var body = items.map(function (m) {
+      totalBytes += Number(m.size || 0);
+      var tags = (m.tags || []).slice(0, 4).map(function (t) {
+        return '<span class="chipnote">' + esc(t) + '</span>';
+      }).join(' ');
+      return '<tr>' +
+        '<td class="mono" style="font-size:11px;white-space:nowrap;color:var(--fg3)">' +
+          esc(String(m.id || '').slice(0, 10)) + '</td>' +
+        '<td style="white-space:nowrap"><span class="chipnote">' + esc(kindName(m.kind)) + '</span></td>' +
+        '<td class="mono" style="white-space:nowrap;font-size:11.5px">' +
+          esc(when(m.created || m.createdAt)) + '</td>' +
+        '<td style="max-width:560px;word-break:break-word;white-space:pre-wrap;line-height:1.6;font-size:12.5px">' +
+          memContentCell(m) + '</td>' +
+        '<td style="max-width:150px;word-break:break-all">' + (tags || '—') + '</td>' +
+        '<td class="mu" style="white-space:nowrap">' + esc(nmemBytes(m.size)) + '</td>' +
+        '<td style="white-space:nowrap"><button type="button" class="btn btn-ghost btn-sm" ' +
+          'data-act="mem-del" data-v="' + esc(m.id || '') + '" data-ns="' + esc(ns) + '">' +
+          esc(zh ? '删除' : 'Delete') + '</button></td>' +
+        '</tr>';
+    }).join('');
+    return '<div class="sub" style="font-size:12.5px;margin-bottom:8px">' +
+        '<span class="mono">' + esc(ns) + '</span> · ' +
+        '<span class="mono">' + (b.total || items.length) + (zh ? ' 条' : ' items') + '</span> · ' +
+        '<span class="mono">' + esc(nmemBytes(totalBytes)) + '</span>' +
+        (items.length < (b.total || 0)
+          ? ' <span style="color:var(--fg3)">' + esc(zh ? '（显示前 ' + items.length + ' 条）' : '(first ' + items.length + ' shown)') + '</span>'
+          : '') +
+      '</div>' +
+      '<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">' +
+        '<button type="button" class="btn btn-ghost btn-sm" data-act="mem-expand-all" data-ns="' + esc(ns) + '">' +
+          esc(zh ? '全部展开' : 'Expand all') + '</button>' +
+        '<button type="button" class="btn btn-ghost btn-sm" data-act="mem-clear" data-ns="' + esc(ns) + '">' +
+          esc(zh ? '清空此库（管理员）' : 'Clear this store (admin)') + '</button>' +
+      '</div>' +
+      '<div class="card" style="overflow:hidden"><div style="overflow-x:auto">' +
+        '<table class="ltable"><thead><tr>' +
+          '<th>id</th><th>' + (zh ? '类型' : 'Kind') + '</th>' +
+          '<th>' + (zh ? '生成时间' : 'Created') + '</th>' +
+          '<th>' + (zh ? '内容' : 'Content') + '</th>' +
+          '<th>' + (zh ? '标签' : 'Tags') + '</th>' +
+          '<th>' + (zh ? '大小' : 'Size') + '</th>' +
+          '<th></th>' +
+        '</tr></thead><tbody>' + body + '</tbody></table>' +
+      '</div></div>';
   }
 
   function mnemPaintList(box) {
@@ -7766,6 +7843,96 @@ body.docs #view{ display:block !important; }
       /* 命名空间为空 = 该成员尚未领取密钥、还没有私有库（服务端会把这类成员
          也列进来以对齐「成员」列表）。也要给出明确提示，而不是静默无反应。 */
       if (ns !== CONSOLE.nsCur) loadNsMemories(ns);
+      return;
+    }
+
+    /* 单条记忆：展开 / 收起全文。
+       数据本来就是全量下发的，这里只切换视觉折叠 —— 不再需要回服务端取。 */
+    var memTog = t.closest('[data-act="mem-toggle"]');
+    if (memTog) {
+      var tid = memTog.getAttribute('data-v') || '';
+      var cell = document.getElementById('memtxt-' + tid);
+      if (cell) {
+        var collapsed = cell.style.maxHeight !== '' && cell.style.maxHeight !== 'none';
+        cell.style.maxHeight = collapsed ? 'none' : '5.6em';
+        cell.style.overflow = collapsed ? 'visible' : 'hidden';
+        var n = memTog.getAttribute('data-n') || '';
+        memTog.textContent = collapsed
+          ? dz('收起', 'Collapse')
+          : dz('展开全文（' + n + ' 字）', 'Show all (' + n + ' chars)');
+      }
+      return;
+    }
+
+    /* 全部展开：把当前表格里所有折叠的内容一次性铺开。 */
+    var expAll = t.closest('[data-act="mem-expand-all"]');
+    if (expAll) {
+      var nodes = document.querySelectorAll('#memn-detail .memtxt');
+      for (var i = 0; i < nodes.length; i++) {
+        nodes[i].style.maxHeight = 'none';
+        nodes[i].style.overflow = 'visible';
+      }
+      var btns = document.querySelectorAll('#memn-detail [data-act="mem-toggle"]');
+      for (var j = 0; j < btns.length; j++) btns[j].textContent = dz('收起', 'Collapse');
+      return;
+    }
+
+    /* 删除单条记忆。
+       默认**软删除**（引擎 delete_memory：status=deleted、记录与审计链仍在），
+       误删可回溯；只有按住 Shift 点才做物理删除 —— 那是不可逆的，所以要求
+       二次确认。这条链路上最不能接受的是"点了没反应"或"删了没说清删了什么"，
+       所以成功/失败都明确告知。 */
+    var memDel = t.closest('[data-act="mem-del"]');
+    if (memDel) {
+      var mid = memDel.getAttribute('data-v') || '';
+      var mns = memDel.getAttribute('data-ns') || '';
+      if (!mid) return;
+      var hard = !!e.shiftKey;
+      var ask = hard
+        ? dz('【彻底删除】记忆 ' + mid.slice(0, 10) + '… 将无法恢复，确定？',
+             'Permanently delete ' + mid.slice(0, 10) + '…? This cannot be undone.')
+        : dz('删除这条记忆？可在引擎侧通过审计记录回溯。',
+             'Delete this memory? The audit trail keeps it recoverable.');
+      if (!window.confirm(ask)) return;
+      api('/api/dash/memory/delete?ns=' + encodeURIComponent(mns) +
+          '&id=' + encodeURIComponent(mid), {
+        method: 'POST',
+        body: JSON.stringify(hard ? { hard: true, confirm: 'yes' } : {})
+      }).then(function (r) {
+        if (r.ok) {
+          toast(dz('已删除。', 'Deleted.'));
+          loadNsMemories(mns);           /* 立刻刷新，别让用户对着旧行发呆 */
+        } else {
+          toast(apiErr(r, dz('删除失败。', 'Delete failed.')));
+        }
+      });
+      return;
+    }
+
+    /* 清空整个库（管理员）。默认软删，Shift 点为物理清空。 */
+    var memClear = t.closest('[data-act="mem-clear"]');
+    if (memClear) {
+      var cns = memClear.getAttribute('data-ns') || '';
+      var chard = !!e.shiftKey;
+      var cask = chard
+        ? dz('【彻底清空】' + cns + ' 里的全部记忆将被物理删除，无法恢复，确定？',
+             'Permanently clear every memory in ' + cns + '? Cannot be undone.')
+        : dz('把 ' + cns + ' 里的全部记忆标记为已删除？',
+             'Mark every memory in ' + cns + ' as deleted?');
+      if (!window.confirm(cask)) return;
+      api('/api/dash/memories/clear?ns=' + encodeURIComponent(cns), {
+        method: 'POST',
+        body: JSON.stringify({ confirm: 'yes', hard: chard })
+      }).then(function (r) {
+        if (r.ok) {
+          var d = (r.body || {});
+          toast(dz('已处理 ' + (d.deleted || 0) + ' 条，失败 ' + (d.failed || 0) + ' 条。',
+                   'Cleared ' + (d.deleted || 0) + ', failed ' + (d.failed || 0) + '.'));
+          loadNsMemories(cns);
+        } else {
+          toast(apiErr(r, dz('清空失败。', 'Clear failed.')));
+        }
+      });
       return;
     }
 
