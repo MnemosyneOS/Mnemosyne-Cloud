@@ -7642,6 +7642,14 @@ body.docs #view{ display:block !important; }
     var full = String(m.content != null ? m.content : (m.excerpt || ''));
     var chars = m.chars || full.length;
     var id = String(m.id || '');
+    /* 空内容不能渲染成空白格 —— 那看起来像"页面坏了"。现网确实存在这类
+       记录（u_df… 库里就有 1 条 content 为空的 episodic，多半是写入时
+       只带了元数据）。如实标出来，管理员才知道该不该清掉它。 */
+    if (!full.trim()) {
+      return '<span style="color:var(--fg3);font-style:italic">' +
+        esc(lang === 'zh' ? '（这条记忆没有正文，只有元数据）' : '(no body — metadata only)') +
+        '</span>';
+    }
     var collapsed = chars > 260;
     var html =
       '<div class="memtxt" id="memtxt-' + esc(id) + '"' +
