@@ -135,6 +135,10 @@
        href: '#/admin/orders' },
      { id: 'visitors', zh: '在线用户', en: 'Visitors', ic: 'activity', badge: 'LIVE',
        href: '#/admin/visitors' },
+     /* 访问日志：把第一方访客 + Cloudflare 边缘事件合成一张表，分页看历史。
+        与「在线用户」的区别：那个只看"现在谁在线"，这个看"谁来过、结果如何"。 */
+     { id: 'accesslog', zh: '访问日志', en: 'Access log', ic: 'list', badge: 'NEW',
+       href: '#/admin/accesslog' },
      { id: 'demo', zh: '演示 & 测试', en: 'Demo & test', ic: 'presentation', badge: 'NEW' },
      { id: 'users', zh: '注册用户信息', en: 'Users', ic: 'users' },
      { id: 'tools', zh: '工具台（52）', en: 'Tools (52)', ic: 'wrench' },
@@ -155,6 +159,7 @@
     analytics: ['使用分析', 'Analytics'], exports: ['导出与迁移', 'Export'],
     billing: ['套餐与用量', 'Plan & usage'], settings: ['设置', 'Settings'],
     orders: ['订单管理', 'Orders'], visitors: ['在线用户', 'Visitors'],
+    accesslog: ['访问日志', 'Access log'],
     demo: ['演示 & 测试', 'Demo & test'],
     users: ['注册用户信息', 'Registered users'], tools: ['工具台', 'Toolbox'],
     audit: ['审计日志', 'Audit log'], docs: ['文档', 'Docs'], mcp: ['MCP 接入', 'MCP'],
@@ -2064,6 +2069,134 @@
   };
 
   /* ---- 文档 / MCP / 更新日志 -------------------------------------------- */
+  /* ---- 后台 · 访问日志（2026-10-23）--------------------------------------
+     与「在线用户」的分工：
+       · 在线用户 = 此刻谁在线（90 秒内有心跳），看"现在"；
+       · 访问日志 = 谁来过、什么结果、安全状态如何，看"历史"，分页 50 条。
+     数据来自两处合并：第一方访客表（有停留时长/在线状态）+ Cloudflare
+     边缘事件（有被 WAF 拦掉的请求和爬虫）。合并逻辑在后端，这里只渲染。 */
+  PAGES.accesslog = function (el) {
+    var st = MC.access || (MC.access = { page: 1, kind: 'all', q: '', online: 0 });
+
+    function pill(kind, text) {
+      var cls = kind === 'ok' ? 'ok' : kind === 'warn' ? 'warn'
+              : kind === 'danger' ? 'bad' : '';
+      return '<span class="mc-pill ' + cls + '"><i></i>' + esc(text) + '</span>';
+    }
+
+    function draw(d) {
+      var items = d.items || [];
+      var zh = zhNow();
+      var note = d.cf_configured ? '' :
+        '<div class="mc-note" style="margin-bottom:12px;border-color:#f0c36d;' +
+        'background:#fff8e6;color:#7a5b00">' +
+        esc(dz('Cloudflare API 未配置：当前只显示本站访客数据，' +
+               '被防火墙拦截的请求和爬虫看不到。配置 CF_API_TOKEN / CF_ZONE_ID 后即可合并。',
+               'Cloudflare API not configured — only first-party data is shown.')) +
+        '</div>';
+
+      var rows = items.length ? items.map(function (x) {
+        var on = x.online;
+        return '<tr>' +
+          '<td>' + pill(on ? 'ok' : '', on ? dz('在线', 'Online') : dz('离线', 'Offline')) + '</td>' +
+          '<td class="num" style="white-space:nowrap">' + esc(fmtTime(x.at_iso)) + '</td>' +
+          '<td class="num" style="white-space:nowrap">' + esc(fmtTime(x.last_seen_iso)) + '</td>' +
+          '<td style="font-family:monospace;font-size:11.5px">' + esc(x.ip || '—') + '</td>' +
+          '<td>' + esc(x.country || '—') + (x.city ? ' · ' + esc(x.city) : '') + '</td>' +
+          '<td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" ' +
+            'title="' + esc((x.paths || []).join(' → ') || x.path || '') + '">' +
+            esc(x.path || (x.paths && x.paths[x.paths.length - 1]) || '—') + '</td>' +
+          '<td class="num">' + (x.dwell ? esc(fmtDwell(x.dwell)) : '—') + '</td>' +
+          '<td>' + esc(x.kind_label || '—') + '</td>' +
+          '<td>' + pill(x.result === 'ok' ? 'ok' : 'warn', x.result_label || '—') + '</td>' +
+          '<td>' + pill(x.security, x.security_label || '—') + '</td>' +
+          '</tr>';
+      }).join('') : '<tr><td colspan="10" style="text-align:center;padding:26px;color:var(--fg3)">' +
+        esc(dz('还没有访问记录', 'No records yet')) + '</td></tr>';
+
+      var pager = '<div class="mc-row" style="justify-content:space-between;align-items:center;margin-top:12px">' +
+        '<span class="mc-note" style="border:0;background:none">' +
+          esc(dz('第 ' + d.page + ' / ' + d.pages + ' 页 · 共 ' + d.total + ' 条',
+                 'Page ' + d.page + ' / ' + d.pages + ' · ' + d.total + ' rows')) +
+        '</span>' +
+        '<span class="mc-row" style="gap:8px">' +
+          '<button class="mc-btn sm" data-act="access-page" data-page="' + (d.page - 1) + '"' +
+            (d.page <= 1 ? ' disabled' : '') + '>' + esc(dz('上一页', 'Prev')) + '</button>' +
+          '<button class="mc-btn sm" data-act="access-page" data-page="' + (d.page + 1) + '"' +
+            (d.page >= d.pages ? ' disabled' : '') + '>' + esc(dz('下一页', 'Next')) + '</button>' +
+        '</span></div>';
+
+      el.innerHTML = head(dz('访问日志', 'Access log'),
+        dz('谁来过、停留多久、是真人还是 AI、有没有被拦。每页 50 条。',
+           'Who visited, for how long, human or bot, allowed or blocked. 50 per page.'),
+        '<span class="mc-pill ok"><i></i>' + esc(dz('在线 ' + (d.online_count || 0),
+                                                   d.online_count + ' online')) + '</span>') +
+        note +
+        '<div class="mc-card pad" style="margin-bottom:12px">' +
+          '<div class="mc-row" style="gap:8px;flex-wrap:wrap">' +
+            '<select class="mc-inp" id="a-kind" style="width:150px">' +
+              [['all', dz('全部来源', 'All')], ['human', dz('真人', 'Human')],
+               ['bot', dz('AI / 机器人', 'Bots')], ['unknown', dz('未知', 'Unknown')]]
+                .map(function (kv) {
+                  return '<option value="' + kv[0] + '"' +
+                    (st.kind === kv[0] ? ' selected' : '') + '>' + esc(kv[1]) + '</option>';
+                }).join('') + '</select>' +
+            '<input class="mc-inp" id="a-q" style="flex:1;min-width:180px" ' +
+              'placeholder="' + esc(dz('搜 IP / 国家 / 页面 / UA', 'IP / country / path / UA')) + '" ' +
+              'value="' + esc(st.q || '') + '">' +
+            '<button class="mc-btn" data-act="access-search">' + esc(dz('搜索', 'Search')) + '</button>' +
+            '<button class="mc-btn" data-act="access-sync">' +
+              '<i data-lucide="refresh-cw"></i>' + esc(dz('同步 Cloudflare', 'Sync Cloudflare')) + '</button>' +
+            '<button class="mc-btn" data-act="access-backup">' +
+              '<i data-lucide="database"></i>' + esc(dz('立即备份', 'Back up now')) + '</button>' +
+          '</div>' +
+          '<div class="mc-note" style="margin-top:10px">' + esc(d.retention_note || '') + '</div>' +
+        '</div>' +
+        '<div class="mc-card"><div class="mc-scroll"><table class="mc-tbl">' +
+          '<thead><tr>' +
+            '<th>' + esc(dz('状态', 'Status')) + '</th>' +
+            '<th>' + esc(dz('访问时间', 'First seen')) + '</th>' +
+            '<th>' + esc(dz('最近访问', 'Last seen')) + '</th>' +
+            '<th>IP</th>' +
+            '<th>' + esc(dz('国家/地区', 'Country')) + '</th>' +
+            '<th>' + esc(dz('访问页面', 'Page')) + '</th>' +
+            '<th>' + esc(dz('停留', 'Dwell')) + '</th>' +
+            '<th>' + esc(dz('类型', 'Type')) + '</th>' +
+            '<th>' + esc(dz('结果', 'Result')) + '</th>' +
+            '<th>' + esc(dz('安全', 'Security')) + '</th>' +
+          '</tr></thead><tbody>' + rows + '</tbody></table></div></div>' + pager;
+      icons();
+    }
+
+    function fmtTime(s) {
+      if (!s) return '—';
+      /* 后端统一出 ISO（UTC 或本地）。这里只做「YYYY-MM-DD HH:MM:SS」的截取，
+         不在浏览器里再做时区换算 —— 换算过一次已经出过"时间对不上"的问题。 */
+      return String(s).replace('T', ' ').replace('Z', '').slice(0, 19);
+    }
+    function fmtDwell(sec) {
+      var s = Math.max(0, Number(sec) || 0);
+      if (s < 60) return s + 's';
+      if (s < 3600) return Math.floor(s / 60) + 'm ' + (s % 60) + 's';
+      return Math.floor(s / 3600) + 'h ' + Math.floor((s % 3600) / 60) + 'm';
+    }
+
+    function load() {
+      el.innerHTML = head(dz('访问日志', 'Access log'),
+        dz('加载中…', 'Loading…')) + loading();
+      var q = ['page=' + st.page, 'per=50'];
+      if (st.kind && st.kind !== 'all') q.push('kind=' + encodeURIComponent(st.kind));
+      if (st.q) q.push('q=' + encodeURIComponent(st.q));
+      if (st.online) q.push('online=1');
+      api('/api/admin/access-log?' + q.join('&')).then(function (r) {
+        if (MC.page !== 'accesslog') return;
+        draw((r && r.ok && r.body) || { page: 1, pages: 1, total: 0, items: [] });
+      });
+    }
+    MC.accessLoad = load;
+    load();
+  };
+
   PAGES.docs = function (el) {
     var s = MC.setup || {};
     el.innerHTML = head(dz('文档', 'Docs'),
@@ -2678,6 +2811,49 @@
         vs.q = vq ? vq.value : '';
         MC.visitors = vs;
         if (MC.visitorsLoad) MC.visitorsLoad();
+        break;
+      }
+      /* ---- 访问日志 ---- */
+      case 'access-page': {
+        var ap = parseInt(act.getAttribute('data-page'), 10) || 1;
+        MC.access = MC.access || { page: 1, kind: 'all', q: '', online: 0 };
+        MC.access.page = Math.max(1, ap);
+        if (MC.accessLoad) MC.accessLoad();
+        break;
+      }
+      case 'access-search': {
+        var ks = document.getElementById('a-kind');
+        var qs2 = document.getElementById('a-q');
+        MC.access = MC.access || {};
+        MC.access.kind = (ks && ks.value) || 'all';
+        MC.access.q = (qs2 && qs2.value) || '';
+        MC.access.page = 1;
+        if (MC.accessLoad) MC.accessLoad();
+        break;
+      }
+      case 'access-sync': {
+        toast(dz('正在从 Cloudflare 拉取…', 'Syncing from Cloudflare…'));
+        post('/api/admin/access-log/sync', { hours: 24 }).then(function (r) {
+          var b = (r && r.ok && r.body) || {};
+          if (b.ok) {
+            toast(dz('已同步：拉到 ' + (b.fetched || 0) + ' 条，新增 ' + (b.inserted || 0) + ' 条',
+                     'Synced: ' + (b.fetched || 0) + ' fetched, ' + (b.inserted || 0) + ' new'));
+            if (MC.accessLoad) MC.accessLoad();
+          } else if (b.error === 'not_configured') {
+            toast(dz('未配置 Cloudflare API Token，无法同步', 'Cloudflare API token not configured'));
+          } else {
+            toast(dz('同步失败：' + (b.error || 'unknown'), 'Sync failed: ' + (b.error || 'unknown')));
+          }
+        });
+        break;
+      }
+      case 'access-backup': {
+        post('/api/admin/access-log/backup', {}).then(function (r) {
+          var b = (r && r.ok && r.body) || {};
+          toast(b.ok ? dz('已备份 ' + (b.rows || 0) + ' 条到 ' + String(b.path || '').split('/').pop(),
+                          'Backed up ' + (b.rows || 0) + ' rows')
+                     : dz('备份失败', 'Backup failed'));
+        });
         break;
       }
       case 'visitor-csv': {
