@@ -2231,6 +2231,7 @@
       el.innerHTML = head(dz('访问日志', 'Access log'), '',
         '<span class="mc-pill ok"><i></i>' + esc(dz('在线 ' + (d.online_count || 0),
                                                    d.online_count + ' online')) + '</span>') +
+        '<div id="a-summary"></div>' +
         note +
         '<div class="mc-card pad" style="margin-bottom:12px">' +
           '<div class="mc-row" style="gap:8px;flex-wrap:wrap">' +
@@ -2266,6 +2267,110 @@
             '<th>' + esc(dz('安全', 'Security')) + '</th>' +
           '</tr></thead><tbody>' + rows + '</tbody></table></div></div>' + pager;
       icons();
+      loadSummary();
+    }
+
+    /* ---- Cloudflare 概览卡片 ---------------------------------------------
+       对应 CF 面板顶部那三块：唯一访问者 / 请求总数 / 已缓存百分比，
+       另加被拦截请求与 30 天曲线。数据来自 /api/admin/access-log/summary。
+       失败时显示原因（未配置 / 权限不足），不显示 0 —— 0 会被当成"没人访问"。 */
+    function loadSummary() {
+      var box = document.getElementById('a-summary');
+      if (!box) return;
+      api('/api/admin/access-log/summary?days=30').then(function (r) {
+        var d = (r && r.ok && r.body) || {};
+        if (!box) return;
+        if (!d.ok) {
+          box.innerHTML = '<div class="mc-note" style="margin-bottom:12px;' +
+            'border-color:#f0c36d;background:#fff8e6;color:#7a5b00">' +
+            esc(dz('Cloudflare 概览不可用：', 'Cloudflare summary unavailable: ') +
+                (d.message || d.error || 'unknown')) + '</div>';
+          return;
+        }
+        box.innerHTML = summaryHTML(d);
+        icons();
+      });
+    }
+
+    function kpi(label, value, sub) {
+      return '<div style="flex:1;min-width:132px;padding:14px 16px;border-radius:10px;' +
+        'border:1px solid var(--hair);background:var(--bg2)">' +
+        '<div style="font-size:11px;color:var(--fg3);letter-spacing:.02em">' + esc(label) + '</div>' +
+        '<div style="font-size:22px;font-weight:700;margin-top:6px;letter-spacing:-.02em;' +
+        'font-variant-numeric:tabular-nums">' + esc(value) + '</div>' +
+        (sub ? '<div style="font-size:10.5px;color:var(--fg3);margin-top:3px">' + esc(sub) + '</div>' : '') +
+        '</div>';
+    }
+
+    function summaryHTML(d) {
+      var t = d.totals || {};
+      var ser = d.series || [];
+      var maxReq = 1;
+      ser.forEach(function (x) { if (x.requests > maxReq) maxReq = x.requests; });
+      var W = 640, H = 64;
+      var pts = ser.map(function (x, i) {
+        var px = ser.length > 1 ? i * (W / (ser.length - 1)) : 0;
+        var py = H - (x.requests / maxReq) * (H - 6) - 3;
+        return px.toFixed(1) + ',' + py.toFixed(1);
+      }).join(' ');
+      var uniPts = ser.map(function (x, i) {
+        var px = ser.length > 1 ? i * (W / (ser.length - 1)) : 0;
+        var mu = 1;
+        ser.forEach(function (y) { if (y.uniques > mu) mu = y.uniques; });
+        var py = H - (x.uniques / mu) * (H - 6) - 3;
+        return px.toFixed(1) + ',' + py.toFixed(1);
+      }).join(' ');
+
+      var countries = (d.top_countries || []).slice(0, 6).map(function (c) {
+        return '<div class="mc-kv"><span class="k">' + esc(countryName(c.code)) +
+          '</span><span class="v">' + n0(c.count) + '</span></div>';
+      }).join('') || '<div class="mc-note" style="border:0;background:none">—</div>';
+
+      var paths = (d.top_paths || []).slice(0, 6).map(function (p) {
+        return '<div class="mc-kv"><span class="k" style="font-family:monospace;font-size:11px">' +
+          esc(p.path || '/') + '</span><span class="v">' + n0(p.count) + '</span></div>';
+      }).join('') || '<div class="mc-note" style="border:0;background:none">—</div>';
+
+      return '<div class="mc-card pad" style="margin-bottom:12px">' +
+        '<div class="mc-row" style="justify-content:space-between;align-items:baseline">' +
+          '<b style="font-size:13px">' + esc(dz('Cloudflare 概览', 'Cloudflare overview')) + '</b>' +
+          '<span class="mc-note" style="border:0;background:none">' +
+            esc((d.range && (d.range.from + ' ~ ' + d.range.to)) || '') + ' · ' +
+            esc(dz('近 ' + d.days + ' 天', 'last ' + d.days + ' days')) + '</span></div>' +
+        '<div class="mc-row" style="gap:10px;flex-wrap:wrap;margin-top:12px">' +
+          kpi(dz('唯一访问者', 'Unique visitors'), n0(t.uniques), dz('逐日相加', 'sum of daily')) +
+          kpi(dz('请求总数', 'Requests'), n0(t.requests), '') +
+          kpi(dz('已缓存', 'Cached'), (t.cached_pct != null ? t.cached_pct + '%' : '—'),
+              t.bytes ? fmtBytes(t.bytes) : '') +
+          kpi(dz('威胁 / 被拦', 'Threats'), n0(t.threats), '') +
+        '</div>' +
+        '<div style="margin-top:14px">' +
+          '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" ' +
+            'style="width:100%;height:64px;display:block">' +
+            '<polyline fill="none" stroke="var(--accent-deep)" stroke-width="1.6" points="' + pts + '"/>' +
+            '<polyline fill="none" stroke="#8b8b8b" stroke-width="1.2" stroke-dasharray="3 3" points="' + uniPts + '"/>' +
+          '</svg>' +
+          '<div class="mc-row" style="justify-content:space-between;margin-top:4px;font-size:10.5px;color:var(--fg3)">' +
+            '<span>' + esc(ser.length ? ser[0].date : '') + '</span>' +
+            '<span>' + esc(dz('实线=请求 · 虚线=唯一访客', 'solid=requests · dashed=uniques')) + '</span>' +
+            '<span>' + esc(ser.length ? ser[ser.length - 1].date : '') + '</span>' +
+          '</div></div>' +
+        '<div class="mc-grid mc-g2" style="margin-top:14px">' +
+          '<div><div class="mc-h2" style="margin:0 0 6px;font-size:12px">' +
+            esc(dz('访问来源国家/地区', 'Top countries')) + '</div>' + countries + '</div>' +
+          '<div><div class="mc-h2" style="margin:0 0 6px;font-size:12px">' +
+            esc(dz('热门路径', 'Top paths')) + '</div>' + paths + '</div>' +
+        '</div>' +
+        '<div class="mc-note" style="margin-top:10px">' + esc(d.plan_note || '') + '</div>' +
+        '</div>';
+    }
+
+    function fmtBytes(b) {
+      var n = Number(b) || 0;
+      if (n > 1e9) return (n / 1e9).toFixed(2) + ' GB';
+      if (n > 1e6) return (n / 1e6).toFixed(1) + ' MB';
+      if (n > 1e3) return (n / 1e3).toFixed(1) + ' KB';
+      return n + ' B';
     }
 
     /* 国家代码 → 中文名。用浏览器内置的 Intl.DisplayNames（Chrome/Safari/Edge
@@ -2279,6 +2384,11 @@
       var c = String(code || '').toUpperCase();
       if (!c) return '—';
       if (!zhNow()) return c;
+      /* 港澳台必须写成"中国香港 / 中国台湾 / 中国澳门"。
+         Intl.DisplayNames 会返回"香港""台湾"，不能直接用 —— 所以这三个
+         先查固定表，命中就返回，不给 Intl 覆盖的机会。 */
+      var FIXED = { CN: '中国', HK: '中国香港', TW: '中国台湾', MO: '中国澳门' };
+      if (FIXED[c]) return FIXED[c];
       try {
         if (window.Intl && Intl.DisplayNames) {
           var n = new Intl.DisplayNames(['zh-CN'], { type: 'region' }).of(c);
