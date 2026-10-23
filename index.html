@@ -2725,7 +2725,7 @@ body.docs #view{ display:block !important; }
      它只在被 renderDash() 调用时才取 window.MN，所以早加载不会有时序问题；
      晚加载反而会让「直达 #/dashboard/overview」白屏一次。 -->
 <script src="assets/console-graph.js?v=10.8"></script>
-<script src="assets/console.js?v=10.8"></script>
+<script src="assets/console.js?v=11.0"></script>
 <!-- 演示舞台：给商业合作伙伴看的 10 章剧本。独立文件，只在演示页被调用。 -->
 <script src="assets/console-demo.js?v=10.8"></script>
 
@@ -3085,63 +3085,45 @@ body.docs #view{ display:block !important; }
     entBadges: ['MIT', 'HIPAA mapping', '等保 mapping', 'GDPR mapping', 'PIPL mapping', 'SHA-256 ledger'],
 
     plans: [
-      { name: 'Hobby', badge: 'MIT', desc: 'For individuals exploring side projects.',
-        price: '$0', unit: 'free forever', cta: 'Start now', href: '#/docs',
+      { name: 'Free', badge: 'FREE', desc: 'Every MCP tool, no card required. See what persistent memory does for your agent.',
+        price: '$0', unit: '/ month', cta: 'Start free', href: '#/login',
         feats: [
-          ['Unlimited end users', 0],
-          ['10,000 new requests / month', 0],
-          ['1,000 recalls / month', 0],
-          ['1 project', 0],
-          ['BEAM bi-layer memory + temporal TripleStore', 0],
-          ['All 52 MCP tools, no feature gating', 0],
-          ['AIC compression capsule — capsule / expand / recall_health', 0],
-          ['Pure SQLite, zero third-party dependencies', 0],
-          ['SHA-256 hash-chain ledger + security notary redaction', 0],
-          ['Local dark web dashboard', 0],
-          ['Community support via GitHub Issues', 1]
+          ['All 55 MCP tools', 0],
+          ['30-day cold memory window', 0],
+          ['1 namespace', 0],
+          ['7-day audit window', 0],
+          ['Cross-namespace recall', 1],
+          ['Your data is never deleted', 1]
         ] },
-      { name: 'Starter', badge: '', desc: 'For indie developers shipping their first AI agent.',
-        price: '$9', unit: '/ month', cta: 'Start now', href: '#/docs',
+      { name: 'Pro', badge: 'POPULAR', desc: 'Permanent memory for individual developers who use AI every day.',
+        price: '$6.9', unit: '/ month', cta: 'Start Pro', href: '#/dashboard/billing', rec: 1,
+        footnote: '$69/year — 12 months for the price of 10. Cancel anytime in PayPal.',
         feats: [
-          ['Unlimited end users', 0],
-          ['50,000 new requests / month', 0],
-          ['5,000 recalls / month', 0],
-          ['1 project', 0],
-          ['Everything in Hobby, plus:', 1],
-          ['Qdrant vector backend + Hunyuan Hy-Memory-30B-A3B embeddings', 0],
-          ['MCP over Streamable HTTP with token auth', 0],
-          ['Managed hosting on the free-tier deploy package', 0],
-          ['One-command deploy + free HTTPS setup', 0],
-          ['Email support', 0]
+          ['Everything in Free, plus:', 1],
+          ['Permanent cold memory — no 30-day window', 0],
+          ['Cross-namespace recall', 0],
+          ['Unlimited audit history', 0],
+          ['Full export', 0],
+          ['Billed through PayPal Subscriptions', 0]
         ] },
-      { name: 'Pro', badge: 'POPULAR', desc: 'For production applications at real scale.',
-        price: '$99', unit: '/ month', cta: 'Choose Pro', href: '#/contact', rec: 1,
+      { name: 'Team', badge: 'TEAM', desc: 'Per seat. For small teams and compliance-sensitive deployments.',
+        price: '$19.9', unit: '/ seat / month', cta: 'Start Team', href: '#/dashboard/billing',
+        footnote: '$199/year per seat — 12 months for the price of 10.',
         feats: [
-          ['Unlimited end users', 0],
-          ['500,000 new requests / month', 0],
-          ['50,000 recalls / month', 0],
-          ['Unlimited projects', 0],
-          ['Everything in Starter, plus:', 1],
-          ['Multi-tenant namespaces — one token, one isolated store', 0],
-          ['Reranker plugin as a second relevance criterion', 0],
-          ['Scheduled backups and /health monitoring', 0],
-          ['Upgrades without rebuilding the image', 0],
-          ['Priority support', 0]
-        ] },
-      { name: 'Enterprise', badge: 'Custom', desc: 'For teams that need compliance, control and an SLA.',
-        price: 'Flexible', unit: '', cta: 'Contact us', href: '#/contact',
-        feats: [
-          ['Unlimited end users', 0],
-          ['Unlimited write requests', 0],
-          ['Unlimited recall requests', 0],
-          ['Unlimited projects', 0],
           ['Everything in Pro, plus:', 1],
-          ['Fully air-gapped deployment, zero egress', 0],
-          ['Compliance mapping: HIPAA / 等保 / GDPR / PIPL', 0],
-          ['SSO / LDAP / RBAC and audit export', 0],
-          ['Domain-tuned embedding and reranking models', 0],
-          ['Private plugin SDK and custom graph schema', 0],
-          ['99.9% SLA and a dedicated support channel', 0]
+          ['Multi-user namespace management', 0],
+          ['Team memory policies', 0],
+          ['Audit report export', 0],
+          ['Per-seat billing', 0]
+        ] },
+      { name: 'Compliance Add-on', badge: 'ADD-ON', desc: 'Optional pack on top of Pro or Team. Not a standalone tier.',
+        price: '$9.9', unit: '/ month', cta: 'Add to Pro or Team', href: '#/dashboard/billing',
+        footnote: 'Requires an active Pro or Team subscription. Monthly only.',
+        feats: [
+          ['Scheduled verify_integrity reports', 0],
+          ['Deletion proof export (memory_cascade_delete)', 0],
+          ['Data residency configuration', 0],
+          ['Requires Pro or Team', 1]
         ] }
     ],
 
@@ -3281,7 +3263,7 @@ body.docs #view{ display:block !important; }
         { t: '信任中心', d: '安全、合规与认证', href: '#/trust' },
         { t: '状态', d: '运行时健康与事件历史', href: '#/status' }
       ] },
-      { label: '控制台', href: '#/dashboard/overview', auth: 1 },
+      { label: 'Mnemosyne OS SaaS', href: '#/dashboard/overview', auth: 1 },
       { label: '资源', mega: [
         { t: '研究', href: '#/research' },
         { t: '博客', href: '#/blog' },
@@ -3419,63 +3401,45 @@ body.docs #view{ display:block !important; }
     entBadges: ['MIT', 'HIPAA 映射', '等保 映射', 'GDPR 映射', 'PIPL 映射', 'SHA-256 账本'],
 
     plans: [
-      { name: '爱好', badge: 'MIT', desc: '适用于探索和开展副业项目的个人。',
-        price: '$0', unit: '永久免费', cta: '开始使用', href: '#/docs',
+      { name: 'Free', badge: '免费', desc: '全部 MCP 工具，不用绑卡。先让它替你记住一次。',
+        price: '¥0', unit: '/ 月', cta: '免费开始', href: '#/login',
         feats: [
-          ['无限最终用户', 0],
-          ['每月新增请求数：10,000', 0],
-          ['每月 1,000 次检索请求', 0],
-          ['1 个项目', 0],
-          ['BEAM 双层记忆 + 时序 TripleStore', 0],
-          ['52 个 MCP 工具，不做功能阉割', 0],
-          ['AIC 压缩胶囊 —— capsule / expand / recall_health', 0],
-          ['纯 SQLite，零第三方依赖', 0],
-          ['SHA-256 哈希链账本 + 安全公证脱敏', 0],
-          ['本地暗色 Web 控制台', 0],
-          ['社区支持（GitHub Issues）', 1]
+          ['55 个 MCP 工具全开', 0],
+          ['冷层记忆 30 天召回窗口', 0],
+          ['1 个命名空间', 0],
+          ['审计窗口 7 天', 0],
+          ['跨命名空间召回', 1],
+          ['数据永不删除', 1]
         ] },
-      { name: '起动机', badge: '', desc: '面向首次发布 AI 代理的独立开发者。',
-        price: '$9', unit: '/ 月', cta: '开始使用', href: '#/docs',
+      { name: 'Pro', badge: '最受欢迎', desc: '每天都在用 AI 干活的人，记忆不该有保质期。',
+        price: '$6.9', unit: '/ 月', cta: '开通 Pro', href: '#/dashboard/billing', rec: 1,
+        footnote: '$69/年 —— 付 10 个月用 12 个月。随时可在 PayPal 内取消。',
         feats: [
-          ['无限最终用户', 0],
-          ['每月新增请求 50,000 次', 0],
-          ['每月 5,000 次检索请求', 0],
-          ['1 个项目', 0],
-          ['包含「爱好」全部功能，外加：', 1],
-          ['Qdrant 向量后端 + 混元 Hy-Memory-30B-A3B 嵌入', 0],
-          ['MCP over Streamable HTTP + 令牌鉴权', 0],
-          ['免费额度部署包托管', 0],
-          ['一键上线 + 免费 HTTPS 接入', 0],
-          ['邮件支持', 0]
+          ['包含 Free 全部功能，外加：', 1],
+          ['永久冷层记忆（不再有 30 天窗口）', 0],
+          ['跨命名空间召回', 0],
+          ['审计历史无限制', 0],
+          ['全量导出', 0],
+          ['通过 PayPal 订阅自动续费', 0]
         ] },
-      { name: '专业版', badge: '受欢迎的', desc: '适用于具有实际规模的生产环境应用。',
-        price: '$99', unit: '/ 月', cta: '选择专业版', href: '#/contact', rec: 1,
+      { name: 'Team', badge: '团队', desc: '按席位计费。面向小团队与合规敏感型部署。',
+        price: '$19.9', unit: '/ 席位 / 月', cta: '开通 Team', href: '#/dashboard/billing',
+        footnote: '$199/年 / 席位 —— 付 10 个月用 12 个月。',
         feats: [
-          ['无限最终用户', 0],
-          ['每月新增请求 50 万次', 0],
-          ['每月 50,000 次检索请求', 0],
-          ['无限项目', 0],
-          ['包含「起动机」全部功能，外加：', 1],
-          ['多租户命名空间 —— 一把令牌一个物理隔离房间', 0],
-          ['重排插件作为第二判据', 0],
-          ['定时备份与 /health 健康检查', 0],
-          ['升级无需重建镜像', 0],
-          ['优先工单支持', 0]
+          ['包含 Pro 全部功能，外加：', 1],
+          ['多用户命名空间管理', 0],
+          ['团队记忆策略', 0],
+          ['审计报告导出', 0],
+          ['按席位计费', 0]
         ] },
-      { name: '企业', badge: '定制', desc: '适用于需要合规性、控制和 SLA 的团队。',
-        price: '灵活定价', unit: '', cta: '联系我们', href: '#/contact',
+      { name: '合规证明包', badge: '加购', desc: 'Pro / Team 之上的可选加购，不是独立订阅层。',
+        price: '$9.9', unit: '/ 月', cta: '加到 Pro / Team', href: '#/dashboard/billing',
+        footnote: '需已有 Pro 或 Team 订阅，只做月付。',
         feats: [
-          ['无限最终用户', 0],
-          ['无限次添加请求', 0],
-          ['无限次检索请求', 0],
-          ['无限项目', 0],
-          ['包含「专业版」全部功能，外加：', 1],
-          ['完全气隙部署，零外联出网', 0],
-          ['合规映射：HIPAA / 等保 / GDPR / PIPL', 0],
-          ['SSO / LDAP / RBAC 与审计导出', 0],
-          ['领域定制嵌入与重排模型', 0],
-          ['私有插件 SDK 与自定义图谱 schema', 0],
-          ['99.9% SLA 与专属支持通道', 0]
+          ['verify_integrity 定期报告', 0],
+          ['删除证明导出（memory_cascade_delete）', 0],
+          ['数据驻留配置支持', 0],
+          ['需已有 Pro 或 Team', 1]
         ] }
     ],
 
@@ -5498,7 +5462,7 @@ body.docs #view{ display:block !important; }
                 (mail ? '<span class="em">' + esc(mail) + '</span>' : '') +
               '</span>' +
             '</div>' +
-            '<a href="#/dashboard/overview"><span class="t">' + (zh ? '控制台' : 'Console') + '</span>' +
+            '<a href="#/dashboard/overview"><span class="t">' + (zh ? 'Mnemosyne OS SaaS' : 'Mnemosyne OS SaaS') + '</span>' +
               '<span class="d">' + (zh ? '你的记忆、密钥、用量与设置' : 'Your memories, keys, usage and settings') + '</span></a>' +
             (DX_ROLE.loaded && isAdmin()
               ? '<a href="#/admin"><span class="t">' + (zh ? '后台管理' : 'Admin console') + '</span>' +
@@ -5790,12 +5754,141 @@ body.docs #view{ display:block !important; }
              '<div class="rule my-6"></div>' +
              (t.featLabel ? '<p class="mono text-[11px] uppercase tracking-[.14em] text-fg3 mb-1">' + esc(t.featLabel) + '</p>' : '') +
              '<ul class="flex-1">' + feats + '</ul>' +
+             /* 2026-10-23（指令 §4.2）：两张卡的脚注文案。
+                为什么必须写在这里而不是塞进 feats 列表：feats 是"功能勾选项"，
+                而这两句是**条款性说明**（数据不删 / 按席位计价），
+                混进勾选列表会被当成一条普通功能，读者不会认真看。 */
+             (t.footnote ? '<p class="mt-4 text-[11px] leading-[1.6] text-fg3" style="opacity:.8">' +
+                esc(t.footnote) + '</p>' : '') +
            '</div>';
   }
 
   function renderTiers() {
     var el = $('#tiers'); if (!el) return;
     el.innerHTML = (T.plans || []).map(planHTML).join('');
+    /* 2026-10-23：价格页与控制台**必须同源**（指令 §4.1/§4.3）。
+       先按静态数据渲染（首屏不空），再异步拉 /v1/pricing 覆盖 ——
+       失败就保持静态值，绝不显示空白或报错。 */
+    loadLivePricing();
+  }
+
+  /* 价格数字格式化：6.9 → "6.9"，19.9 → "19.9"，69 → "69"。
+     不做 toFixed(2)，因为 $6.90 在价格页读起来比 $6.9 笨重。 */
+  function money(n) {
+    var v = Number(n);
+    if (!isFinite(v)) return '0';
+    return (Math.round(v * 100) / 100).toString();
+  }
+
+  function loadLivePricing() {
+    if (!window.fetch) return;
+    /* ⚠️ 这里必须自己取一次 #tiers：`el` 是 renderTiers 的**局部变量**，
+       函数作用域链拿不到它。早前这行写的是裸 `el.innerHTML`，抛 ReferenceError
+       后被下面的 .catch() 静默吞掉 —— 结果是「接口一直没被真正消费」，
+       价格页永远停在静态值，而日志里一句错都没有。2026-10-23 实测发现。 */
+    var el = $('#tiers'); if (!el) return;
+    fetch('/v1/pricing', { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || !d.tiers || !d.tiers.length) return;
+        var zh = (typeof lang !== 'undefined' && lang === 'zh');
+        /* 2026-10-23：**整卡重建**，不再只同步数字。
+           旧做法是保留首页四档、只改价格数字 —— 结果是首页显示
+           Starter/Pro/Enterprise 三个"档"，而客户在控制台看到的是
+           Free/Pro/Team 三个"层"，两套名词 + 两套价格并存，
+           客户会问"我到底买的是哪个 Pro"。现在首页就是订阅线的四张卡
+           （三档 + 加购），数据全部来自 /v1/pricing，不可能再对不上。 */
+        var plans = d.tiers.map(function (t) {
+          var free = t.id === 'free';
+          var team = t.id === 'team';
+          var cny = t.cny || {};
+          var p = {
+            name: t.name,
+            badge: free ? (zh ? '免费' : 'FREE')
+                 : team ? (zh ? '团队' : 'TEAM')
+                 : (zh ? '最受欢迎' : 'POPULAR'),
+            rec: t.id === 'pro' ? 1 : 0,
+            desc: free
+              ? (zh ? '全部 MCP 工具，不用绑卡。先让它替你记住一次。'
+                    : 'Every MCP tool, no card required. See what persistent memory does for your agent.')
+              : team
+              ? (zh ? '按席位计费。面向小团队与合规敏感型部署。'
+                    : 'Per seat. For small teams and compliance-sensitive deployments.')
+              : (zh ? '每天都在用 AI 干活的人，记忆不该有保质期。'
+                    : 'Permanent memory for individual developers who use AI every day.'),
+            price: free ? '$0' : '$' + money(t.price_monthly),
+            unit: free ? (zh ? '/ 月' : '/ month')
+                  : team ? (zh ? '/ 席位 / 月' : '/ seat / month')
+                  : (zh ? '/ 月' : '/ month'),
+            cta: free ? (zh ? '免费开始' : 'Start free')
+                 : team ? (zh ? '开通 Team' : 'Start Team')
+                 : (zh ? '开通 Pro' : 'Start Pro'),
+            href: free ? '#/login' : '#/dashboard/billing',
+            feats: (zh ? (t.features_zh || t.features) : (t.features || []))
+              .map(function (f) { return [f, 0]; }),
+          };
+          if (free) {
+            /* 免费档的「数据永不删除」已由接口的 features 提供，这里不再补 ——
+               补了会在卡里出现两遍（2026-10-23 实测重复）。 */
+          } else {
+            var annual = Number(t.price_annual) || 0;
+            var cnyLine = (zh && cny.price_monthly)
+              ? ' 人民币 ¥' + money(cny.price_monthly) + '/月（微信收款码，人工确认）。' : '';
+            p.footnote = (zh
+              ? '$' + money(annual) + (team ? '/年 / 席位' : '/年')
+                + ' —— 付 10 个月用 12 个月。' + cnyLine
+              : '$' + money(annual) + (team ? '/year per seat' : '/year')
+                + ' — 12 months for the price of 10. Cancel anytime in PayPal.')
+                + (zh ? ' 通过 PayPal 订阅自动续费。' : ' Billed through PayPal Subscriptions.');
+          }
+          return p;
+        });
+
+        /* 加购包：不是独立层级，所以单独一张卡，且在文案里点明"需已有 Pro/Team" */
+        if (d.addon) {
+          var a = d.addon;
+          var acny = (a.cny || {}).price_monthly;
+          plans.push({
+            name: zh ? '合规证明包' : 'Compliance Add-on',
+            badge: zh ? '加购' : 'ADD-ON',
+            desc: zh ? 'Pro / Team 之上的可选加购，不是独立订阅层。'
+                     : 'Optional pack on top of Pro or Team. Not a standalone tier.',
+            price: '$' + money(a.price_monthly),
+            unit: zh ? '/ 月' : '/ month',
+            cta: zh ? '加到 Pro / Team' : 'Add to Pro or Team',
+            href: '#/dashboard/billing',
+            feats: (zh ? (a.features_zh || a.features) : (a.features || []))
+              .map(function (f) { return [f, 0]; })
+              .concat([[zh ? '需已有 Pro 或 Team' : 'Requires Pro or Team', 1]]),
+            footnote: (zh ? '需已有 Pro 或 Team 订阅，只做月付。' : 'Requires an active Pro or Team subscription. Monthly only.')
+              + ((zh && acny) ? ' 人民币 ¥' + money(acny) + '/月。' : ''),
+          });
+        }
+
+        T.plans = plans;
+
+        if (d.promo && d.promo.active) {
+          /* 插到 #tiers **正前方** —— 那里一定在首屏可见区域内。
+             （早前用 host.children[1]，落点可能被前面的 reveal 动画块挤到
+               折叠线以下，实测在无头 Chrome 里拿不到文本。） */
+          var tiersEl = document.getElementById('tiers');
+          var host = tiersEl && tiersEl.parentNode;
+          if (host && !document.getElementById('promo-banner')) {
+            var bar = document.createElement('p');
+            bar.id = 'promo-banner';
+            bar.className = 'mt-6 text-center text-[13px] leading-[1.7]';
+            bar.style.cssText = 'max-width:820px;margin:0 auto 20px;' +
+              'padding:12px 16px;border-radius:12px;background:var(--accent-wash,#f4f1ff)';
+            bar.textContent = zh
+              ? '每个新账号都先送 ' + d.promo.days + ' 天 Team 权益，无需绑卡。' +
+                d.promo.days + ' 天后你可以永久留在 Free，或升级 Pro 保住全部记忆。'
+              : d.promo.description;
+            host.insertBefore(bar, tiersEl);
+          }
+        }
+        el.innerHTML = (T.plans || []).map(planHTML).join('');
+        if (window.lucide) { try { lucide.createIcons(); } catch (e) {} }
+      })['catch'](function () { /* 接口不可用：保持静态价格 */ });
   }
 
   /* mem0's resource row: a coloured thumbnail plate over a headline and a
@@ -6291,7 +6384,7 @@ body.docs #view{ display:block !important; }
     zh: {
       tabIn: '登录', tabUp: '注册',
       h: '登录 Mnemosyne OS',
-      lede: '账号用于保存你的控制台、提交过的申请与套餐信息。本地记忆引擎的数据始终留在你自己机器上。',
+      lede: '账号用于保存你的 Mnemosyne OS SaaS 面板、提交过的申请与套餐信息。本地记忆引擎的数据始终留在你自己机器上。',
       email: '邮箱', pass: '密码', pass2: '确认密码', code: '验证码',
       name: '显示名称', company: '公司',
       signIn: '登录', signUp: '注册', sendCode: '发送邮箱验证码',
@@ -6328,7 +6421,7 @@ body.docs #view{ display:block !important; }
       netDown: '无法连接账号服务，请检查网络后重试。',
       codeHint: '六位数字，有效期约 10 分钟。请先点右侧按钮发送到上面的邮箱。',
       pass2Hint: '请再输入一次相同的密码。',
-      noMail: '本站尚未配置发信服务，因此注册暂时不使用验证码。请在控制台「设置 → 邮件」里填入 SMTP 信息后启用。',
+      noMail: '本站尚未配置发信服务，因此注册暂时不使用验证码。请在 Mnemosyne OS SaaS「设置 → 邮件」里填入 SMTP 信息后启用。',
       noMailLink: '打开邮件设置',
       codeFailed: '验证码发送失败，请一分钟后再试。',
       signedInMsg: '已登录：{email}'
@@ -6883,8 +6976,7 @@ body.docs #view{ display:block !important; }
          time.time() 是浮点，str() 出来是 '1792640820.987307' 这种带小数点的串。
          旧正则 `^\d+$` 不认小数点 → 整串掉进 else 分支 new Date(str) → NaN
          → isNaN() 原样返回那串数字，用户页「注册时间」就显示成一串 epoch。
-         后端现在统一发本地 ISO，这里是纵深防御：万一哪条旧路径还在发
-         epoch，也别把数字当日期显示出去。 */
+         后端现在统一发本地 ISO，这里是纵深防御。 */
       var n = Number(v);
       d = new Date(n > 0 && n < 1e11 ? n * 1000 : n);
     } else {
@@ -6916,7 +7008,7 @@ body.docs #view{ display:block !important; }
       return '<div class="card card-pad" style="max-width:520px">' +
         '<h2 class="h2" style="font-size:20px">' + (zh ? '需要登录' : 'Sign-in required') + '</h2>' +
         '<p class="sub" style="margin-top:12px">' +
-          (zh ? '控制台只对已登录账号开放。登录后可查看你的提交记录、资料与套餐。'
+          (zh ? 'Mnemosyne OS SaaS 只对已登录账号开放。登录后可查看你的提交记录、资料与套餐。'
               : 'The console is available to signed-in accounts only. Sign in to see your submissions, profile and plan.') +
         '</p>' +
         '<div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">' +
@@ -7821,7 +7913,7 @@ body.docs #view{ display:block !important; }
         CONSOLE.leads = []; CONSOLE.profiles = []; CONSOLE.admins = [];
         CONSOLE.isAdmin = false;
         if (!r.ok) {
-          CONSOLE.err = apiErr(r, lang === 'zh' ? '无法加载控制台数据。' : 'Could not load the console.');
+          CONSOLE.err = apiErr(r, lang === 'zh' ? '无法加载 Mnemosyne OS SaaS 数据。' : 'Could not load Mnemosyne OS SaaS.');
           consoleSay('err', CONSOLE.err);
         }
         paintConsole();
@@ -8057,7 +8149,7 @@ body.docs #view{ display:block !important; }
        2026-10-21 审计：成员直接敲 #/admin 会看到一个"我的账号"精简版
        （总览 / 留言 / 账号安全），虽然拿不到任何管理数据，但那是**后台的壳**，
        客户/成员看到会以为自己进了管理端。成员的账号设置已经搬进
-       控制台「设置」，这里直接送回控制台。 */
+       Mnemosyne OS SaaS「设置」，这里直接送回 Mnemosyne OS SaaS。 */
     if (path === 'admin' && !(DX_ROLE.loaded && isAdmin())) {
       if (!DX_ROLE.loaded) { dxEnsureRole().then(function () { route(); }); return; }
       view.innerHTML = '<div class="shell"><div style="max-width:520px;margin:12vh auto;text-align:center">' +
@@ -8065,17 +8157,17 @@ body.docs #view{ display:block !important; }
         esc(lang === 'zh' ? '后台管理仅限管理员' : 'Admin only') + '</h1>' +
         '<p style="font-size:13px;color:var(--fg2);line-height:1.8">' +
         esc(lang === 'zh'
-            ? '你的账号设置与控制台都在「控制台」里。'
+            ? '你的账号设置与套餐都在「Mnemosyne OS SaaS」里。'
             : 'Your account settings live in the console.') + '</p>' +
         '<p style="margin-top:16px"><a class="btn btn-primary btn-sm" href="#/dashboard/overview">' +
-        esc(lang === 'zh' ? '进入控制台' : 'Open the console') + '</a></p></div></div>';
+        esc(lang === 'zh' ? '进入 Mnemosyne OS SaaS' : 'Open Mnemosyne OS SaaS') + '</a></p></div></div>';
       document.title = (lang === 'zh' ? '无权访问' : 'Not allowed') + ' — Mnemosyne OS';
       icons();
       return;
     }
 
     view.innerHTML = consoleHTML();
-    document.title = (lang === 'zh' ? '账号控制台' : 'Console') + ' — Mnemosyne OS';
+    document.title = (lang === 'zh' ? 'Mnemosyne OS SaaS' : 'Mnemosyne OS SaaS') + ' — Mnemosyne OS';
     icons();
     consoleRefresh();
   }
@@ -8664,14 +8756,14 @@ function renderDash(path) {
   if (!window.__mnConsoleRetry) {
     window.__mnConsoleRetry = 1;
     var s = document.createElement('script');
-    s.src = 'assets/console.js?v=10.8';
+    s.src = 'assets/console.js?v=11.0';
     s.onload = function () { renderDash(path); };
     s.onerror = function () {
       var view = $('#view');
       if (view) {
         view.hidden = false;
         view.innerHTML = '<div style="padding:48px;max-width:520px;margin:0 auto;font-size:13px;line-height:1.8">' +
-          '<b style="font-size:15px">控制台资源未加载</b><br>' +
+          '<b style="font-size:15px">Mnemosyne OS SaaS 资源未加载</b><br>' +
           'assets/console.js 没有取到。检查网络后刷新；若持续出现，说明部署包漏了 assets 目录。' +
           '<br><br><a href="#top" style="text-decoration:underline">返回首页</a></div>';
       }

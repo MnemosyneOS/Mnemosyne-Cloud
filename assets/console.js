@@ -127,6 +127,8 @@
      { id: 'billing', zh: '套餐与用量', en: 'Plan & usage', ic: 'credit-card' },
      { id: 'settings', zh: '设置', en: 'Settings', ic: 'settings' }],
     [{ g: 'admin', admin: 1 },
+     { id: 'orders', zh: '订单管理', en: 'Orders', ic: 'receipt', badge: 'NEW' },
+     { id: 'visitors', zh: '在线用户', en: 'Visitors', ic: 'activity', badge: 'LIVE' },
      { id: 'demo', zh: '演示 & 测试', en: 'Demo & test', ic: 'presentation', badge: 'NEW' },
      { id: 'users', zh: '注册用户信息', en: 'Users', ic: 'users' },
      { id: 'tools', zh: '工具台（52）', en: 'Tools (52)', ic: 'wrench' },
@@ -146,6 +148,7 @@
     formation: ['记忆运行层', 'Formation layer'], dream: ['梦 · 离线巩固', 'Dreams'],
     analytics: ['使用分析', 'Analytics'], exports: ['导出与迁移', 'Export'],
     billing: ['套餐与用量', 'Plan & usage'], settings: ['设置', 'Settings'],
+    orders: ['订单管理', 'Orders'], visitors: ['在线用户', 'Visitors'],
     demo: ['演示 & 测试', 'Demo & test'],
     users: ['注册用户信息', 'Registered users'], tools: ['工具台', 'Toolbox'],
     audit: ['审计日志', 'Audit log'], docs: ['文档', 'Docs'], mcp: ['MCP 接入', 'MCP'],
@@ -390,13 +393,15 @@
       });
       return;
     }
-    if (!isAdmin() && (rest === 'users' || rest === 'tools' || rest === 'audit' || rest === 'demo')) rest = 'overview';
+    if (!isAdmin() && (rest === 'users' || rest === 'tools' || rest === 'audit'
+                       || rest === 'demo' || rest === 'orders'
+                       || rest === 'visitors')) rest = 'overview';
 
     document.body.classList.add('dash');
     var home = document.getElementById('home');
     if (home) home.classList.add('off');
     view.hidden = false;
-    document.title = dz('控制台', 'Console') + ' — Mnemosyne OS';
+    document.title = dz('Mnemosyne OS SaaS', 'Mnemosyne OS SaaS') + ' — Mnemosyne OS';
 
     var first = !document.getElementById('mc-body');
     MC.page = rest;
@@ -1072,21 +1077,161 @@
     el.innerHTML = head(dz('套餐与用量', 'Plan & usage'),
       dz('你的记忆、你的额度。升级后额度立即生效。',
          'Your memory, your quota. Upgrades take effect immediately.')) + loading();
-    Promise.all([api('/api/billing/plans'), api('/api/billing/order')]).then(function (r) {
+    /* 2026-10-23 SaaS 订阅层：除既有人民币套餐外，再拉三个数据源：
+         /api/me/subscription  —— 区块 A：当前计划 + 推广期剩余天数
+         /api/pricing          —— 美元档价目（与价格页**同一份**数据源）
+         /api/console/overview —— 区块 B：本月用量
+       三者并行拉取；任一失败都降级为空，不阻塞页面（旧行为必须保住）。 */
+    Promise.all([
+      api('/api/billing/plans'), api('/api/billing/order'),
+      api('/api/me/subscription'), api('/api/pricing'),
+      api('/api/console/overview')
+    ]).then(function (r) {
       if (MC.page !== 'billing') return;
       var plans = ((r[0] && r[0].ok && r[0].body) || {});
       var orders = ((r[1] && r[1].ok && r[1].body) || {});
+      var sub = ((r[2] && r[2].ok && r[2].body) || {});
+      var pricing = ((r[3] && r[3].ok && r[3].body) || {});
+      var ov = ((r[4] && r[4].ok && r[4].body) || {});
       var cur = (MC.planName || 'starter');
       var qr = plans.qr || '';
+
+      /* ---- 区块 A：当前计划卡片 ---- */
+      var tierLabel = sub.label || (sub.tier === 'team' ? 'Team'
+                    : sub.tier === 'pro' ? 'Pro' : 'Free');
+      var banner = '';
+      if (sub.promotional_expired) {
+        /* PROMO_STRATEGY：措辞重点是「数据还在」，不是「你被锁了」。
+           指令 §3.1 区块 A 原文照搬，一字不改。 */
+        banner = '<div class="mc-note" style="border-color:#f0c36d;background:#fff8e6;' +
+          'color:#7a5b00;margin-bottom:14px;line-height:1.7">' +
+          '<b>' + esc(dz('推广期已结束', 'Your promotional Team access has ended')) + '</b><br>' +
+          esc(dz('你的记忆都还在，但超过 30 天的冷层记忆不再被召回。升级到 Pro 即可恢复全量召回。',
+                 'Your memories are safe, but cold-tier memories older than 30 days are ' +
+                 'no longer recalled. Upgrade to Pro to restore full recall.')) +
+          '</div>';
+      } else if (sub.is_promotional) {
+        banner = '<div class="mc-note" style="border-color:var(--accent-line);' +
+          'background:var(--accent-wash);margin-bottom:14px">' +
+          esc(dz('推广期 Team 权益 —— 到期日 ' + (sub.expires_at || '').slice(0, 10),
+                 'Promotional Team access — expires on ' + (sub.expires_at || '').slice(0, 10))) +
+          (sub.days_left != null ? ' · ' + esc(dz('剩余 ' + sub.days_left + ' 天',
+                                                  sub.days_left + ' days left')) : '') +
+          '</div>';
+      }
+      var tierCard = '<div class="mc-card pad" style="margin-bottom:16px">' +
+        '<div class="mc-row" style="justify-content:space-between;align-items:center">' +
+        '<div><div style="font-size:11px;color:var(--fg3);letter-spacing:.04em">' +
+        esc(dz('当前计划', 'Current plan')) + '</div>' +
+        '<b style="font-size:20px;letter-spacing:-.02em">' + esc(tierLabel) + '</b></div>' +
+        (sub.tier === 'free'
+          ? '<button class="mc-btn pri" data-act="stripe" data-tier="pro" data-interval="month">' +
+            esc(dz('升级到 Pro — $6.9/月', 'Upgrade to Pro — $6.9/mo')) + '</button>'
+          : '<button class="mc-btn" data-act="portal">' +
+            esc(dz('管理订阅', 'Manage subscription')) + '</button>') +
+        '</div>' +
+        ((sub.features || []).length
+          ? '<div style="margin-top:10px">' + sub.features.map(function (f) {
+              return '<div style="font-size:11.5px;color:var(--fg2);padding:2px 0">✓ ' + esc(f) + '</div>';
+            }).join('') + '</div>'
+          : '') +
+        '</div>';
+
+      /* ---- 区块 B：用量概览 ---- */
+      var u = ov.usage || {};
+      var usageCard = '<div class="mc-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));' +
+        'margin-bottom:16px">' +
+        [ [dz('本月写入', 'Writes (mo)'), n0(u.writes_this_month)],
+          [dz('本月召回', 'Recalls (mo)'), n0(u.recalls_this_month)],
+          [dz('活跃命名空间', 'Namespaces'), n0(u.active_namespaces)],
+          [dz('记忆总数', 'Memories'), n0(u.memories_total)]
+        ].map(function (kv) {
+          return '<div class="mc-card pad"><div style="font-size:11px;color:var(--fg3)">' +
+            esc(kv[0]) + '</div><div style="font-size:22px;font-weight:700;margin-top:4px">' +
+            esc(kv[1]) + '</div></div>';
+        }).join('') + '</div>';
+
+      /* ---- 美元档价目（与 /pricing 页面同源）---- */
+      var usd = (pricing.tiers || []).filter(function (t) { return t.id !== 'free'; });
+      var usdHTML = usd.length ? '<div class="mc-h2">' +
+        esc(dz('美元订阅（PayPal 自动续费）', 'USD subscription (PayPal, auto-renew)')) + '</div>' +
+        '<div class="mc-grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">' +
+        usd.map(function (t) {
+          var on = t.id === sub.tier;
+          return '<div class="mc-card pad"' + (on ? ' style="border-color:var(--accent-deep)"' : '') + '>' +
+            '<b style="font-size:14px">' + esc(t.name) + '</b>' +
+            (t.per_seat ? ' <span class="mc-tag">' + esc(dz('按席位', 'per seat')) + '</span>' : '') +
+            '<div style="font-size:22px;font-weight:700;margin:8px 0 2px">$' + t.price_monthly +
+            '<span style="font-size:11.5px;font-weight:400;color:var(--fg3)">' +
+            esc(dz('/ 月', '/ month')) + '</span></div>' +
+            '<div style="font-size:11px;color:var(--fg3);margin-bottom:8px">$' + t.price_annual +
+            esc(dz('/ 年（省两个月）', '/ year (2 months free)')) + '</div>' +
+            /* 指令 §4.2：Team 卡必须点明适用场景（小团队 / 合规敏感部署）——
+               只说"按席位"不构成选择理由，用户不知道自己该不该选它。 */
+            (t.per_seat ? '<div style="font-size:11px;color:var(--fg3);margin-bottom:8px;line-height:1.6">' +
+              esc(dz('面向小团队与合规敏感型部署。',
+                     'For small teams and compliance-sensitive deployments.')) + '</div>' : '') +
+            '<div style="margin-bottom:10px">' + ((zhNow() ? (t.features_zh || t.features) : t.features) || []).map(function (f) {
+              return '<div style="font-size:11.5px;color:var(--fg2);padding:2px 0">✓ ' + esc(f) + '</div>';
+            }).join('') + '</div>' +
+            (on ? '<div class="mc-note" style="text-align:center;border:0;background:none">' +
+                  esc(dz('当前计划', 'Current plan')) + '</div>'
+                : '<button class="mc-btn pri" style="width:100%;justify-content:center" ' +
+                  'data-act="stripe" data-tier="' + esc(t.id) + '" data-interval="month">' +
+                  esc(dz('升级到 ' + t.name, 'Upgrade to ' + t.name)) + '</button>') +
+            '</div>';
+        }).join('') + '</div>' : '';
+
+      /* ---- 合规证明包（加购，不是层级）----
+         刻意与三个层级分开渲染：它是"在 Pro/Team 之上再加"，放进同一个
+         网格会让人以为它是第四档订阅。ADDON_TIER: $9.9/月，只做月付。 */
+      var addonHTML = '';
+      if (pricing.addon && (sub.tier === 'pro' || sub.tier === 'team')) {
+        var ad = pricing.addon;
+        addonHTML = '<div class="mc-h2">' +
+          esc(dz('合规证明包（加购）', 'Compliance Add-on (optional)')) + '</div>' +
+          '<div class="mc-card pad" style="display:flex;gap:18px;flex-wrap:wrap;' +
+          'align-items:flex-start;justify-content:space-between">' +
+          '<div style="flex:1;min-width:240px">' +
+          '<b style="font-size:14px">' + esc(ad.name) + '</b>' +
+          '<div style="font-size:22px;font-weight:700;margin:6px 0 2px">$' + ad.price_monthly +
+          '<span style="font-size:11.5px;font-weight:400;color:var(--fg3)">' +
+          esc(dz('/ 月', '/ month')) + '</span></div>' +
+          '<div style="font-size:11.5px;color:var(--fg2);margin-top:6px;line-height:1.7">' +
+          ((zhNow() ? (ad.features_zh || ad.features) : ad.features) || []).map(function (f) { return '✓ ' + esc(f); }).join('<br>') + '</div>' +
+          '</div>' +
+          '<button class="mc-btn pri" data-act="stripe" data-tier="addon" data-interval="month">' +
+          esc(dz('加购合规证明包 — $9.9/月', 'Add Compliance pack — $9.9/mo')) + '</button>' +
+          '</div>';
+      } else if (pricing.addon) {
+        addonHTML = '<div class="mc-h2">' +
+          esc(dz('合规证明包（加购）', 'Compliance Add-on (optional)')) + '</div>' +
+          '<div class="mc-note">' +
+          esc(dz('合规证明包需要先有 Pro 或 Team 订阅 —— 它是在其之上加的一层，不能单独购买。',
+                 'The Compliance Add-on sits on top of Pro or Team. Upgrade first, ' +
+                 'then add the pack.')) + '</div>';
+      }
+
       el.innerHTML = head(dz('套餐与用量', 'Plan & usage'),
         dz('你的记忆、你的额度。升级后额度立即生效。',
            'Your memory, your quota. Upgrades take effect immediately.')) +
+        banner + tierCard + usageCard + usdHTML + addonHTML +
+        /* 区块 C / D 走异步填充：它们各自要打一个接口，
+           不能让 key 列表或记忆列表的延迟拖住整个页面的首屏。 */
+        '<div id="mc-keys-block"></div>' +
+        '<div id="mc-mem-block"></div>' +
+
+        '<div class="mc-h2">' + esc(dz('人民币套餐（微信）', 'CNY plans (WeChat)')) + '</div>' +
         '<div class="mc-grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">' +
         (plans.plans || []).map(function (p) {
           var on = p.id === cur;
           var price = p.contact ? dz('面议', 'Talk to us')
                     : (p.price ? '¥' + p.price : dz('免费', 'Free'));
-          var period = p.contact ? '' : (p.price ? dz(' / ' + p.days + ' 天', ' / ' + p.days + ' days') : '');
+          /* 周期按 interval 显示「/ 月」「/ 年」而不是「/ 30 天」「/ 365 天」——
+             后者是数据库口径（days 字段），不是人读的价格单位。 */
+          var period = p.contact || !p.price ? ''
+                    : (p.interval === 'year' ? dz(' / 年', ' / year')
+                                             : dz(' / 月', ' / month'));
           var feats = (zhNow() ? p.feats_zh : p.feats_en) || [];
           var btn;
           if (p.contact) {
@@ -1140,8 +1285,112 @@
       MC.plans = plans;
       if (MC.setup && MC.setup.plan) MC.planName = MC.setup.plan;
       icons();
+      /* 区块 C / D：异步填充，任一失败只影响自己那一块 */
+      renderKeysBlock(sub);
+      renderMemBlock(sub);
     });
   };
+
+  /* ---- 区块 C：API Key 管理（指令 §3.1 C）-------------------------------
+     复用既有 /api/me/keys（用户只能看自己那些，命名空间由服务端按会话推导）。
+     Free 层显示**绑定的单一 namespace**，Pro/Team 显示 all namespaces ——
+     这正是层级差异在界面上最直观的体现，不该藏着。 */
+  function renderKeysBlock(sub) {
+    var box = document.getElementById('mc-keys-block');
+    if (!box) return;
+    box.innerHTML = '<div class="mc-h2">' + esc(dz('API Key 管理', 'API keys')) + '</div>' +
+      '<div class="mc-card pad">' + loading() + '</div>';
+    api('/api/me/keys').then(function (r) {
+      if (MC.page !== 'billing') return;
+      var d = (r && r.ok && r.body) || {};
+      var rows = d.keys || [];
+      var free = (sub && sub.tier) === 'free';
+      var scope = free
+        ? esc(dz('仅 ' + (d.namespace || '你的命名空间'), 'this namespace only'))
+        : esc(dz('全部命名空间', 'all namespaces'));
+      box.innerHTML = '<div class="mc-h2">' + esc(dz('API Key 管理', 'API keys')) + '</div>' +
+        '<div class="mc-card pad" style="margin-bottom:10px">' +
+        '<div class="mc-row" style="gap:8px;align-items:center;flex-wrap:wrap">' +
+        '<input class="mc-inp" id="mc-keyname" placeholder="' +
+          esc(dz('给这把钥匙起个名字', 'Name this key')) + '" style="flex:1;min-width:160px">' +
+        '<button class="mc-btn pri" data-act="key-create">' + esc(dz('创建新 Key', 'Create key')) + '</button>' +
+        '<span class="mc-note" style="border:0;background:none">' + esc(dz('作用域：', 'Scope: ')) + scope + '</span>' +
+        '</div></div>' +
+        (rows.length ? '<div class="mc-card"><div class="mc-scroll"><table class="mc-tbl">' +
+          '<thead><tr><th>' + esc(dz('名称', 'Name')) + '</th><th>' + esc(dz('前缀', 'Prefix')) +
+          '</th><th>' + esc(dz('创建', 'Created')) + '</th><th>' + esc(dz('命名空间', 'Namespace')) +
+          '</th><th></th></tr></thead><tbody>' +
+          rows.map(function (k) {
+            return '<tr><td>' + esc(k.name || k.label || '—') + '</td>' +
+              '<td style="font-family:monospace;font-size:11px">' + esc(k.prefix || '—') + '…</td>' +
+              '<td style="white-space:nowrap;color:var(--fg3);font-size:11px">' +
+                esc(String(k.created || k.created_at || '').replace('T', ' ').slice(0, 16)) + '</td>' +
+              '<td style="font-family:monospace;font-size:11px">' +
+                esc(k.namespace || (free ? (d.namespace || '—') : dz('全部', 'all'))) + '</td>' +
+              '<td><button class="mc-btn sm" data-act="key-revoke" data-id="' +
+                esc(k.id || k.prefix || '') + '">' + esc(dz('吊销', 'Revoke')) + '</button></td></tr>';
+          }).join('') + '</tbody></table></div></div>'
+          : '<div class="mc-card">' + empty('key', dz('还没有 API Key', 'No keys yet'),
+              dz('创建一把，然后把它填进你的 MCP 客户端。',
+                 'Create one, then paste it into your MCP client.')) + '</div>');
+      icons();
+    })['catch'](function () {
+      box.innerHTML = '<div class="mc-h2">' + esc(dz('API Key 管理', 'API keys')) + '</div>' +
+        '<div class="mc-card pad">' + esc(dz('读取失败', 'Failed to load')) + '</div>';
+    });
+  }
+
+  /* ---- 区块 D：记忆浏览（指令 §3.1 D）-----------------------------------
+     Free 层的冷层超窗记忆显示**锁图标**，点击提示升级。
+     锁标记由**服务端**算（locked 字段），前端只负责画 —— 判据只有一处。 */
+  function renderMemBlock(sub) {
+    var box = document.getElementById('mc-mem-block');
+    if (!box) return;
+    box.innerHTML = '<div class="mc-h2">' + esc(dz('记忆浏览', 'Memories')) + '</div>' +
+      '<div class="mc-card pad">' + loading() + '</div>';
+    api('/api/console/memories?limit=20&offset=0').then(function (r) {
+      if (MC.page !== 'billing') return;
+      var d = (r && r.ok && r.body) || {};
+      if (r && !r.ok) {
+        box.innerHTML = '<div class="mc-h2">' + esc(dz('记忆浏览', 'Memories')) + '</div>' +
+          '<div class="mc-card pad">' + esc(dz('记忆服务暂时不可用', 'Memory service unavailable')) + '</div>';
+        return;
+      }
+      var items = d.items || [];
+      var locked = items.filter(function (m) { return m.locked; }).length;
+      box.innerHTML = '<div class="mc-h2">' + esc(dz('记忆浏览', 'Memories')) +
+        (d.total != null ? ' <span class="mc-tag">' + n0(d.total) + '</span>' : '') + '</div>' +
+        (locked ? '<div class="mc-note" style="margin-bottom:10px">' +
+          esc(dz('本页有 ' + locked + ' 条冷层记忆超出 Free 的 30 天窗口，已锁定。' +
+                 '它们仍在库里、未被删除 —— 升级 Pro 即可恢复召回。',
+                 locked + ' cold-tier memories on this page are outside the Free 30-day ' +
+                 'window and are locked. They are still stored — upgrade to Pro to restore recall.')) +
+          '</div>' : '') +
+        (items.length ? '<div class="mc-card"><div class="mc-scroll"><table class="mc-tbl">' +
+          '<thead><tr><th>' + esc(dz('内容摘要', 'Excerpt')) + '</th><th>' + esc(dz('写入时间', 'Created')) +
+          '</th><th>' + esc(dz('层级', 'Tier')) + '</th><th class="num">' + esc(dz('置信度', 'Confidence')) +
+          '</th></tr></thead><tbody>' +
+          items.map(function (m) {
+            var lock = m.locked
+              ? '<span class="mc-tag" style="cursor:pointer" data-act="upgrade-hint">🔒 ' +
+                esc(dz('已锁定', 'locked')) + '</span>'
+              : '';
+            return '<tr' + (m.locked ? ' style="opacity:.55"' : '') + '>' +
+              '<td>' + lock + ' ' + esc(m.excerpt || '') + '</td>' +
+              '<td style="white-space:nowrap;color:var(--fg3);font-size:11px">' +
+                esc(String(m.created_at || '').replace('T', ' ').slice(0, 16)) + '</td>' +
+              '<td><span class="mc-tag">' + esc(m.tier || 'hot') + '</span></td>' +
+              '<td class="num">' + esc(m.confidence == null ? '—' : m.confidence) + '</td></tr>';
+          }).join('') + '</tbody></table></div></div>'
+          : '<div class="mc-card">' + empty('brain', dz('还没有记忆', 'No memories yet'),
+              dz('接入 Agent 后，写入的记忆会出现在这里。',
+                 'Once an agent writes, memories show up here.')) + '</div>');
+      icons();
+    })['catch'](function () {
+      box.innerHTML = '<div class="mc-h2">' + esc(dz('记忆浏览', 'Memories')) + '</div>' +
+        '<div class="mc-card pad">' + esc(dz('读取失败', 'Failed to load')) + '</div>';
+    });
+  }
 
   function showPay(order, qr) {
     var box = document.getElementById('mc-pay');
@@ -1194,7 +1443,7 @@
           '<div class="mc-kv"><span class="k">' + esc(dz('套餐', 'Plan')) + '</span><span class="v">' +
             esc(planLabel()) + '</span></div>' +
           '<p class="mc-p" style="margin-top:10px">' + esc(dz(
-            '主题与语言已移到控制台右上角，和网站首页保持一致。',
+            '主题与语言已移到 Mnemosyne OS SaaS 右上角，和网站首页保持一致。',
             'Theme and language now live in the top-right corner, matching the site.')) + '</p>' +
           /* 模型 / 邮件 / 品牌这些是**站点级**配置，属于后台管理，不在个人设置里。
              之前我把入口说成"设置 → 模型"，用户找不到 —— 这里给一条直达链接。 */
@@ -1451,6 +1700,160 @@
     });
   };
 
+  /* ---- 后台 · 订单管理（2026-10-23 SaaS）-------------------------------- */
+  /* 列表 + 筛选 + 搜索 + 详情展开 + 两个手动操作。
+     推广期订单（billing_interval='promotional' 且金额 0）用浅灰底标出来 ——
+     否则它和真实付费订单长得一样，运营会误以为"有人白拿"。 */
+  PAGES.orders = function (el) {
+    var st = MC.orders || (MC.orders = { status: '', tier: '', q: '', page: 1 });
+    function row(o) {
+      var promo = o.is_promotional_row;
+      var pill = o.status === 'active'
+          ? '<span class="mc-pill ok"><i></i>' + esc(dz('已生效', 'Active')) + '</span>'
+        : o.status === 'promotional_active'
+          ? '<span class="mc-pill"><i></i>' + esc(dz('推广期', 'Promotional')) + '</span>'
+        : o.status === 'promotional_expired'
+          ? '<span class="mc-pill warn"><i></i>' + esc(dz('推广期已结束', 'Promo ended')) + '</span>'
+        : o.status === 'past_due'
+          ? '<span class="mc-pill warn"><i></i>' + esc(dz('逾期', 'Past due')) + '</span>'
+        : o.status === 'canceled'
+          ? '<span class="mc-pill"><i></i>' + esc(dz('已取消', 'Canceled')) + '</span>'
+        : '<span class="mc-pill"><i></i>' + esc(o.status || '—') + '</span>';
+      var amt = promo ? '—' : '$' + (Number(o.amount_cents || 0) / 100).toFixed(2);
+      var bg = promo ? ' style="background:var(--bg2)"' : '';
+      return '<tr' + bg + ' data-act="order-detail" data-id="' + esc(o.id) + '" style="cursor:pointer">' +
+        '<td style="font-family:monospace;font-size:11px">' + esc(o.id) + '</td>' +
+        '<td>' + esc(o.user_id) + '</td>' +
+        '<td><span class="mc-tag">' + esc(o.tier) + '</span></td>' +
+        '<td>' + esc(o.billing_interval || '') + '</td>' +
+        '<td class="num">' + esc(amt) + '</td>' +
+        '<td>' + pill + '</td>' +
+        '<td style="white-space:nowrap;color:var(--fg3);font-size:11px">' +
+          esc(String(o.created_at || '').replace('T', ' ').slice(0, 16)) + '</td>' +
+        '<td style="white-space:nowrap;color:var(--fg3);font-size:11px">' +
+          esc(String(o.expires_at || '').replace('T', ' ').slice(0, 16) || '—') + '</td></tr>';
+    }
+    function draw(d) {
+      var items = d.items || [];
+      el.innerHTML = head(dz('订单管理', 'Orders'),
+        dz('推广期订单用浅灰底标出：金额为 0，不是漏付。',
+           'Promotional orders are shaded grey: amount is zero by design.'),
+        '<span class="mc-note" style="border:0;background:none">' + n0(d.total) + '</span>') +
+        '<div class="mc-card pad" style="margin-bottom:12px">' +
+        '<div class="mc-row" style="gap:8px;flex-wrap:wrap">' +
+        '<select class="mc-inp" id="o-status" style="width:150px">' +
+        ['', 'active', 'promotional_active', 'promotional_expired', 'past_due', 'canceled']
+          .map(function (v) {
+            return '<option value="' + v + '"' + (st.status === v ? ' selected' : '') + '>' +
+              esc(v || dz('全部状态', 'All statuses')) + '</option>';
+          }).join('') + '</select>' +
+        '<select class="mc-inp" id="o-tier" style="width:120px">' +
+        ['', 'free', 'pro', 'team'].map(function (v) {
+          return '<option value="' + v + '"' + (st.tier === v ? ' selected' : '') + '>' +
+            esc(v || dz('全部层级', 'All tiers')) + '</option>';
+        }).join('') + '</select>' +
+        '<input class="mc-inp" id="o-q" placeholder="' + esc(dz('邮箱或订单号', 'Email or order id')) +
+          '" value="' + esc(st.q) + '" style="flex:1;min-width:180px">' +
+        '<button class="mc-btn pri" data-act="order-search">' + esc(dz('搜索', 'Search')) + '</button>' +
+        '</div></div>' +
+        (items.length ? '<div class="mc-card"><div class="mc-scroll"><table class="mc-tbl">' +
+          '<thead><tr><th>ID</th><th>' + esc(dz('用户', 'User')) + '</th><th>' + esc(dz('层级', 'Tier')) +
+          '</th><th>' + esc(dz('周期', 'Interval')) + '</th><th class="num">' + esc(dz('金额', 'Amount')) +
+          '</th><th>' + esc(dz('状态', 'Status')) + '</th><th>' + esc(dz('创建', 'Created')) +
+          '</th><th>' + esc(dz('到期', 'Expires')) + '</th></tr></thead><tbody>' +
+          items.map(row).join('') + '</tbody></table></div></div>'
+          : '<div class="mc-card">' + empty('receipt', dz('没有匹配的订单', 'No matching orders'),
+              dz('换个筛选条件试试。', 'Try different filters.')) + '</div>') +
+        '<div id="mc-order-detail"></div>';
+      icons();
+    }
+    function load() {
+      el.innerHTML = head(dz('订单管理', 'Orders'), dz('加载中…', 'Loading…')) + loading();
+      var q = [];
+      if (st.status) q.push('status=' + encodeURIComponent(st.status));
+      if (st.tier) q.push('tier=' + encodeURIComponent(st.tier));
+      if (st.q) q.push('q=' + encodeURIComponent(st.q));
+      api('/api/admin/orders' + (q.length ? '?' + q.join('&') : '')).then(function (r) {
+        if (MC.page !== 'orders') return;
+        draw((r && r.ok && r.body) || {});
+      });
+    }
+    MC.ordersLoad = load;
+    load();
+  };
+
+  /* ---- 后台 · 在线用户（2026-10-23 增长分析）---------------------------- */
+  /* 每 10 秒轮询一次（指令 §6.3）。页面切走时停表 —— 否则后台开着这个页
+     会一直打请求，而管理员其实已经去别的页了。 */
+  PAGES.visitors = function (el) {
+    var st = MC.visitors || (MC.visitors = { kind: 'all', country: '', tier: '', q: '' });
+    function draw(d) {
+      var items = d.items || [];
+      el.innerHTML = head(dz('在线用户', 'Visitors'),
+        dz('最近 ' + (d.online_window_seconds || 90) + ' 秒内有心跳的访客。每 10 秒自动刷新。',
+           'Visitors with a heartbeat in the last ' + (d.online_window_seconds || 90) +
+           's. Refreshes every 10s.'),
+        '<span class="mc-note" style="border:0;background:none">' + n0(d.count) + '</span>') +
+        '<div class="mc-card pad" style="margin-bottom:12px">' +
+        '<div class="mc-row" style="gap:8px;flex-wrap:wrap">' +
+        '<select class="mc-inp" id="v-kind" style="width:150px">' +
+        [['all', dz('全部', 'All')], ['registered', dz('仅已注册', 'Registered only')],
+         ['anonymous', dz('仅匿名', 'Anonymous only')]].map(function (p) {
+          return '<option value="' + p[0] + '"' + (st.kind === p[0] ? ' selected' : '') + '>' +
+            esc(p[1]) + '</option>';
+        }).join('') + '</select>' +
+        '<input class="mc-inp" id="v-country" placeholder="' + esc(dz('国家代码', 'Country')) +
+          '" value="' + esc(st.country) + '" style="width:110px">' +
+        '<input class="mc-inp" id="v-q" placeholder="' + esc(dz('IP / 邮箱 / 国家', 'IP / email / country')) +
+          '" value="' + esc(st.q) + '" style="flex:1;min-width:160px">' +
+        '<button class="mc-btn pri" data-act="visitor-search">' + esc(dz('筛选', 'Filter')) + '</button>' +
+        '<button class="mc-btn" data-act="visitor-csv">' + esc(dz('导出 CSV', 'Export CSV')) + '</button>' +
+        '</div></div>' +
+        (items.length ? '<div class="mc-card"><div class="mc-scroll"><table class="mc-tbl">' +
+          '<thead><tr><th>IP</th><th>' + esc(dz('地区', 'Geo')) + '</th><th>' + esc(dz('身份', 'Identity')) +
+          '</th><th>' + esc(dz('层级', 'Tier')) + '</th><th>' + esc(dz('当前页面', 'Page')) +
+          '</th><th class="num">' + esc(dz('驻留', 'Dwell')) + '</th><th class="num">' +
+          esc(dz('访问次数', 'Visits')) + '</th></tr></thead><tbody>' +
+          items.map(function (v) {
+            var who = v.is_registered
+              ? '<span class="mc-pill ok"><i></i>' + esc(v.email) + '</span>'
+              : '<span class="mc-tag">' + esc(dz('匿名', 'anonymous')) + '</span>';
+            var dwell = Number(v.total_dwell_seconds || 0);
+            var ds = dwell >= 60 ? Math.floor(dwell / 60) + 'm ' + (dwell % 60) + 's' : dwell + 's';
+            return '<tr data-act="visitor-detail" data-sid="' + esc(v.session_id) + '" style="cursor:pointer">' +
+              '<td style="font-family:monospace;font-size:11px">' + esc(v.ip_address || '—') + '</td>' +
+              '<td>' + esc([v.country_code, v.city].filter(Boolean).join(' / ') || '—') + '</td>' +
+              '<td>' + who + '</td>' +
+              '<td>' + esc(v.tier || '—') + '</td>' +
+              '<td style="font-family:monospace;font-size:11px">' + esc(v.current_page || '—') + '</td>' +
+              '<td class="num">' + esc(ds) + '</td>' +
+              '<td class="num">' + esc(v.visit_count || 1) + '</td></tr>';
+          }).join('') + '</tbody></table></div></div>'
+          : '<div class="mc-card">' + empty('activity', dz('当前没有在线访客', 'No one online right now'),
+              dz('打开一个页面就会出现在这里。', 'Open a page and it shows up here.')) + '</div>') +
+        '<div id="mc-visitor-detail"></div>';
+      icons();
+    }
+    function load(silent) {
+      if (!silent) el.innerHTML = head(dz('在线用户', 'Visitors'), dz('加载中…', 'Loading…')) + loading();
+      var q = ['online=1'];
+      if (st.kind && st.kind !== 'all') q.push('kind=' + encodeURIComponent(st.kind));
+      if (st.country) q.push('country=' + encodeURIComponent(st.country));
+      if (st.q) q.push('q=' + encodeURIComponent(st.q));
+      api('/api/admin/visitors/online?' + q.join('&')).then(function (r) {
+        if (MC.page !== 'visitors') return;
+        draw((r && r.ok && r.body) || {});
+      });
+    }
+    if (MC.visitorTimer) clearInterval(MC.visitorTimer);
+    MC.visitorTimer = setInterval(function () {
+      if (MC.page !== 'visitors') { clearInterval(MC.visitorTimer); MC.visitorTimer = null; return; }
+      load(true);
+    }, 10000);
+    MC.visitorsLoad = load;
+    load();
+  };
+
   /* ---- 文档 / MCP / 更新日志 -------------------------------------------- */
   PAGES.docs = function (el) {
     var s = MC.setup || {};
@@ -1458,7 +1861,7 @@
       dz('五分钟上手，不用读源码。', 'Five minutes to get going.')) +
       '<div class="mc-grid mc-g2">' +
         docCard(dz('一、装好 Agent 侧的 MCP', '1 · Wire the MCP client'),
-          dz('控制台「接入配置」里选你的 Agent，复制那条命令执行。它会写好配置并自检。',
+          dz('Mnemosyne OS SaaS「接入配置」里选你的 Agent，复制那条命令执行。它会写好配置并自检。',
              'Pick your agent in Setup, copy the command, run it.')) +
         docCard(dz('二、让它真的用上记忆', '2 · Make the agent use it'),
           dz('在 Agent 的规则/系统提示里加一句：每次对话开始先 recall，结束时把结论 retain。',
@@ -1510,7 +1913,7 @@
 
   PAGES.changelog = function (el) {
     el.innerHTML = head(dz('更新日志', 'Changelog'),
-      dz('控制台与记忆系统的变化。', 'What changed, and when.')) +
+      dz('Mnemosyne OS SaaS 与记忆系统的变化。', 'What changed, and when.')) +
       '<div class="mc-card pad">' +
         log('2026-10-20', dz('控制台 v9 重做', 'Console v9'),
           dz('导航重排、主题跟随站点、真实图谱、可执行的梦、注册用户全量信息、接入向导、微信扫码升级。',
@@ -1698,7 +2101,7 @@
           kpi(dz('最近写入', 'Last write'), v.last_write ? ago(v.last_write) : '—', '', 'clock') +
         '</div></div>';
       foot = '<div class="mf"><span class="sp"></span><button class="mc-btn pri" data-act="wizard-finish">' +
-        esc(dz('进入控制台', 'Enter the console')) + '</button></div>';
+        esc(dz('进入 Mnemosyne OS SaaS', 'Enter Mnemosyne OS SaaS')) + '</button></div>';
     }
     box.innerHTML = head2 + body2 + foot;
     icons();
@@ -1885,6 +2288,218 @@
           var b = (r && r.ok && r.body) || {};
           if (!b.order) { toast(dz('下单失败', 'Order failed')); return; }
           showPay(b.order, b.qr || '');
+        });
+        break;
+      }
+      /* ---- 区块 C：API Key 管理（指令 §3.1 C）---- */
+      case 'key-create': {
+        var kn = document.getElementById('mc-keyname');
+        var nm = (kn && kn.value || '').trim() || 'default';
+        act.disabled = true;
+        post('/api/me/keys', { name: nm }).then(function (r) {
+          act.disabled = false;
+          var b = (r && r.ok && r.body) || {};
+          /* 明文密钥只在创建那一刻返回一次 —— 必须当场显示，且提示用户保存。
+             静默成功是这里最糟的 UX：用户永远拿不回那把钥匙。 */
+          if (b.key) {
+            if (kn) kn.value = '';
+            var box = document.getElementById('mc-keys-block');
+            if (box) {
+              var tip = document.createElement('div');
+              tip.className = 'mc-note';
+              tip.style.cssText = 'border-color:var(--accent-line);background:var(--accent-wash);' +
+                                  'margin-bottom:10px;word-break:break-all;font-family:monospace';
+              tip.textContent = dz('新密钥（只显示这一次，请立刻复制保存）：',
+                                   'New key (shown once — copy it now): ') + b.key;
+              box.insertBefore(tip, box.firstChild);
+            }
+            toast(dz('已创建，请复制上方密钥', 'Created — copy the key above'));
+          } else {
+            toast(b.error || dz('创建失败', 'Create failed'));
+          }
+          bust('/api/me/keys');
+          if (MC.ordersLoad) MC.ordersLoad();
+          paint();
+        });
+        break;
+      }
+      case 'key-revoke': {
+        var kid = act.getAttribute('data-id');
+        if (!confirm(dz('确认吊销这把 Key？使用它的客户端会立刻失效。',
+                        'Revoke this key? Clients using it stop working immediately.'))) break;
+        post('/api/me/keys/revoke', { id: kid }).then(function (r) {
+          var b = (r && r.ok && r.body) || {};
+          toast(b.ok ? dz('已吊销', 'Revoked') : (b.error || dz('吊销失败', 'Revoke failed')));
+          bust('/api/me/keys');
+          paint();
+        });
+        break;
+      }
+      /* 区块 D：点锁 → 提示升级（PROMO_STRATEGY：说清"数据还在"） */
+      case 'upgrade-hint': {
+        toast(dz('这条冷层记忆超出 Free 的 30 天召回窗口。数据仍在库里、未被删除；' +
+                 '升级 Pro 即可恢复。',
+                 'This cold-tier memory is outside the Free 30-day recall window. ' +
+                 'It is still stored; upgrade to Pro to restore it.'));
+        break;
+      }
+      /* 2026-10-23：美元档走 Stripe Checkout。
+         金额**不在前端出现** —— 只传 tier/interval，价格由服务端的 Price ID 决定。
+         这样价格页、控制台、实际扣款三者不可能对不上。 */
+      case 'stripe': {
+        var tier = act.getAttribute('data-tier') || 'pro';
+        var interval = act.getAttribute('data-interval') || 'month';
+        act.disabled = true;
+        post('/api/billing/create-checkout-session',
+             { tier: tier, interval: interval }).then(function (r) {
+          act.disabled = false;
+          var b = (r && r.ok && r.body) || {};
+          if (b.url) { window.location.href = b.url; return; }
+          var msg = (b.message || b.error || 'Checkout unavailable');
+          toast(msg);
+        });
+        break;
+      }
+      case 'portal': {
+        act.disabled = true;
+        post('/api/billing/portal', {}).then(function (r) {
+          act.disabled = false;
+          var b = (r && r.ok && r.body) || {};
+          if (b.url) { window.location.href = b.url; return; }
+          toast(b.message || dz('订阅门户不可用', 'Billing portal unavailable'));
+        });
+        break;
+      }
+      /* ---- 后台 · 订单 ---- */
+      case 'order-search': {
+        var st1 = MC.orders || {};
+        var es = document.getElementById('o-status');
+        var et = document.getElementById('o-tier');
+        var eq = document.getElementById('o-q');
+        st1.status = es ? es.value : '';
+        st1.tier = et ? et.value : '';
+        st1.q = eq ? eq.value : '';
+        MC.orders = st1;
+        if (MC.ordersLoad) MC.ordersLoad();
+        break;
+      }
+      case 'order-detail': {
+        var oid4 = act.getAttribute('data-id');
+        var box = document.getElementById('mc-order-detail');
+        if (!box) return;
+        box.innerHTML = '<div class="mc-card pad" style="margin-top:12px">' + loading() + '</div>';
+        api('/api/admin/orders/detail?id=' + encodeURIComponent(oid4)).then(function (r) {
+          var d = (r && r.ok && r.body) || {};
+          if (!d.order) { box.innerHTML = ''; toast(dz('读取失败', 'Failed to load')); return; }
+          var o = d.order, s = d.subscription || {};
+          var evs = (d.events || []).map(function (e) {
+            return '<tr><td style="white-space:nowrap;font-size:11px;color:var(--fg3)">' +
+              esc(String(e.created_at || '').replace('T', ' ').slice(0, 19)) + '</td>' +
+              '<td><span class="mc-tag pri">' + esc(e.event_type) + '</span></td>' +
+              '<td style="font-size:11px;color:var(--fg3)">' +
+              esc(JSON.stringify(e.metadata || {}).slice(0, 160)) + '</td></tr>';
+          }).join('');
+          box.innerHTML = '<div class="mc-card pad" style="margin-top:12px">' +
+            '<div class="mc-row" style="justify-content:space-between;align-items:center">' +
+            '<b>' + esc(dz('订单 #', 'Order #')) + esc(o.id) + ' · ' + esc(o.user_id) + '</b>' +
+            '<div class="mc-row" style="gap:6px">' +
+            '<button class="mc-btn sm" data-act="order-downgrade" data-uid="' + esc(o.user_id) + '">' +
+              esc(dz('强制降级为 Free', 'Force downgrade to Free')) + '</button>' +
+            '<button class="mc-btn sm" data-act="order-sync" data-uid="' + esc(o.user_id) + '">' +
+              esc(dz('从 Stripe 同步', 'Sync from Stripe')) + '</button>' +
+            '<button class="mc-btn sm" data-act="order-close">' + esc(dz('收起', 'Close')) + '</button>' +
+            '</div></div>' +
+            '<div style="margin:10px 0;font-size:11.5px;color:var(--fg2);line-height:1.8">' +
+            esc(dz('当前权益：', 'Entitlements: ')) + esc(s.tier) +
+            ' · Stripe 订阅 ' + esc(s.stripe_subscription_id || '—') +
+            ' · 客户 ' + esc(s.stripe_customer_id || '—') + '</div>' +
+            ((d.entitlements || {}).features || []).map(function (f) {
+              return '<div style="font-size:11.5px;color:var(--fg2)">✓ ' + esc(f) + '</div>';
+            }).join('') +
+            '<div class="mc-h2" style="margin-top:14px">' + esc(dz('事件时间线', 'Event timeline')) + '</div>' +
+            (evs ? '<div class="mc-scroll"><table class="mc-tbl">' +
+              '<thead><tr><th>' + esc(dz('时间', 'When')) + '</th><th>' + esc(dz('事件', 'Event')) +
+              '</th><th>' + esc(dz('详情', 'Detail')) + '</th></tr></thead><tbody>' + evs +
+              '</tbody></table></div>'
+              : '<div class="mc-note">' + esc(dz('暂无事件', 'No events yet')) + '</div>') +
+            '</div>';
+          icons();
+        });
+        break;
+      }
+      case 'order-close': {
+        var b1 = document.getElementById('mc-order-detail');
+        if (b1) b1.innerHTML = '';
+        break;
+      }
+      case 'order-downgrade': {
+        var uid1 = act.getAttribute('data-uid');
+        if (!confirm(dz('确认把 ' + uid1 + ' 强制降级为 Free？会写入审计事件。',
+                        'Force downgrade ' + uid1 + ' to Free? An audit event will be written.'))) break;
+        post('/api/admin/orders/downgrade', { user_id: uid1 }).then(function (r) {
+          var b = (r && r.ok && r.body) || {};
+          toast(b.ok ? dz('已降级', 'Downgraded') : (b.error || dz('失败', 'Failed')));
+          if (MC.ordersLoad) MC.ordersLoad();
+        });
+        break;
+      }
+      case 'order-sync': {
+        var uid2 = act.getAttribute('data-uid');
+        post('/api/admin/orders/sync', { user_id: uid2 }).then(function (r) {
+          var b = (r && r.ok && r.body) || {};
+          toast(b.ok ? dz('已从 Stripe 同步', 'Synced from Stripe')
+                     : (b.message || b.error || dz('同步失败', 'Sync failed')));
+          if (MC.ordersLoad) MC.ordersLoad();
+        });
+        break;
+      }
+      /* ---- 后台 · 在线用户 ---- */
+      case 'visitor-search': {
+        var vs = MC.visitors || {};
+        var vk = document.getElementById('v-kind');
+        var vc = document.getElementById('v-country');
+        var vq = document.getElementById('v-q');
+        vs.kind = vk ? vk.value : 'all';
+        vs.country = vc ? vc.value : '';
+        vs.q = vq ? vq.value : '';
+        MC.visitors = vs;
+        if (MC.visitorsLoad) MC.visitorsLoad();
+        break;
+      }
+      case 'visitor-csv': {
+        var vs2 = MC.visitors || {};
+        var q2 = ['format=csv'];
+        if (vs2.kind && vs2.kind !== 'all') q2.push('kind=' + encodeURIComponent(vs2.kind));
+        if (vs2.country) q2.push('country=' + encodeURIComponent(vs2.country));
+        if (vs2.q) q2.push('q=' + encodeURIComponent(vs2.q));
+        window.location.href = '/api/admin/visitors/online?' + q2.join('&');
+        break;
+      }
+      case 'visitor-detail': {
+        var sid2 = act.getAttribute('data-sid');
+        var vb = document.getElementById('mc-visitor-detail');
+        if (!vb) return;
+        /* 详情从当前列表里取（已加载过），不额外打接口 ——
+           访客数据是"快照"，重新拉一次反而会显示成另一个时刻的状态。 */
+        api('/api/admin/visitors/online?online=0&limit=200').then(function (r) {
+          var d2 = (r && r.ok && r.body) || {};
+          var v = (d2.items || []).filter(function (x) { return x.session_id === sid2; })[0];
+          if (!v) { vb.innerHTML = ''; return; }
+          vb.innerHTML = '<div class="mc-card pad" style="margin-top:12px">' +
+            '<b>' + esc(v.ip_address || '—') + '</b> · ' +
+            esc([v.country_code, v.city].filter(Boolean).join(' / ') || dz('未知地区', 'unknown geo')) +
+            '<div style="margin-top:10px;font-size:11.5px;color:var(--fg2);line-height:1.9">' +
+            esc(dz('首次出现：', 'First seen: ')) + esc(String(v.first_seen_at || '').replace('T', ' ')) + '<br>' +
+            esc(dz('最后活动：', 'Last seen: ')) + esc(String(v.last_seen_at || '').replace('T', ' ')) + '<br>' +
+            esc(dz('驻留时长：', 'Dwell: ')) + esc(v.total_dwell_seconds || 0) + 's<br>' +
+            esc(dz('访问次数：', 'Visits: ')) + esc(v.visit_count || 1) + '<br>' +
+            esc(dz('身份：', 'Identity: ')) + esc(v.email || dz('匿名', 'anonymous')) + '<br>' +
+            esc(dz('UA：', 'UA: ')) + esc(String(v.user_agent || '').slice(0, 120)) + '</div>' +
+            '<div class="mc-h2" style="margin-top:12px">' + esc(dz('页面路径序列', 'Page path sequence')) + '</div>' +
+            '<div style="font-family:monospace;font-size:11.5px;line-height:1.9">' +
+            ((v.page_paths || []).map(function (p) { return esc(p); }).join(' → ') || '—') + '</div>' +
+            '</div>';
+          icons();
         });
         break;
       }
@@ -2076,4 +2691,32 @@
 
   window.MNConsole = { render: render, MC: MC };
   MC.render = render;
+
+  /* ------------------------------------------------- PayPal 回跳确认
+     PayPal 审批完成后会回到 return_url 并**追加** subscription_id 与 ba_token。
+     我们不等 webhook（通常 5–30 秒才到）：这里主动确认一次，让"点完同意
+     回来还是 Free"这个体验空白消失。webhook 仍是最终事实，这里只是加速。 */
+  (function confirmPayPalReturn() {
+    var qs = (location.search || '').replace(/^\?/, '');
+    if (!qs) return;
+    var q = {};
+    qs.split('&').forEach(function (kv) {
+      var i = kv.indexOf('=');
+      if (i > 0) q[decodeURIComponent(kv.slice(0, i))] = decodeURIComponent(kv.slice(i + 1));
+    });
+    if (q.paypal !== 'success' || !q.subscription_id) return;
+    post('/api/billing/paypal-confirm', { subscription_id: q.subscription_id })
+      .then(function (r) {
+        var b = (r && r.ok && r.body) || {};
+        if (b.ok && (b.tier === 'pro' || b.tier === 'team')) {
+          toast(dz('订阅已生效：' + String(b.tier).toUpperCase(),
+                   'Subscription active: ' + String(b.tier).toUpperCase()));
+          MC.dirty = {};
+          render();
+        } else if (b.status && b.status !== 'ACTIVE') {
+          toast(dz('PayPal 状态：' + b.status + '（尚未生效，稍后自动刷新）',
+                   'PayPal status: ' + b.status + ' (will sync shortly)'));
+        }
+      })['catch'](function () { /* 确认失败不打断页面，webhook 兜底 */ });
+  })();
 })();
