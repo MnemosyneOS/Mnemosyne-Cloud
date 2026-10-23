@@ -1207,7 +1207,7 @@
         '<b style="font-size:20px;letter-spacing:-.02em">' + esc(tierLabel) + '</b></div>' +
         (sub.tier === 'free'
           ? '<button class="mc-btn pri" data-act="stripe" data-tier="pro" data-interval="month">' +
-            esc(dz('升级到 Pro — $6.9/月', 'Upgrade to Pro — $6.9/mo')) + '</button>'
+            esc(dz('支付 Pro — $6.9/月', 'Pay Pro — $6.9/mo')) + '</button>'
           : '<button class="mc-btn" data-act="portal">' +
             esc(dz('管理订阅', 'Manage subscription')) + '</button>') +
         '</div>' +
@@ -1253,12 +1253,13 @@
           return '<div class="mc-note" style="text-align:center;border:0;background:none;' +
                  'font-size:11.5px">' + esc(dz('当前计划', 'Current plan')) + '</div>';
         }
+        /* 只保留 PayPal 页内按钮 —— 不再摆一个「改用跳转支付」。
+           用户反馈：两个按钮摆在一起不知道点哪个，而且跳转那条路体验差。
+           跳转方式降级成**兜底**：仅当 PayPal SDK 加载失败（被墙/网络不通）
+           时，在按钮位置注入一个不显眼的文字链（见 mountPayPal 的失败分支）。 */
         var inner =
           '<div class="pp-slot" data-plan-id="' + esc(planId) + '" data-tier="' + esc(tier) +
-            '" data-interval="' + iv + '" style="max-width:240px;margin:0 auto;min-height:42px"></div>' +
-          '<button class="mc-btn sm" style="display:block;margin:8px auto 0;width:240px" ' +
-            'data-act="stripe" data-tier="' + esc(tier) + '" data-interval="' + iv + '">' +
-            esc(dz('改用跳转支付', 'Pay by redirect')) + '</button>';
+            '" data-interval="' + iv + '" style="max-width:240px;margin:0 auto;min-height:42px"></div>';
         if (on && promotional) {
           /* 推广期赠送的档也必须能买 —— 用户要把赠送的 Team 转成正式订阅。
              原来这里直接显示"当前计划"把按钮吞掉，看起来像"Team 不能买"。 */
@@ -1413,8 +1414,7 @@
               : '') +
             '<button class="mc-btn ' + (on ? '' : 'pri') + '" style="display:block;margin:0 auto;' +
             'min-width:180px" data-act="buy" data-plan="' + esc(pk.id) + '">' +
-            esc(on ? dz('转为正式订阅', 'Convert to paid') : dz('选择 ' + pk.zh, 'Choose ' + pk.en)) +
-            '</button>';
+            esc(dz('支付', 'Pay')) + '</button>';
         }
 
         return '<div class="mc-card pad" style="display:flex;flex-direction:column;' +
@@ -1488,7 +1488,7 @@
       icons();
       /* 美元档用页内 PayPal 按钮：拿公开 client_id 渲染，用户点一下原地付款。
          pricing 里没有 client_id（PayPal 未配置）就什么都不做，卡片上会显示
-         上面那个「改用跳转支付」按钮，功能不丢。 */
+         上面的跳转兜底，只有 SDK 加载失败时才出现。 */
       if (curSel === 'USD' && pricing.paypal_client_id) {
         mountPayPal(pricing.paypal_client_id);
       }
@@ -1620,7 +1620,7 @@
        · 点一下在原地弹窗，可用 PayPal 余额，也可用借记卡/信用卡（由 PayPal
          决定是否给访客卡通道，取决于商户账户是否开通 ACDC）；
        · 付款完成 onApprove 直接回我们页面，调 paypal-confirm 立刻生效。
-     跳转方式保留为「改用跳转支付」，SDK 被墙或加载失败时仍有路可走。 */
+     跳转方式只在 SDK 被墙/加载失败时作为兜底出现。 */
   var PP_STATE = { loading: false, cbs: [], failed: false };
 
   function loadPayPalSdk(clientId, cb) {
@@ -1665,8 +1665,10 @@
         slot.setAttribute('data-mounted', '1');
         try {
           window.paypal.Buttons({
+            /* label:'pay' 让按钮显示最短的「支付」，而不是默认的
+               「PayPal」/「订阅」等长文案 —— 用户要求所有支付入口文字统一。 */
             style: { shape: 'rect', color: 'gold', layout: 'vertical',
-                     label: 'paypal', height: 40, tagline: false },
+                     label: 'pay', height: 40, tagline: false },
             createSubscription: function (data, actions) {
               /* custom_id 必须是登录邮箱 —— 服务端 paypal-confirm 会拿它和
                  会话邮箱比对，防"确认别人的订阅"。 */
@@ -1693,8 +1695,21 @@
               });
             },
             onError: function () {
-              toast(dz('PayPal 按钮加载失败，请点下方「改用跳转支付」',
-                       'PayPal failed to load — use "Pay by redirect" below'));
+              /* SDK 加载失败（国内网络常发生）→ 在每个空槽里注入一个不显眼的
+                 文字链兜底。用户平时看不到它，只有真的打不开时才出现。 */
+              toast(dz('PayPal 按钮加载失败，正在切换到备用支付方式',
+                       'PayPal failed to load — switching to the fallback'));
+              var slots = document.querySelectorAll('.pp-slot');
+              for (var i = 0; i < slots.length; i++) {
+                var sl = slots[i];
+                if (sl.getAttribute('data-fallback')) continue;
+                sl.setAttribute('data-fallback', '1');
+                sl.innerHTML = '<a href="#" style="font-size:12px;color:var(--fg2);' +
+                  'text-decoration:underline" data-act="stripe" data-tier="' +
+                  esc(sl.getAttribute('data-tier') || '') + '" data-interval="' +
+                  esc(sl.getAttribute('data-interval') || 'month') + '">' +
+                  esc(dz('支付', 'Pay')) + '</a>';
+              }
             }
           }).render(slot);
         } catch (e) {
@@ -2300,7 +2315,7 @@
       /* 字段释义：类型 / 结果 / 安全 这三列是判定结果，不解释没人知道阈值。
          放在表格正上方一行，看表时不用去翻文档。 */
       var legend = '<div class="mc-note" style="margin:0 0 8px;line-height:1.9">' +
-        esc(dz('类型：真人 = 有浏览器心跳的真实访客；AI / 机器人 = 按 UA 识别（GPTBot、ClaudeBot、curl、python 等）；未知 = 识别不出。',
+        esc(dz('类型：真人 = 有浏览器心跳的真实访客；机器人 = 按 UA 识别，显示具体命中的名字（GPTBot、ClaudeBot、curl、python-requests 等）；未知 = 识别不出。',
                'Type: Human = real browser with heartbeat; Bot = by UA; Unknown = unidentifiable.')) + '<br>' +
         esc(dz('结果：通过 = 正常返回；被拒 = 被防火墙拦截或返回 4xx；挑战 = 触发了人机校验。',
                'Result: Allowed / Denied / Challenged.')) + '<br>' +
@@ -3525,9 +3540,8 @@
       return tip;
     }
     function hide() { if (tip) tip.style.display = 'none'; cur = null; }
-    function show(el, x, y) {
-      var text = el.getAttribute('data-tip') || el.innerText || '';
-      if (!String(text).trim()) return hide();
+    function show(el, text, x, y) {
+      if (!String(text || '').trim()) return hide();
       var t = ensure();
       t.textContent = text;
       t.style.display = 'block';
@@ -3539,18 +3553,40 @@
       t.style.top = Math.max(8, top) + 'px';
       cur = el;
     }
+
+    /* 为什么必须接管 title：
+       审计日志这类表格是**横向滚动**的，单元格不裁切文字（scrollWidth ==
+       clientWidth），所以"溢出检测"永远不触发 —— 上一版悬停就是这么失效的。
+       而这些单元格本来就带原生 title，浏览器会弹一个要等 1 秒、样式无法控制、
+       多行很难看的原生提示。
+       现在：有 title 就换成我们的提示框（并把 title 摘掉避免两个一起弹），
+       没有 title 才退回溢出检测。 */
     document.addEventListener('mouseover', function (e) {
       var el = e.target;
       if (!el || el.nodeType !== 1) return;
-      var cand = el.closest('[data-tip], td, th, .mc-clip, .feat span, .mc-kv .v, .mc-code');
+      var cand = el.closest('[title], [data-tip], td, th, .mc-clip, .feat span, ' +
+                            '.mc-kv .v, .mc-code, .mc-note');
       if (!cand) return hide();
+      var text = cand.getAttribute('title');
+      if (text) {
+        cand.setAttribute('data-mn-tip', text);
+        cand.removeAttribute('title');      /* 不让浏览器再弹一个原生提示 */
+        show(cand, text, e.clientX, e.clientY);
+        return;
+      }
+      var explicit = cand.getAttribute('data-tip');
+      if (explicit) { show(cand, explicit, e.clientX, e.clientY); return; }
       var over = cand.scrollWidth > cand.clientWidth + 2 ||
                  cand.scrollHeight > cand.clientHeight + 2;
-      if (!over && !cand.getAttribute('data-tip')) return hide();
-      show(cand, e.clientX, e.clientY);
+      if (!over) return hide();
+      show(cand, cand.innerText, e.clientX, e.clientY);
     });
     document.addEventListener('mouseout', function (e) {
       if (!cur) return;
+      /* 把 title 还回去：同一个元素可能被反复悬停 */
+      var t = cur.getAttribute('data-mn-tip');
+      if (t != null && !cur.hasAttribute('title')) cur.setAttribute('title', t);
+      if (cur.hasAttribute('data-mn-tip')) cur.removeAttribute('data-mn-tip');
       if (!e.relatedTarget || !cur.contains(e.relatedTarget)) hide();
     });
     document.addEventListener('scroll', hide, true);
