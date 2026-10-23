@@ -2758,7 +2758,7 @@ body.docs #view{ display:block !important; }
      它只在被 renderDash() 调用时才取 window.MN，所以早加载不会有时序问题；
      晚加载反而会让「直达 #/dashboard/overview」白屏一次。 -->
 <script src="assets/console-graph.js?v=10.8"></script>
-<script src="assets/console.js?v=11.6"></script>
+<script src="assets/console.js?v=11.7"></script>
 <!-- 演示舞台：给商业合作伙伴看的 10 章剧本。独立文件，只在演示页被调用。 -->
 <script src="assets/console-demo.js?v=10.8"></script>
 
@@ -8907,7 +8907,7 @@ function renderDash(path) {
   if (!window.__mnConsoleRetry) {
     window.__mnConsoleRetry = 1;
     var s = document.createElement('script');
-    s.src = 'assets/console.js?v=11.6';
+    s.src = 'assets/console.js?v=11.7';
     s.onload = function () { renderDash(path); };
     s.onerror = function () {
       var view = $('#view');
