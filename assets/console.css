@@ -753,6 +753,7 @@ body.dm-full { overflow: hidden; }
    这样新加的列、新加的卡片自动生效，不用一处处加 title。 */
 .mn-tip{
   position:fixed; z-index:9999; display:none; max-width:460px;
+  max-height:60vh; overflow:auto;
   padding:8px 10px; border-radius:6px;
   background:rgba(22,20,28,.96); color:#fff;
   font-size:12px; line-height:1.65; letter-spacing:0;

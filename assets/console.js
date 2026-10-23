@@ -1596,7 +1596,8 @@
                 esc(dz('已锁定', 'locked')) + '</span>'
               : '';
             return '<tr' + (m.locked ? ' style="opacity:.55"' : '') + '>' +
-              '<td>' + lock + ' ' + esc(m.excerpt || '') + '</td>' +
+              '<td data-tip="' + esc(m.full || m.excerpt || '') + '">' +
+                lock + ' ' + esc(m.excerpt || '') + '</td>' +
               '<td style="white-space:nowrap;color:var(--fg3);font-size:11px">' +
                 esc(String(m.created_at || '').replace('T', ' ').slice(0, 16)) + '</td>' +
               '<td><span class="mc-tag">' + esc(m.tier || 'hot') + '</span></td>' +
