@@ -1301,7 +1301,7 @@
                      : '<span class="mc-pill"><i></i>' + esc(dz('待支付', 'Unpaid')) + '</span>';
             return '<tr><td style="font-family:monospace">' + esc(o.id) + '</td>' +
               '<td>' + esc(o.plan_zh || o.plan) + '</td>' +
-              '<td class="num">¥' + Math.round(Number(o.amount) || 0) + '</td>' +
+              '<td class="num">¥' + fmtYuan(o.amount) + '</td>' +
               '<td>' + pill + '</td><td style="white-space:nowrap;color:var(--fg3)">' +
               esc(new Date(o.created * 1000).toLocaleDateString()) + '</td>' +
               '<td>' + (st === 'pending' ? '<button class="mc-btn sm" data-act="pay" data-id="' + esc(o.id) + '">' +
@@ -1422,13 +1422,22 @@
     });
   }
 
+  /* 人民币金额显示：最多两位小数，去掉多余的 0。
+     9.9 -> "9.9"，99 -> "99"，19.95 -> "19.95"。 */
+  function fmtYuan(v) {
+    var n = Number(v) || 0;
+    return (Math.round(n * 100) / 100).toString();
+  }
+
   function showPay(order, qr) {
     var box = document.getElementById('mc-pay');
     if (!box) return;
-    /* 人民币一律整数元：标价多少就付多少，没有小数、没有"校验位尾数"。
-       早前给金额加 1~99 分做订单识别，用户看到 ¥10.37 这种数字根本不知道
-       该付多少 —— 对账改由「备注里填订单号」承担。 */
-    var yuan = Math.round(Number(order.amount) || 0);
+    /* 金额显示：¥9.9 要显示成 9.9，不能四舍五入成 10（早前用 Math.round
+       把 9.9 显示成 10，用户按 10 付款，对账就对不上）。整数就显示整数。 */
+    var yuan = fmtYuan(order.amount);
+    /* 每个金额都有**专属收款码**（assets/payqr/<金额>.jpg，一码一价）：
+       扫码那一刻金额就被码本身固定住，用户不需要手动输金额，也不会付错档。
+       早前靠"金额加 1~99 分做校验位"来区分订单，用户看到 ¥10.37 根本不知道付多少。 */
     /* ⚠️ 这里原来给 .mc-modal 挂了 onclick="event.stopPropagation()"，
        本意是"点弹窗内部不要关掉"。但控制台所有按钮都靠 **document 上的
        事件委托** 分发 data-act —— 在 .mc-modal 上 stopPropagation 等于
@@ -1438,12 +1447,12 @@
     box.innerHTML = '<div class="mc-mask" data-act="close-pay-mask"><div class="mc-modal" style="max-width:520px">' +
       '<div class="mh"><div class="st">' + esc(dz('微信支付', 'WeChat Pay')) + '</div>' +
       '<h2>' + esc(dz('扫码支付 ¥', 'Scan to pay ¥') + yuan) + '</h2>' +
-      '<p>' + esc(dz('金额就是标价，不需要多付或少付。',
-        'The amount is exactly the list price — nothing more, nothing less.')) + '</p></div>' +
+      '<p>' + esc(dz('这是 ¥' + yuan + ' 的专属收款码，扫码后金额已固定，不需要手动输入。',
+        'This QR is pre-set to ¥' + yuan + ' — no amount entry needed.')) + '</p></div>' +
       '<div class="mb" style="display:flex;gap:16px;align-items:flex-start">' +
-        (qr ? '<img class="mc-qr" src="' + esc(qr) + '" alt="WeChat QR">'
-            : '<div class="mc-qrph">' + esc(dz('管理员还没上传收款码。上传后这里会出现二维码。',
-                'The admin has not uploaded the QR yet.')) + '</div>') +
+        (qr ? '<img class="mc-qr" src="' + esc(qr) + '" alt="WeChat QR" width="200" height="200">'
+            : '<div class="mc-qrph">' + esc(dz('这个金额的收款码还没配。请先在后台设置里上传收款码。',
+                'No QR configured for this amount yet.')) + '</div>') +
         '<div style="flex:1">' +
           '<div class="mc-kv"><span class="k">' + esc(dz('订单号', 'Order')) + '</span><span class="v" style="font-family:monospace">' +
             esc(order.id) + '</span></div>' +
@@ -2554,8 +2563,11 @@
       }
       case 'pay': {        var oid = act.getAttribute('data-id');
         api('/api/billing/order?id=' + encodeURIComponent(oid)).then(function (r) {
-          var o = ((r && r.ok && r.body) || {}).order;
-          if (o) showPay(o, (MC.plans && MC.plans.qr) || '');
+          var body = (r && r.ok && r.body) || {};
+          var o = body.order;
+          /* 用订单自己那条记录的金额码，不要拿「通用收款码」顶替 ——
+             通用码不含金额，用户得自己输金额，等于把"付错档"的风险交回去。 */
+          if (o) showPay(o, body.qr || (MC.plans && MC.plans.qr) || '');
         });
         break;
       }
