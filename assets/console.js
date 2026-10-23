@@ -1123,7 +1123,7 @@
             '<div class="mc-h2" style="margin:0 0 8px">' +
               esc(dz('导出与迁移属于增值包权益', 'Export & migration is part of the add-on')) + '</div>' +
             '<p class="mc-p" style="max-width:520px;margin:0 auto 18px">' +
-              esc(dz('整库导出（JSONL + manifest）需要购买「合规证明包」。' +
+              esc(dz('整库导出（JSONL + manifest）需要购买「增值包」。' +
                      '你的记忆数据一直都在，随时可以升级后带走。',
                      'Full export requires the Compliance Add-on. Your data is always yours.')) + '</p>' +
             '<a class="mc-btn pri" href="#/dashboard/billing">' +
@@ -1239,96 +1239,112 @@
       /* ---- 美元档价目（与 /pricing 页面同源）---- */
       var usd = (pricing.tiers || []).filter(function (t) { return t.id !== 'free'; });
       MC.usdIv = MC.usdIv || {};
-      var usdHTML = usd.length ? '<div class="mc-h2">' +
-        esc(dz('美元订阅（PayPal）', 'USD subscription (PayPal)')) + '</div>' +
-        '<div class="mc-grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">' +
-        usd.map(function (t) {
-          var on = t.id === sub.tier;
-          var hasYear = Number(t.price_annual) > 0;
-          var iv = (hasYear && MC.usdIv[t.id] === 'year') ? 'year' : 'month';
-          var amt = iv === 'year' ? t.price_annual : t.price_monthly;
-          var period = iv === 'year' ? dz('/ 年（省两个月）', '/ year (2 months free)')
-                                     : dz('/ 月', '/ month');
-          var planId = ((t.paypal_plan_id || {})[iv]) || '';
+      /* 美元档 + 增值包：**三张卡同一行**。
+         原来 addon 单独渲染在网格下方，视觉上像"第四档订阅"，而且一行只放得下
+         两张卡、第二行单独一张 —— 用户截图指出"应该在同一个行"。
+         现在统一进一个 3 列网格，卡片更紧凑。 */
+      MC.usdIv = MC.usdIv || {};
 
-          var seg = hasYear
-            ? '<div class="mc-row" style="gap:6px;margin:0 0 10px">' +
-              [['month', dz('月付', 'Monthly')], ['year', dz('年付', 'Yearly')]]
-                .map(function (kv) {
-                  return '<button class="mc-btn sm' + (iv === kv[0] ? ' pri' : '') + '" ' +
-                    'aria-pressed="' + (iv === kv[0] ? 'true' : 'false') + '" ' +
-                    'data-act="usd-piv" data-tier="' + esc(t.id) + '" data-piv="' + kv[0] + '">' +
-                    esc(kv[1]) + '</button>';
-                }).join('') + '</div>'
-            : '';
-
-          /* 页内按钮容器：PayPal JS SDK 渲染进这里，点一下原地弹窗付款，
-             不再整页跳去 paypal.com 登录（那一跳是转化率杀手）。
-             下面再留一个「改用跳转支付」，SDK 被墙/失败时仍有路可走。 */
-          var cta;
-          if (on) {
-            cta = '<div class="mc-note" style="text-align:center;border:0;background:none">' +
-                  esc(dz('当前计划', 'Current plan')) + '</div>';
-          } else if (planId) {
-            cta = '<div class="pp-slot" data-plan-id="' + esc(planId) + '" ' +
-                    'data-tier="' + esc(t.id) + '" data-interval="' + iv + '" ' +
-                    'style="min-height:42px"></div>' +
-                  '<button class="mc-btn sm" style="width:100%;justify-content:center;margin-top:6px" ' +
-                    'data-act="stripe" data-tier="' + esc(t.id) + '" data-interval="' + iv + '">' +
-                    esc(dz('改用跳转支付', 'Pay by redirect')) + '</button>';
-          } else {
-            cta = '<button class="mc-btn pri" style="width:100%;justify-content:center" ' +
-                  'data-act="stripe" data-tier="' + esc(t.id) + '" data-interval="' + iv + '">' +
-                  esc(dz('升级到 ' + t.name, 'Upgrade to ' + t.name)) + '</button>';
-          }
-
-          return '<div class="mc-card pad"' + (on ? ' style="border-color:var(--accent-deep)"' : '') + '>' +
-            '<b style="font-size:14px">' + esc(t.name) + '</b>' +
-            (t.per_seat ? ' <span class="mc-tag">' + esc(dz('按席位', 'per seat')) + '</span>' : '') +
-            '<div style="margin-top:10px">' + seg + '</div>' +
-            '<div style="font-size:22px;font-weight:700;margin:4px 0 2px">$' + amt +
-            '<span style="font-size:11.5px;font-weight:400;color:var(--fg3)">' +
-            esc(period) + '</span></div>' +
-            /* 指令 §4.2：Team 卡必须点明适用场景（小团队 / 合规敏感部署）——
-               只说"按席位"不构成选择理由，用户不知道自己该不该选它。 */
-            (t.per_seat ? '<div style="font-size:11px;color:var(--fg3);margin:4px 0 8px;line-height:1.6">' +
-              esc(dz('面向小团队与合规敏感型部署。',
-                     'For small teams and compliance-sensitive deployments.')) + '</div>' : '') +
-            '<div style="margin-bottom:10px">' + ((zhNow() ? (t.features_zh || t.features) : t.features) || []).map(function (f) {
-              return '<div style="font-size:11.5px;color:var(--fg2);padding:2px 0">✓ ' + esc(f) + '</div>';
-            }).join('') + '</div>' + cta +
-            '</div>';
-        }).join('') + '</div>' : '';
-
-      /* ---- 合规证明包（加购，不是层级）----
-         刻意与三个层级分开渲染：它是"在 Pro/Team 之上再加"，放进同一个
-         网格会让人以为它是第四档订阅。ADDON_TIER: $9.9/月，只做月付。 */
-      var addonHTML = '';
-      if (pricing.addon && (sub.tier === 'pro' || sub.tier === 'team')) {
-        var ad = pricing.addon;
-        addonHTML = '<div class="mc-h2">' +
-          esc(dz('合规证明包（加购）', 'Compliance Add-on (optional)')) + '</div>' +
-          '<div class="mc-card pad" style="display:flex;gap:18px;flex-wrap:wrap;' +
-          'align-items:flex-start;justify-content:space-between">' +
-          '<div style="flex:1;min-width:240px">' +
-          '<b style="font-size:14px">' + esc(ad.name) + '</b>' +
-          '<div style="font-size:22px;font-weight:700;margin:6px 0 2px">$' + ad.price_monthly +
-          '<span style="font-size:11.5px;font-weight:400;color:var(--fg3)">' +
-          esc(dz('/ 月', '/ month')) + '</span></div>' +
-          '<div style="font-size:11.5px;color:var(--fg2);margin-top:6px;line-height:1.7">' +
-          ((zhNow() ? (ad.features_zh || ad.features) : ad.features) || []).map(function (f) { return '✓ ' + esc(f); }).join('<br>') + '</div>' +
-          '</div>' +
-          '<button class="mc-btn pri" data-act="stripe" data-tier="addon" data-interval="month">' +
-          esc(dz('加购合规证明包 — $9.9/月', 'Add Compliance pack — $9.9/mo')) + '</button>' +
-          '</div>';
-      } else if (pricing.addon) {
-        addonHTML = '<div class="mc-h2">' +
-          esc(dz('合规证明包（加购）', 'Compliance Add-on (optional)')) + '</div>' +
-          '<div class="mc-note">' +
-          esc(dz('合规证明包需要先有 Pro 或 Team 订阅 —— 它是在其之上加的一层，不能单独购买。',
-                 'The Compliance Add-on sits on top of Pro or Team. Upgrade first, ' +
-                 'then add the pack.')) + '</div>';
+      /* 支付按钮：**不铺满整行**。PayPal 官方按钮默认 width:100%，
+         在宽卡片里会变成一条巨大的黄条（用户截图指出"太大了"）。
+         统一 240px 居中，跳转兜底按钮同宽。 */
+      function payCta(tier, iv, planId, on, promotional) {
+        if (on && !promotional) {
+          return '<div class="mc-note" style="text-align:center;border:0;background:none;' +
+                 'font-size:11.5px">' + esc(dz('当前计划', 'Current plan')) + '</div>';
+        }
+        var inner =
+          '<div class="pp-slot" data-plan-id="' + esc(planId) + '" data-tier="' + esc(tier) +
+            '" data-interval="' + iv + '" style="max-width:240px;margin:0 auto;min-height:42px"></div>' +
+          '<button class="mc-btn sm" style="display:block;margin:8px auto 0;width:240px" ' +
+            'data-act="stripe" data-tier="' + esc(tier) + '" data-interval="' + iv + '">' +
+            esc(dz('改用跳转支付', 'Pay by redirect')) + '</button>';
+        if (on && promotional) {
+          /* 推广期赠送的档也必须能买 —— 用户要把赠送的 Team 转成正式订阅。
+             原来这里直接显示"当前计划"把按钮吞掉，看起来像"Team 不能买"。 */
+          inner = '<div style="font-size:11px;color:var(--fg3);text-align:center;margin-bottom:6px">' +
+                  esc(dz('推广期赠送中 · 可转为正式订阅',
+                         'Promotional — convert to a paid plan')) + '</div>' + inner;
+        }
+        return inner;
       }
+
+      var usdCards = (usd || []).map(function (t) {
+        var on = t.id === sub.tier;
+        var promotional = on && !!sub.is_promotional;
+        var hasYear = Number(t.price_annual) > 0;
+        var iv = (hasYear && MC.usdIv[t.id] === 'year') ? 'year' : 'month';
+        var amt = iv === 'year' ? t.price_annual : t.price_monthly;
+        var period = iv === 'year' ? dz('/ 年', '/ year') : dz('/ 月', '/ month');
+        var planId = ((t.paypal_plan_id || {})[iv]) || '';
+
+        var seg = hasYear
+          ? '<div class="mc-row" style="gap:6px;margin:0 0 10px">' +
+            [['month', dz('月付', 'Monthly')], ['year', dz('年付', 'Yearly')]]
+              .map(function (kv) {
+                return '<button class="mc-btn sm' + (iv === kv[0] ? ' pri' : '') + '" ' +
+                  'aria-pressed="' + (iv === kv[0] ? 'true' : 'false') + '" ' +
+                  'data-act="usd-piv" data-tier="' + esc(t.id) + '" data-piv="' + kv[0] + '">' +
+                  esc(kv[1]) + '</button>';
+              }).join('') + '</div>'
+          : '';
+
+        return '<div class="mc-card pad"' + (on ? ' style="border-color:var(--accent-deep)"' : '') + '>' +
+          '<b style="font-size:14px">' + esc(t.name) + '</b>' +
+          (t.per_seat ? ' <span class="mc-tag">' + esc(dz('按席位', 'per seat')) + '</span>' : '') +
+          '<div style="margin-top:10px">' + seg + '</div>' +
+          '<div style="font-size:22px;font-weight:700;margin:4px 0 2px">$' + amt +
+          '<span style="font-size:11.5px;font-weight:400;color:var(--fg3)">' +
+          esc(period) + '</span></div>' +
+          '<div style="font-size:11px;color:var(--fg3);margin:4px 0 8px;line-height:1.6;min-height:34px">' +
+            esc(t.per_seat ? dz('面向小团队与合规敏感型部署。',
+                                'For small teams and compliance-sensitive deployments.')
+                           : dz('适合每天都在用 AI 干活的人。', 'For daily AI work.')) + '</div>' +
+          '<div style="margin-bottom:10px">' +
+            ((zhNow() ? (t.features_zh || t.features) : t.features) || []).map(function (f) {
+              return '<div style="font-size:11.5px;color:var(--fg2);padding:2px 0">✓ ' + esc(f) + '</div>';
+            }).join('') + '</div>' +
+          payCta(t.id, iv, planId, on, promotional) +
+          '</div>';
+      });
+
+      /* 增值包（原「合规证明包」）：与 Pro/Team 同排，作为第三张卡。
+         它是加购，不是第四档订阅 —— 所以价格单位写「/ 月（加购）」，
+         并且在未开通 Pro/Team 时给一句提示，但不阻止下单。 */
+      if (pricing.addon) {
+        var ad = pricing.addon;
+        var addonOn = !!sub.addon_active;
+        var adPlanId = ((ad.paypal_plan_id || {})[ 'month' ]) || '';
+        usdCards.push('<div class="mc-card pad"' +
+          (addonOn ? ' style="border-color:var(--accent-deep)"' : '') + '>' +
+          '<div class="mc-row" style="justify-content:space-between;align-items:center">' +
+            '<b style="font-size:14px">' + esc(dz('增值包', 'Add-on')) + '</b>' +
+            (addonOn ? '<span class="mc-pill ok"><i></i>' + esc(dz('已开通', 'Active')) + '</span>' : '') +
+          '</div>' +
+          '<div style="font-size:22px;font-weight:700;margin:8px 0 2px">$' + ad.price_monthly +
+          '<span style="font-size:11.5px;font-weight:400;color:var(--fg3)">' +
+          esc(dz('/ 月（加购）', '/ mo (add-on)')) + '</span></div>' +
+          '<div style="font-size:11px;color:var(--fg3);margin:4px 0 8px;line-height:1.6;min-height:34px">' +
+            esc(dz('在 Pro / Team 之上再加一层，不单独售卖。',
+                   'Sits on top of Pro / Team; not sold standalone.')) + '</div>' +
+          '<div style="margin-bottom:10px">' +
+            ((zhNow() ? (ad.features_zh || ad.features) : ad.features) || []).map(function (f) {
+              return '<div style="font-size:11.5px;color:var(--fg2);padding:2px 0">✓ ' + esc(f) + '</div>';
+            }).join('') + '</div>' +
+          (addonOn
+            ? '<div class="mc-note" style="text-align:center;border:0;background:none;font-size:11.5px">' +
+              esc(dz('已开通', 'Active')) + '</div>'
+            : payCta('addon', 'month', adPlanId, false, false)) +
+          '</div>');
+      }
+
+      var usdHTML = usdCards.length ? '<div class="mc-h2">' +
+        esc(dz('美元订阅（PayPal）', 'USD subscription (PayPal)')) + '</div>' +
+        '<div class="mc-grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">' +
+        usdCards.join('') + '</div>' : '';
+
+      /* 增值包已并入上面的三卡网格，这里不再单独渲染 */
+      var addonHTML = '';
 
       /* ---- 币种 / 通道选择：USD(PayPal) ↔ CNY(微信) ----
          为什么二选一而不是两块都摆：两块并排会让人以为要买两次，
@@ -1365,7 +1381,10 @@
         var hasYear = !!(g.month && g.year);
         var iv = (hasYear && MC.cnyIv[tid] === 'year') ? 'year' : 'month';
         var pk = g[iv] || base;
-        var on = (pk.id === cur);
+        /* 「当前计划」按**订阅层级**判断，不是拿 plan id 和旧 planName 比 ——
+           那两个值永远不相等，结果所有卡都当成"未购买"。 */
+        var on = (tid === sub.tier);
+        var promotional = on && !!sub.is_promotional;
         var zh = zhNow();
 
         /* 卡内周期切换。只有真有两个周期的档才给按钮，加购包只做月付。 */
@@ -1383,9 +1402,20 @@
 
         var feats = (zh ? base.feats_zh : base.feats_en) || [];
         var period = (iv === 'year') ? dz(' / 年', ' / year') : dz(' / 月', ' / month');
-        var btn = '<button class="mc-btn ' + (on ? '' : 'pri') + '" style="width:100%" ' +
-          'data-act="buy" data-plan="' + esc(pk.id) + '">' +
-          esc(on ? dz('续费', 'Renew') : dz('选择 ' + pk.zh, 'Choose ' + pk.en)) + '</button>';
+        var btn;
+        if (on && !promotional) {
+          btn = '<div class="mc-note" style="text-align:center;border:0;background:none;' +
+                'font-size:11.5px">' + esc(dz('当前计划', 'Current plan')) + '</div>';
+        } else {
+          btn = (promotional
+              ? '<div style="font-size:11px;color:var(--fg3);text-align:center;margin-bottom:6px">' +
+                esc(dz('推广期赠送中 · 可转为正式订阅', 'Promotional — convert to paid')) + '</div>'
+              : '') +
+            '<button class="mc-btn ' + (on ? '' : 'pri') + '" style="display:block;margin:0 auto;' +
+            'min-width:180px" data-act="buy" data-plan="' + esc(pk.id) + '">' +
+            esc(on ? dz('转为正式订阅', 'Convert to paid') : dz('选择 ' + pk.zh, 'Choose ' + pk.en)) +
+            '</button>';
+        }
 
         return '<div class="mc-card pad" style="display:flex;flex-direction:column;' +
             (on ? 'border-color:var(--accent-deep);box-shadow:0 0 0 1px var(--accent-line)' : '') + '">' +
@@ -1405,7 +1435,7 @@
 
       var cnyHTML = '<div class="mc-h2">' +
         esc(dz('人民币订阅（微信支付）', 'CNY subscription (WeChat Pay)')) + '</div>' +
-        '<div class="mc-grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">' +
+        '<div class="mc-grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">' +
         cnyCards + '</div>';
 
       el.innerHTML = head(dz('套餐与用量', 'Plan & usage'),
@@ -1415,14 +1445,17 @@
         (curSel === 'USD' ? (usdHTML + addonHTML) : cnyHTML) +
         /* 区块 C / D 走异步填充：它们各自要打一个接口，
            不能让 key 列表或记忆列表的延迟拖住整个页面的首屏。 */
-        '<div id="mc-keys-block"></div>' +
+        /* API Key 管理已从「套餐与用量」移走（用户要求）：
+           它是账号级凭证配置，和"买什么套餐"没有关系；放在计费页只会让人以为
+           它是付费功能。需要看/建 Key 请到「设置 → API Key」。 */
         '<div id="mc-mem-block"></div>' +
 
         '<div class="mc-h2">' + esc(dz('我的订单', 'My orders')) + '</div>' +
         ((orders.orders || []).length ? '<div class="mc-card"><div class="mc-scroll"><table class="mc-tbl">' +
           '<thead><tr><th>' + esc(dz('订单号', 'Order')) + '</th><th>' + esc(dz('套餐', 'Plan')) +
           '</th><th class="num">' + esc(dz('金额', 'Amount')) + '</th><th>' + esc(dz('状态', 'Status')) +
-          '</th><th>' + esc(dz('创建', 'Created')) + '</th><th></th></tr></thead><tbody>' +
+          '</th><th>' + esc(dz('注册邮箱', 'Account email')) + '</th>' +
+          '<th>' + esc(dz('创建', 'Created')) + '</th><th></th></tr></thead><tbody>' +
           (orders.orders || []).map(function (o) {
             var st = o.status;
             var pill = st === 'active' ? '<span class="mc-pill ok"><i></i>' + esc(dz('已生效', 'Active')) + '</span>'
@@ -1431,12 +1464,21 @@
             return '<tr><td style="font-family:monospace">' + esc(o.id) + '</td>' +
               '<td>' + esc(o.plan_zh || o.plan) + '</td>' +
               '<td class="num">¥' + fmtYuan(o.amount) + '</td>' +
-              '<td>' + pill + '</td><td style="white-space:nowrap;color:var(--fg3)">' +
+              '<td>' + pill + '</td>' +
+              /* 注册邮箱：核对"这笔是谁的"最直接的字段（用户要求加上） */
+              '<td style="font-size:11.5px;color:var(--fg2);max-width:180px;overflow:hidden;' +
+                'text-overflow:ellipsis;white-space:nowrap" title="' + esc(o.email || '') + '">' +
+                esc(o.email || '—') + '</td>' +
+              '<td style="white-space:nowrap;color:var(--fg3)">' +
               esc(new Date(o.created * 1000).toLocaleDateString()) + '</td>' +
-              '<td>' + (st === 'pending' ? '<button class="mc-btn sm" data-act="pay" data-id="' + esc(o.id) + '">' +
-                esc(dz('去支付', 'Pay')) + '</button>' : '') +
-              (st === 'paid' && isAdmin() ? ' <button class="mc-btn sm pri" data-act="confirm" data-id="' +
-                esc(o.id) + '">' + esc(dz('确认到账', 'Confirm')) + '</button>' : '') + '</td></tr>';
+              '<td style="white-space:nowrap">' +
+              (st === 'pending' ? '<button class="mc-btn sm" data-act="pay" data-id="' + esc(o.id) + '">' +
+                esc(dz('去支付', 'Pay')) + '</button> ' : '') +
+              (st === 'paid' && isAdmin() ? '<button class="mc-btn sm pri" data-act="confirm" data-id="' +
+                esc(o.id) + '">' + esc(dz('确认到账', 'Confirm')) + '</button> ' : '') +
+              '<button class="mc-btn sm" data-act="order-del" data-id="' + esc(o.id) + '" ' +
+                'style="color:#b42318">' + esc(dz('删除', 'Delete')) + '</button>' +
+              '</td></tr>';
           }).join('') + '</tbody></table></div></div>'
           : '<div class="mc-card">' + empty('credit-card', dz('还没有订单', 'No orders yet'),
               dz('选一个套餐开始。', 'Pick a plan to start.')) + '</div>') +
@@ -1451,7 +1493,6 @@
         mountPayPal(pricing.paypal_client_id);
       }
       /* 区块 C / D：异步填充，任一失败只影响自己那一块 */
-      renderKeysBlock(sub);
       renderMemBlock(sub);
     }
 
@@ -1591,8 +1632,12 @@
     var s = document.createElement('script');
     /* vault=true + intent=subscription：订阅必须这两个参数，否则
        actions.subscription.create 不存在。currency 固定 USD。 */
+    /* locale 必须显式传：不传时 PayPal 按**浏览器/IP 推断**，实测在中国 IP 下
+       弹窗直接变成韩文（用户截图）。跟着站内语言走：中文→zh_CN，英文→en_US。 */
+    var loc = zhNow() ? 'zh_CN' : 'en_US';
     s.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(clientId) +
-            '&vault=true&intent=subscription&components=buttons&currency=USD';
+            '&vault=true&intent=subscription&components=buttons&currency=USD' +
+            '&locale=' + loc + '&buyer-country=CN';
     s.async = true;
     s.onload = function () {
       PP_STATE.loading = false;
@@ -1744,8 +1789,12 @@
          现在收款码是**一码一价**，按金额放在 assets/payqr/<分>.jpg，
          由后端按订单金额选图。让管理员再上传一张"通用码"只会造成两套逻辑
          并存：传了也用不上，反而让人以为系统在用那张。 */
-      '';
+
+      /* API Key 管理从「套餐与用量」搬到这里：它是账号级凭证，
+         和计费无关。放在设置里更符合"这里改的是我的账号"的预期。 */
+      '<div id="mc-keys-block"></div>';
     icons();
+    renderKeysBlock({});
   };
 
   /* ---- 演示 & 测试 ----------------------------------------------------- */
@@ -3241,6 +3290,27 @@
           MC.billingCache = null;      /* 订单状态变了，缓存必须失效 */
           paint();
           reloadRail();
+        });
+        break;
+      }
+      /* 删除订单：用户删自己的待付/已失效单；管理员可删任意（含已生效）。 */
+      case 'order-del': {
+        var odId = act.getAttribute('data-id');
+        if (!odId) break;
+        if (!window.confirm(dz('确定删除订单 ' + odId + ' 吗？',
+                               'Delete order ' + odId + '?'))) break;
+        post('/api/billing/order/delete', { id: odId }).then(function (r) {
+          var b = (r && r.ok && r.body) || {};
+          if (b.ok) {
+            toast(dz('订单已删除', 'Order deleted'));
+            bust('/api/billing/order');
+            MC.billingCache = null;
+            paint();
+          } else if (b.error === 'active_order') {
+            toast(dz('已生效的订单是付款凭证，需要管理员删除', 'Paid orders can only be removed by the operator'));
+          } else {
+            toast(dz('删除失败：' + (b.error || 'unknown'), 'Delete failed'));
+          }
         });
         break;
       }
