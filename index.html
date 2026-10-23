@@ -2762,7 +2762,7 @@ body.docs #view{ display:block !important; }
      它只在被 renderDash() 调用时才取 window.MN，所以早加载不会有时序问题；
      晚加载反而会让「直达 #/dashboard/overview」白屏一次。 -->
 <script src="assets/console-graph.js?v=10.8"></script>
-<script src="assets/console.js?v=11.2"></script>
+<script src="assets/console.js?v=11.3"></script>
 <!-- 演示舞台：给商业合作伙伴看的 10 章剧本。独立文件，只在演示页被调用。 -->
 <script src="assets/console-demo.js?v=10.8"></script>
 
@@ -5937,8 +5937,10 @@ body.docs #view{ display:block !important; }
            不能收人民币，实测 CURRENCY_NOT_SUPPORTED_FOR_RECEIVER）。 */
         var noteUsd = zh ? '通过 PayPal 订阅，自动续费，可随时在 PayPal 内取消'
                          : 'Billed through PayPal Subscriptions — auto-renew, cancel anytime.';
-        var noteCny = zh ? '微信扫码支付，人工确认后开通'
-                         : 'WeChat QR payment, activated after operator confirmation.';
+        /* 不再写"人工确认"：这句话出现在价格页上会让人觉得"付了还要等"。
+           实际开通方式见回复说明 —— 个人收款码没有回调，运营侧仍需一次确认；
+           但这是后台动作，不该写在客户看的价目卡上。 */
+        var noteCny = zh ? '微信扫码支付' : 'WeChat QR payment.';
 
         var plans = d.tiers.map(function (t) {
           var free = t.id === 'free';
@@ -8911,7 +8913,7 @@ function renderDash(path) {
   if (!window.__mnConsoleRetry) {
     window.__mnConsoleRetry = 1;
     var s = document.createElement('script');
-    s.src = 'assets/console.js?v=11.2';
+    s.src = 'assets/console.js?v=11.3';
     s.onload = function () { renderDash(path); };
     s.onerror = function () {
       var view = $('#view');
@@ -9840,6 +9842,62 @@ function docsOpen(open) {
 }
 
   window.addEventListener('hashchange', route);
+
+  /* ---- 访客心跳（需求书 §6.2）-------------------------------------------
+     为什么必须有：服务端只在**页面加载**时记一条 track_visitor，而本站是
+     hash 路由的 SPA —— 站内换页不刷新，不产生新记录；在线判定又是
+     `last_seen_at > now - 90s`。没有心跳的结果就是：人明明开着页面，
+     90 秒后一律判成离线。2026-10-23 实测：管理员自己在线，后台却显示
+     「当前没有在线访客」—— 就是这个原因，不是抓取不准，是根本没有心跳。
+
+     会话 id 存 sessionStorage：同一标签页持续访问算一个人，新标签页算
+     另一个人；服务端另有「IP+UA 哈希」兜底，两者互补。
+     `document.hidden` 时不发 —— 后台标签页不该算"在线"。 */
+  (function visitorHeartbeat() {
+    if (window.__mnHeartbeat) return;
+    window.__mnHeartbeat = 1;
+    var KEY = 'mn-vsid', sid = '';
+    try {
+      sid = sessionStorage.getItem(KEY) || '';
+      if (!sid) {
+        sid = 'v-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+        sessionStorage.setItem(KEY, sid);
+      }
+    } catch (e) { sid = 'v-' + Date.now().toString(36); }
+
+    var last = Date.now();
+    function currentPage() {
+      var h = (location.hash || '').replace(/^#/, '');
+      return (h || (location.pathname + location.search) || '/').slice(0, 190);
+    }
+    function beat() {
+      var now = Date.now();
+      var dwell = Math.max(0, Math.min(3600, Math.round((now - last) / 1000)));
+      last = now;
+      var payload = JSON.stringify({
+        session_id: sid, page_path: currentPage(), dwell_seconds: dwell
+      });
+      try {
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon('/api/track/heartbeat',
+            new Blob([payload], { type: 'application/json' }));
+          return;
+        }
+      } catch (e) { /* 落到 fetch */ }
+      try {
+        fetch('/api/track/heartbeat', {
+          method: 'POST', credentials: 'same-origin', keepalive: true,
+          headers: { 'Content-Type': 'application/json' }, body: payload
+        })['catch'](function () {});
+      } catch (e) { /* 心跳失败绝不能影响页面 */ }
+    }
+    beat();                                          /* 进站立刻记一条 */
+    setInterval(function () { if (!document.hidden) beat(); }, 30000);
+    window.addEventListener('hashchange', beat);      /* 站内切页 */
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) beat();                   /* 切回标签页立刻刷新 */
+    });
+  })();
 
   /* ask what sign-up can offer before the first paint of the login page */
   api('/api/auth/methods').then(function (r) {

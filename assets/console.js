@@ -1087,20 +1087,17 @@
 
   /* ---- 套餐与用量 ------------------------------------------------------- */
   PAGES.billing = function (el) {
-    el.innerHTML = head(dz('套餐与用量', 'Plan & usage'),
-      dz('你的记忆、你的额度。升级后额度立即生效。',
-         'Your memory, your quota. Upgrades take effect immediately.')) + loading();
     /* 2026-10-23 SaaS 订阅层：除既有人民币套餐外，再拉三个数据源：
          /api/me/subscription  —— 区块 A：当前计划 + 推广期剩余天数
          /api/pricing          —— 美元档价目（与价格页**同一份**数据源）
          /api/console/overview —— 区块 B：本月用量
-       三者并行拉取；任一失败都降级为空，不阻塞页面（旧行为必须保住）。 */
-    Promise.all([
-      api('/api/billing/plans'), api('/api/billing/order'),
-      api('/api/me/subscription'), api('/api/pricing'),
-      api('/api/console/overview')
-    ]).then(function (r) {
-      if (MC.page !== 'billing') return;
+       三者并行拉取；任一失败都降级为空，不阻塞页面（旧行为必须保住）。
+
+       ⚠️ 加了缓存：切币种 / 切月年只是重画，不再重发这 5 个请求。
+       不加缓存时每次切换都先清成「加载中…」，实测在网关慢的情况下
+       要等十几秒 —— 用户看到的是"点了没反应"，这比慢更伤。
+       数据变更（下单、确认、PayPal 确认）会显式清掉缓存。 */
+    function _apply(r) {
       var plans = ((r[0] && r[0].ok && r[0].body) || {});
       var orders = ((r[1] && r[1].ok && r[1].body) || {});
       var sub = ((r[2] && r[2].ok && r[2].body) || {});
@@ -1143,11 +1140,15 @@
           : '<button class="mc-btn" data-act="portal">' +
             esc(dz('管理订阅', 'Manage subscription')) + '</button>') +
         '</div>' +
-        ((sub.features || []).length
-          ? '<div style="margin-top:10px">' + sub.features.map(function (f) {
-              return '<div style="font-size:11.5px;color:var(--fg2);padding:2px 0">✓ ' + esc(f) + '</div>';
-            }).join('') + '</div>'
-          : '') +
+        (function () {
+          /* 中文界面必须用中文特性列表，否则「当前计划」卡里全是英文
+             （用户截图指出：切了中文还显示 "55 MCP tools / 30-day ..."）。 */
+          var feats = (zhNow() ? (sub.features_zh || sub.features) : sub.features) || [];
+          if (!feats.length) return '';
+          return '<div style="margin-top:10px">' + feats.map(function (f) {
+            return '<div style="font-size:11.5px;color:var(--fg2);padding:2px 0">✓ ' + esc(f) + '</div>';
+          }).join('') + '</div>';
+        })() +
         '</div>';
 
       /* ---- 区块 B：用量概览 ---- */
@@ -1166,32 +1167,64 @@
 
       /* ---- 美元档价目（与 /pricing 页面同源）---- */
       var usd = (pricing.tiers || []).filter(function (t) { return t.id !== 'free'; });
+      var usdIv = MC.usdInterval || 'month';
       var usdHTML = usd.length ? '<div class="mc-h2">' +
-        esc(dz('美元订阅（PayPal 自动续费）', 'USD subscription (PayPal, auto-renew)')) + '</div>' +
+        esc(dz('美元订阅（PayPal）', 'USD subscription (PayPal)')) + '</div>' +
         '<div class="mc-grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">' +
         usd.map(function (t) {
           var on = t.id === sub.tier;
+          var hasYear = Number(t.price_annual) > 0;
+          var iv = (hasYear && usdIv === 'year') ? 'year' : 'month';
+          var amt = iv === 'year' ? t.price_annual : t.price_monthly;
+          var period = iv === 'year' ? dz('/ 年（省两个月）', '/ year (2 months free)')
+                                     : dz('/ 月', '/ month');
+          var planId = ((t.paypal_plan_id || {})[iv]) || '';
+
+          var seg = hasYear
+            ? '<div class="mc-row" style="gap:6px;margin:0 0 10px">' +
+              [['month', dz('月付', 'Monthly')], ['year', dz('年付', 'Yearly')]]
+                .map(function (kv) {
+                  return '<button class="mc-btn sm' + (iv === kv[0] ? ' pri' : '') + '" ' +
+                    'aria-pressed="' + (iv === kv[0] ? 'true' : 'false') + '" ' +
+                    'data-act="usd-piv" data-piv="' + kv[0] + '">' + esc(kv[1]) + '</button>';
+                }).join('') + '</div>'
+            : '';
+
+          /* 页内按钮容器：PayPal JS SDK 渲染进这里，点一下原地弹窗付款，
+             不再整页跳去 paypal.com 登录（那一跳是转化率杀手）。
+             下面再留一个「改用跳转支付」，SDK 被墙/失败时仍有路可走。 */
+          var cta;
+          if (on) {
+            cta = '<div class="mc-note" style="text-align:center;border:0;background:none">' +
+                  esc(dz('当前计划', 'Current plan')) + '</div>';
+          } else if (planId) {
+            cta = '<div class="pp-slot" data-plan-id="' + esc(planId) + '" ' +
+                    'data-tier="' + esc(t.id) + '" data-interval="' + iv + '" ' +
+                    'style="min-height:42px"></div>' +
+                  '<button class="mc-btn sm" style="width:100%;justify-content:center;margin-top:6px" ' +
+                    'data-act="stripe" data-tier="' + esc(t.id) + '" data-interval="' + iv + '">' +
+                    esc(dz('改用跳转支付', 'Pay by redirect')) + '</button>';
+          } else {
+            cta = '<button class="mc-btn pri" style="width:100%;justify-content:center" ' +
+                  'data-act="stripe" data-tier="' + esc(t.id) + '" data-interval="' + iv + '">' +
+                  esc(dz('升级到 ' + t.name, 'Upgrade to ' + t.name)) + '</button>';
+          }
+
           return '<div class="mc-card pad"' + (on ? ' style="border-color:var(--accent-deep)"' : '') + '>' +
             '<b style="font-size:14px">' + esc(t.name) + '</b>' +
             (t.per_seat ? ' <span class="mc-tag">' + esc(dz('按席位', 'per seat')) + '</span>' : '') +
-            '<div style="font-size:22px;font-weight:700;margin:8px 0 2px">$' + t.price_monthly +
+            '<div style="margin-top:10px">' + seg + '</div>' +
+            '<div style="font-size:22px;font-weight:700;margin:4px 0 2px">$' + amt +
             '<span style="font-size:11.5px;font-weight:400;color:var(--fg3)">' +
-            esc(dz('/ 月', '/ month')) + '</span></div>' +
-            '<div style="font-size:11px;color:var(--fg3);margin-bottom:8px">$' + t.price_annual +
-            esc(dz('/ 年（省两个月）', '/ year (2 months free)')) + '</div>' +
+            esc(period) + '</span></div>' +
             /* 指令 §4.2：Team 卡必须点明适用场景（小团队 / 合规敏感部署）——
                只说"按席位"不构成选择理由，用户不知道自己该不该选它。 */
-            (t.per_seat ? '<div style="font-size:11px;color:var(--fg3);margin-bottom:8px;line-height:1.6">' +
+            (t.per_seat ? '<div style="font-size:11px;color:var(--fg3);margin:4px 0 8px;line-height:1.6">' +
               esc(dz('面向小团队与合规敏感型部署。',
                      'For small teams and compliance-sensitive deployments.')) + '</div>' : '') +
             '<div style="margin-bottom:10px">' + ((zhNow() ? (t.features_zh || t.features) : t.features) || []).map(function (f) {
               return '<div style="font-size:11.5px;color:var(--fg2);padding:2px 0">✓ ' + esc(f) + '</div>';
-            }).join('') + '</div>' +
-            (on ? '<div class="mc-note" style="text-align:center;border:0;background:none">' +
-                  esc(dz('当前计划', 'Current plan')) + '</div>'
-                : '<button class="mc-btn pri" style="width:100%;justify-content:center" ' +
-                  'data-act="stripe" data-tier="' + esc(t.id) + '" data-interval="month">' +
-                  esc(dz('升级到 ' + t.name, 'Upgrade to ' + t.name)) + '</button>') +
+            }).join('') + '</div>' + cta +
             '</div>';
         }).join('') + '</div>' : '';
 
@@ -1239,45 +1272,65 @@
         }).join('') + '</div>';
 
       /* 人民币档位单独拼一段，供切换时整体替换（免费档已在上面 tiers 里，这里不再列） */
+      /* 人民币档位：按 tier 归组（pro / team / addon），卡内切月付/年付。
+         PLAN_CATALOG 里 pro_month 与 pro_year 是两个 id，但它们是**同一档的
+         两个周期** —— 照单全渲染就是"同一档并排两张卡"，这正是之前的毛病。
+         现在 3 张卡、每张卡内一个切换。 */
+      var cnyState = MC.cnyInterval || 'month';
+      var cnyGroups = { pro: {}, team: {}, addon: {} };
+      (plans.plans || []).forEach(function (p) {
+        var m = /^(pro|team|addon)_(month|year)$/.exec(String(p.id || ''));
+        if (m && p.price > 0) cnyGroups[m[1]][m[2]] = p;
+      });
+
+      var cnyCards = ['pro', 'team', 'addon'].map(function (tid) {
+        var g = cnyGroups[tid];
+        var base = g.month || g.year;
+        if (!base) return '';
+        var hasYear = !!(g.month && g.year);
+        var iv = (hasYear && cnyState === 'year') ? 'year' : 'month';
+        var pk = g[iv] || base;
+        var on = (pk.id === cur);
+        var zh = zhNow();
+
+        /* 卡内周期切换。只有真有两个周期的档才给按钮，加购包只做月付。 */
+        var seg = '';
+        if (hasYear) {
+          seg = '<div class="mc-row" style="gap:6px;margin:0 0 10px">' +
+            [['month', dz('月付', 'Monthly')], ['year', dz('年付 · 省两个月', 'Yearly · 2 months free')]]
+              .map(function (kv) {
+                return '<button class="mc-btn sm' + (iv === kv[0] ? ' pri' : '') + '" ' +
+                  'aria-pressed="' + (iv === kv[0] ? 'true' : 'false') + '" ' +
+                  'data-act="cny-piv" data-piv="' + kv[0] + '">' + esc(kv[1]) + '</button>';
+              }).join('') + '</div>';
+        }
+
+        var feats = (zh ? base.feats_zh : base.feats_en) || [];
+        var period = (iv === 'year') ? dz(' / 年', ' / year') : dz(' / 月', ' / month');
+        var btn = '<button class="mc-btn ' + (on ? '' : 'pri') + '" style="width:100%" ' +
+          'data-act="buy" data-plan="' + esc(pk.id) + '">' +
+          esc(on ? dz('续费', 'Renew') : dz('选择 ' + pk.zh, 'Choose ' + pk.en)) + '</button>';
+
+        return '<div class="mc-card pad" style="display:flex;flex-direction:column;' +
+            (on ? 'border-color:var(--accent-deep);box-shadow:0 0 0 1px var(--accent-line)' : '') + '">' +
+          '<div class="mc-row" style="justify-content:space-between;align-items:center">' +
+            '<b style="font-size:14px">' + esc(zh ? base.zh : base.en) + '</b>' +
+            (on ? '<span class="mc-pill ok"><i></i>' + esc(dz('当前', 'Current')) + '</span>'
+                : '<span class="mc-tag">' + esc(base.badge || '') + '</span>') + '</div>' +
+          '<div style="margin-top:10px">' + seg + '</div>' +
+          '<div style="font-size:24px;font-weight:700;margin:4px 0 2px;letter-spacing:-.02em">¥' + esc(pk.price) +
+            '<span style="font-size:11.5px;font-weight:400;color:var(--fg3)">' + esc(period) + '</span></div>' +
+          '<div style="font-size:11.5px;color:var(--fg3);min-height:44px;line-height:1.6">' +
+            esc(zh ? base.zh_desc : base.en_desc) + '</div>' +
+          '<div style="margin:10px 0 12px;flex:1">' + feats.map(function (f) {
+            return '<div style="font-size:11.5px;color:var(--fg2);padding:2px 0">✓ ' + esc(f) + '</div>';
+          }).join('') + '</div>' + btn + '</div>';
+      }).join('');
+
       var cnyHTML = '<div class="mc-h2">' +
-        esc(dz('人民币订阅（微信扫码，人工确认）', 'CNY subscription (WeChat QR, operator-confirmed)')) +
-        '</div>' +
+        esc(dz('人民币订阅（微信支付）', 'CNY subscription (WeChat Pay)')) + '</div>' +
         '<div class="mc-grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">' +
-        (plans.plans || []).filter(function (p) { return p.price > 0; }).map(function (p) {
-          var on = p.id === cur;
-          var price = p.contact ? dz('面议', 'Talk to us')
-                    : (p.price ? '¥' + p.price : dz('免费', 'Free'));
-          /* 周期按 interval 显示「/ 月」「/ 年」而不是「/ 30 天」「/ 365 天」——
-             后者是数据库口径（days 字段），不是人读的价格单位。 */
-          var period = p.contact || !p.price ? ''
-                    : (p.interval === 'year' ? dz(' / 年', ' / year')
-                                             : dz(' / 月', ' / month'));
-          var feats = (zhNow() ? p.feats_zh : p.feats_en) || [];
-          var btn;
-          if (p.contact) {
-            btn = '<a class="mc-btn" style="width:100%;justify-content:center" href="mailto:hello@ai-memory.net">' +
-                  esc(dz('联系我们', 'Contact us')) + '</a>';
-          } else if (p.price) {
-            btn = '<button class="mc-btn ' + (on ? '' : 'pri') + '" style="width:100%" data-act="buy" data-plan="' +
-                  esc(p.id) + '">' + esc(on ? dz('续费', 'Renew') : dz('选择 ' + p.zh, 'Choose ' + p.en)) + '</button>';
-          } else {
-            btn = '<div class="mc-note" style="text-align:center;border:0;background:none;padding:6px 0">' +
-                  esc(dz('当前免费档', 'Free tier')) + '</div>';
-          }
-          return '<div class="mc-card pad" style="display:flex;flex-direction:column;' +
-              (on ? 'border-color:var(--accent-deep);box-shadow:0 0 0 1px var(--accent-line)' : '') + '">' +
-            '<div class="mc-row" style="justify-content:space-between;align-items:center">' +
-              '<b style="font-size:14px">' + esc(zhNow() ? p.zh : p.en) + '</b>' +
-              (on ? '<span class="mc-pill ok"><i></i>' + esc(dz('当前', 'Current')) + '</span>'
-                  : '<span class="mc-tag">' + esc(p.badge || '') + '</span>') + '</div>' +
-            '<div style="font-size:24px;font-weight:700;margin:8px 0 2px;letter-spacing:-.02em">' + esc(price) +
-              '<span style="font-size:11.5px;font-weight:400;color:var(--fg3)">' + esc(period) + '</span></div>' +
-            '<div style="font-size:11.5px;color:var(--fg3);min-height:48px;line-height:1.6">' +
-              esc(zhNow() ? p.zh_desc : p.en_desc) + '</div>' +
-            '<div style="margin:10px 0 12px;flex:1">' + feats.map(function (f) {
-              return '<div style="font-size:11.5px;color:var(--fg2);padding:2px 0">✓ ' + esc(f) + '</div>';
-            }).join('') + '</div>' + btn + '</div>';
-        }).join('') + '</div>';
+        cnyCards + '</div>';
 
       el.innerHTML = head(dz('套餐与用量', 'Plan & usage'),
         dz('你的记忆、你的额度。升级后额度立即生效。',
@@ -1315,9 +1368,29 @@
       MC.plans = plans;
       if (MC.setup && MC.setup.plan) MC.planName = MC.setup.plan;
       icons();
+      /* 美元档用页内 PayPal 按钮：拿公开 client_id 渲染，用户点一下原地付款。
+         pricing 里没有 client_id（PayPal 未配置）就什么都不做，卡片上会显示
+         上面那个「改用跳转支付」按钮，功能不丢。 */
+      if (curSel === 'USD' && pricing.paypal_client_id) {
+        mountPayPal(pricing.paypal_client_id);
+      }
       /* 区块 C / D：异步填充，任一失败只影响自己那一块 */
       renderKeysBlock(sub);
       renderMemBlock(sub);
+    }
+
+    if (MC.billingCache) { _apply(MC.billingCache); return; }
+    el.innerHTML = head(dz('套餐与用量', 'Plan & usage'),
+      dz('你的记忆、你的额度。升级后额度立即生效。',
+         'Your memory, your quota. Upgrades take effect immediately.')) + loading();
+    Promise.all([
+      api('/api/billing/plans'), api('/api/billing/order'),
+      api('/api/me/subscription'), api('/api/pricing'),
+      api('/api/console/overview')
+    ]).then(function (r) {
+      if (MC.page !== 'billing') return;
+      MC.billingCache = r;
+      _apply(r);
     });
   };
 
@@ -1419,6 +1492,93 @@
     })['catch'](function () {
       box.innerHTML = '<div class="mc-h2">' + esc(dz('记忆浏览', 'Memories')) + '</div>' +
         '<div class="mc-card pad">' + esc(dz('读取失败', 'Failed to load')) + '</div>';
+    });
+  }
+
+  /* ---- PayPal 页内按钮（JS SDK）---------------------------------------
+     为什么不再整页跳转：原来的流程是 window.location.href = approve 链接，
+     用户被带到 paypal.com、登录、确认、再跳回来。实测这条链路流失严重
+     （用户原话："点进去登录不了，客户一定拒绝了"）。
+     现在用 PayPal 官方 JS SDK 把按钮渲染在我们自己的页面里：
+       · 点一下在原地弹窗，可用 PayPal 余额，也可用借记卡/信用卡（由 PayPal
+         决定是否给访客卡通道，取决于商户账户是否开通 ACDC）；
+       · 付款完成 onApprove 直接回我们页面，调 paypal-confirm 立刻生效。
+     跳转方式保留为「改用跳转支付」，SDK 被墙或加载失败时仍有路可走。 */
+  var PP_STATE = { loading: false, cbs: [], failed: false };
+
+  function loadPayPalSdk(clientId, cb) {
+    if (window.paypal && window.paypal.Buttons) return cb(true);
+    if (PP_STATE.failed) return cb(false);
+    PP_STATE.cbs.push(cb);
+    if (PP_STATE.loading) return;
+    PP_STATE.loading = true;
+    var s = document.createElement('script');
+    /* vault=true + intent=subscription：订阅必须这两个参数，否则
+       actions.subscription.create 不存在。currency 固定 USD。 */
+    s.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(clientId) +
+            '&vault=true&intent=subscription&components=buttons&currency=USD';
+    s.async = true;
+    s.onload = function () {
+      PP_STATE.loading = false;
+      var q = PP_STATE.cbs; PP_STATE.cbs = [];
+      q.forEach(function (f) { try { f(true); } catch (e) {} });
+    };
+    s.onerror = function () {
+      PP_STATE.loading = false; PP_STATE.failed = true;
+      var q = PP_STATE.cbs; PP_STATE.cbs = [];
+      q.forEach(function (f) { try { f(false); } catch (e) {} });
+    };
+    document.head.appendChild(s);
+  }
+
+  function mountPayPal(clientId) {
+    var slots = document.querySelectorAll('.pp-slot');
+    if (!slots.length) return;
+    loadPayPalSdk(clientId, function (okSdk) {
+      if (!okSdk || !window.paypal || !window.paypal.Buttons) return;
+      var me = sess() || {};
+      Array.prototype.forEach.call(slots, function (slot) {
+        if (slot.getAttribute('data-mounted')) return;
+        var planId = slot.getAttribute('data-plan-id') || '';
+        if (!planId) return;
+        slot.setAttribute('data-mounted', '1');
+        try {
+          window.paypal.Buttons({
+            style: { shape: 'rect', color: 'gold', layout: 'vertical',
+                     label: 'paypal', height: 40, tagline: false },
+            createSubscription: function (data, actions) {
+              /* custom_id 必须是登录邮箱 —— 服务端 paypal-confirm 会拿它和
+                 会话邮箱比对，防"确认别人的订阅"。 */
+              return actions.subscription.create({
+                plan_id: planId,
+                custom_id: String(me.email || me.id || '')
+              });
+            },
+            onApprove: function (data) {
+              post('/api/billing/paypal-confirm',
+                   { subscription_id: data.subscriptionID }).then(function (r) {
+                var b = (r && r.ok && r.body) || {};
+                if (b.ok && b.tier && b.tier !== 'free') {
+                  toast(dz('订阅已生效：' + String(b.tier).toUpperCase(),
+                           'Subscription active: ' + String(b.tier).toUpperCase()));
+                  MC.data = {};
+                  MC.billingCache = null;
+                  paint();
+                } else {
+                  toast(dz('PayPal 已扣款，状态同步中，几秒后自动刷新',
+                           'Paid — syncing your subscription, refresh in a moment'));
+                }
+              });
+            },
+            onError: function () {
+              toast(dz('PayPal 按钮加载失败，请点下方「改用跳转支付」',
+                       'PayPal failed to load — use "Pay by redirect" below'));
+            }
+          }).render(slot);
+        } catch (e) {
+          /* 单张卡挂载失败不影响其它卡；用户仍可用跳转支付 */
+        }
+      });
     });
   }
 
@@ -2496,8 +2656,13 @@
         var uid2 = act.getAttribute('data-uid');
         post('/api/admin/orders/sync', { user_id: uid2 }).then(function (r) {
           var b = (r && r.ok && r.body) || {};
-          toast(b.ok ? dz('已从 Stripe 同步', 'Synced from Stripe')
-                     : (b.message || b.error || dz('同步失败', 'Sync failed')));
+          /* 人民币订单没有第三方订阅可拉，点这个按钮必然失败 —— 不是接口坏了，
+             而是该用「确认到账」。直接说清楚，别让运营去查日志。 */
+          toast(b.ok ? dz('已从支付方同步', 'Synced from payment provider')
+                     : b.error === 'no_provider_subscription'
+                       ? dz('这笔是人民币订单，没有第三方订阅可同步；请在订单上点「确认到账」',
+                            'CNY order: use "Confirm payment" on the order instead.')
+                       : (b.message || dz('同步失败', 'Sync failed')));
           if (MC.ordersLoad) MC.ordersLoad();
         });
         break;
@@ -2556,6 +2721,18 @@
          用 paint() 而不是 render()：render 会重建整个外壳（侧栏 + 顶栏），
          切换一个 tab 不需要动外壳，而且重建外壳会让 Promise.all 重新取一遍
          数据，网络慢时中间会闪一屏空白。 */
+      /* 人民币卡内的「月付 / 年付」切换。与页顶的 USD/CNY 切换分开存，
+         因为两者是正交的：币种管"用哪个通道付"，周期管"买多久"。 */
+      case 'usd-piv': {
+        MC.usdInterval = act.getAttribute('data-piv') || 'month';
+        paint();
+        break;
+      }
+      case 'cny-piv': {
+        MC.cnyInterval = act.getAttribute('data-piv') || 'month';
+        paint();
+        break;
+      }
       case 'billing-cur': {
         MC.billingCur = act.getAttribute('data-cur') || 'USD';
         paint();
@@ -2590,6 +2767,7 @@
         post('/api/billing/order/paid', { id: id2 }).then(function () {
           toast(dz('已提交，等待管理员确认到账', 'Submitted — awaiting confirmation'));
           bust('/api/billing/order');
+          MC.billingCache = null;      /* 订单状态变了，缓存必须失效 */
           paint();
         });
         break;
@@ -2599,6 +2777,7 @@
         post('/api/billing/order/confirm', { id: id3 }).then(function () {
           toast(dz('已确认，套餐生效', 'Confirmed — plan activated'));
           bust('/api/billing/order');
+          MC.billingCache = null;      /* tier 变了，缓存必须失效 */
           paint();
         });
         break;
