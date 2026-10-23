@@ -314,13 +314,25 @@
     return out;
   }
 
+  /* 当前订阅层级。**以 billing 的 subscription 为准**（overview 里带），
+     旧 users.json 的 plan 字段只在没有订阅信息时兜底 ——
+     早前只读 MC.planName（旧五档字段），所以升到 Team 年付后左下角
+     还写着「入门版」、条数也停在旧配额（2026-10-23 用户截图指出）。 */
+  function tierOf() {
+    var s = (MC.overview && MC.overview.subscription) || {};
+    return String(s.tier || MC.planName || 'free').toLowerCase();
+  }
+
   function planHTML() {
     var plan = (MC.users && MC.users.me) || {};
-    var used = (MC.overview && MC.overview.totals && MC.overview.totals.memories) || 0;
-    /* 配额按套餐算，不写死 500：升级完还显示 500 条上限，用户会以为没生效。 */
-    var LIM = { starter: 500, pro: 20000, max: 100000, plus: 500000,
-                enterprise: 1000000, team: 500000 };
-    var lim = LIM[MC.planName] || 500;
+    var u = (MC.overview && MC.overview.usage) || {};
+    var used = Number(u.memories_total
+      || (MC.overview && MC.overview.totals && MC.overview.totals.memories) || 0);
+    /* 配额按**订阅层级**算，不写死：升级完还显示旧上限，用户会以为没生效。 */
+    var LIM = { free: 500, pro: 20000, team: 200000,
+                /* 旧档位保留映射，避免老账号掉到 500 */
+                starter: 500, max: 100000, plus: 500000, enterprise: 1000000 };
+    var lim = LIM[tierOf()] || 500;
     var pct = Math.min(100, Math.round(used * 100 / lim));
     return '<div class="mc-plan">' +
       '<div class="r1"><b>' + esc(planLabel()) + '</b><span style="margin-left:auto">' + n0(used) + ' / ' + n0(lim) + '</span></div>' +
@@ -334,13 +346,24 @@
     if (f) f.outerHTML = planHTML();
   }
 
+  /* 升级/确认之后要重拉 overview 再重画侧栏卡片：
+     tier 和记忆条数都在 overview 里，只调 refreshRail() 用的是旧数据 ——
+     这正是"升到 Team 年付后左下角还写入门版"的直接原因。 */
+  function reloadRail() {
+    bust('/api/console/overview');
+    api('/api/console/overview').then(function (r) {
+      if (r && r.ok && r.body) { MC.overview = r.body; refreshRail(); }
+    });
+  }
+
   function planLabel() {
-    var p = (MC.planName || 'starter');
-    return ({ starter: dz('入门版', 'Starter'), pro: dz('PRO 版', 'Pro'),
-              max: dz('MAX 版', 'Max'), plus: dz('PLUS 版', 'Plus'),
-              enterprise: dz('企业版', 'Enterprise'),
-              /* 老账号可能还挂着 team，保留映射不至于显示成 team 这个英文 id */
-              team: dz('PLUS 版', 'Plus') })[p] || p;
+    var p = tierOf();
+    return ({ free: dz('免费版', 'Free'), pro: dz('PRO 版', 'Pro'),
+              team: dz('TEAM 版', 'Team'),
+              /* 旧五档，老账号兜底 */
+              starter: dz('入门版', 'Starter'), max: dz('MAX 版', 'Max'),
+              plus: dz('PLUS 版', 'Plus'), enterprise: dz('企业版', 'Enterprise')
+            })[p] || p;
   }
 
   var THEME_ICON = {
@@ -758,6 +781,7 @@
         (items.length ? '<div class="mc-card"><div class="mc-scroll"><table class="mc-tbl">' +
           '<thead><tr><th>' + esc(dz('内容', 'Content')) + '</th><th>' + esc(dz('类型', 'Type')) +
           '</th><th>' + esc(dz('标签', 'Tags')) + '</th><th>' + esc(dz('写入', 'Written')) +
+          '</th><th class="num">' + esc(dz('置信度', 'Confidence')) +
           '</th><th class="num">' + esc(dz('召回', 'Hits')) + '</th></tr></thead><tbody>' +
           items.map(function (m) {
             return '<tr data-mem="' + esc(m.id) + '" style="cursor:pointer">' +
@@ -768,6 +792,7 @@
                 return '<span class="mc-tag">' + esc(t) + '</span>'; }).join('') + '</td>' +
               '<td style="white-space:nowrap;color:var(--fg3);font-variant-numeric:tabular-nums">' +
                 esc(fmtTime(m.created)) + '</td>' +
+              '<td class="num">' + esc(confCell(m)) + '</td>' +
               '<td class="num">' + n0(m.accessed) + '</td></tr>';
           }).join('') + '</tbody></table></div></div>' +
           pager(d) +
@@ -1069,8 +1094,49 @@
       '<span>0</span><span>6</span><span>12</span><span>18</span><span>23</span></div>';
   }
 
+  /* 置信度显示。引擎不同版本给的字段名不同（confidence / score / weight），
+     取第一个能解析成数字的；都没有就显示 —，不要编一个 0.5 出来。 */
+  function confCell(m) {
+    var v = m.confidence;
+    if (v === undefined || v === null) v = m.score;
+    if (v === undefined || v === null) v = m.weight;
+    var n = Number(v);
+    if (!isFinite(n)) return '—';
+    if (n > 1) n = n / 100;                    /* 有些实现给 0-100 */
+    return Math.round(n * 100) + '%';
+  }
+
   /* ---- 导出 ------------------------------------------------------------- */
   PAGES.exports = function (el) {
+    /* 2026-10-23：导出与迁移归入**增值包**权益。
+       菜单对所有人可见（不藏起来），但没买增值包的人进来看到的是锁定态 ——
+       藏菜单会让人以为"这功能不存在"，显示锁定态才说明"买了就有"。
+       后端 handle_dash_export 同样校验 has_addon()，前端只是体验层。 */
+    api('/api/me/subscription').then(function (r) {
+      var sub = (r && r.ok && r.body) || {};
+      if (!sub.addon_active) {
+        el.innerHTML = head(dz('导出与迁移', 'Export'),
+          dz('你的记忆是你的。随时整包带走，格式是开放的 JSONL + manifest。',
+             'Your memory is yours. Take it with you as open JSONL + manifest.')) +
+          '<div class="mc-card pad" style="text-align:center;padding:44px 24px">' +
+            '<div style="font-size:34px;line-height:1;margin-bottom:14px">🔒</div>' +
+            '<div class="mc-h2" style="margin:0 0 8px">' +
+              esc(dz('导出与迁移属于增值包权益', 'Export & migration is part of the add-on')) + '</div>' +
+            '<p class="mc-p" style="max-width:520px;margin:0 auto 18px">' +
+              esc(dz('整库导出（JSONL + manifest）需要购买「合规证明包」。' +
+                     '你的记忆数据一直都在，随时可以升级后带走。',
+                     'Full export requires the Compliance Add-on. Your data is always yours.')) + '</p>' +
+            '<a class="mc-btn pri" href="#/dashboard/billing">' +
+              esc(dz('查看增值包', 'See the add-on')) + '</a>' +
+          '</div>';
+        icons();
+        return;
+      }
+      renderExport(el);
+    });
+  };
+
+  function renderExport(el) {
     el.innerHTML = head(dz('导出与迁移', 'Export'),
       dz('你的记忆是你的。随时整包带走，格式是开放的 JSONL + manifest。',
          'Your memory is yours. Take it with you as open JSONL + manifest.')) +
@@ -1172,14 +1238,14 @@
 
       /* ---- 美元档价目（与 /pricing 页面同源）---- */
       var usd = (pricing.tiers || []).filter(function (t) { return t.id !== 'free'; });
-      var usdIv = MC.usdInterval || 'month';
+      MC.usdIv = MC.usdIv || {};
       var usdHTML = usd.length ? '<div class="mc-h2">' +
         esc(dz('美元订阅（PayPal）', 'USD subscription (PayPal)')) + '</div>' +
         '<div class="mc-grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">' +
         usd.map(function (t) {
           var on = t.id === sub.tier;
           var hasYear = Number(t.price_annual) > 0;
-          var iv = (hasYear && usdIv === 'year') ? 'year' : 'month';
+          var iv = (hasYear && MC.usdIv[t.id] === 'year') ? 'year' : 'month';
           var amt = iv === 'year' ? t.price_annual : t.price_monthly;
           var period = iv === 'year' ? dz('/ 年（省两个月）', '/ year (2 months free)')
                                      : dz('/ 月', '/ month');
@@ -1191,7 +1257,8 @@
                 .map(function (kv) {
                   return '<button class="mc-btn sm' + (iv === kv[0] ? ' pri' : '') + '" ' +
                     'aria-pressed="' + (iv === kv[0] ? 'true' : 'false') + '" ' +
-                    'data-act="usd-piv" data-piv="' + kv[0] + '">' + esc(kv[1]) + '</button>';
+                    'data-act="usd-piv" data-tier="' + esc(t.id) + '" data-piv="' + kv[0] + '">' +
+                    esc(kv[1]) + '</button>';
                 }).join('') + '</div>'
             : '';
 
@@ -1281,7 +1348,10 @@
          PLAN_CATALOG 里 pro_month 与 pro_year 是两个 id，但它们是**同一档的
          两个周期** —— 照单全渲染就是"同一档并排两张卡"，这正是之前的毛病。
          现在 3 张卡、每张卡内一个切换。 */
-      var cnyState = MC.cnyInterval || 'month';
+      /* 每张卡**各自**记住自己的周期，默认月付。
+         早前用一个全局 MC.cnyInterval，结果"给 Pro 选了年付，Team 也跟着变年付" ——
+         用户是在比较两档的价格，不该被联动。 */
+      MC.cnyIv = MC.cnyIv || {};
       var cnyGroups = { pro: {}, team: {}, addon: {} };
       (plans.plans || []).forEach(function (p) {
         var m = /^(pro|team|addon)_(month|year)$/.exec(String(p.id || ''));
@@ -1293,7 +1363,7 @@
         var base = g.month || g.year;
         if (!base) return '';
         var hasYear = !!(g.month && g.year);
-        var iv = (hasYear && cnyState === 'year') ? 'year' : 'month';
+        var iv = (hasYear && MC.cnyIv[tid] === 'year') ? 'year' : 'month';
         var pk = g[iv] || base;
         var on = (pk.id === cur);
         var zh = zhNow();
@@ -1302,11 +1372,12 @@
         var seg = '';
         if (hasYear) {
           seg = '<div class="mc-row" style="gap:6px;margin:0 0 10px">' +
-            [['month', dz('月付', 'Monthly')], ['year', dz('年付 · 省两个月', 'Yearly · 2 months free')]]
+            [['month', dz('月付', 'Monthly')], ['year', dz('年付', 'Yearly')]]
               .map(function (kv) {
                 return '<button class="mc-btn sm' + (iv === kv[0] ? ' pri' : '') + '" ' +
                   'aria-pressed="' + (iv === kv[0] ? 'true' : 'false') + '" ' +
-                  'data-act="cny-piv" data-piv="' + kv[0] + '">' + esc(kv[1]) + '</button>';
+                  'data-act="cny-piv" data-tier="' + tid + '" data-piv="' + kv[0] + '">' +
+                  esc(kv[1]) + '</button>';
               }).join('') + '</div>';
         }
 
@@ -1569,6 +1640,7 @@
                   MC.data = {};
                   MC.billingCache = null;
                   paint();
+                  reloadRail();
                 } else {
                   toast(dz('PayPal 已扣款，状态同步中，几秒后自动刷新',
                            'Paid — syncing your subscription, refresh in a moment'));
@@ -1639,7 +1711,7 @@
   PAGES.settings = function (el) {
     var me = sess();
     el.innerHTML = head(dz('设置', 'Settings'),
-      dz('账户、外观、以及（管理员的）收款码。', 'Account, appearance, and the payment QR.')) +
+      dz('账户与外观。站点级配置在后台管理里。', 'Account and appearance. Site settings live in Admin.')) +
       '<div class="mc-grid mc-g2">' +
         '<div class="mc-card pad"><div class="mc-h2" style="margin-top:0">' + esc(dz('账户', 'Account')) + '</div>' +
           '<div class="mc-fld"><label class="mc-lab">' + esc(dz('邮箱', 'Email')) + '</label>' +
@@ -1668,13 +1740,11 @@
             esc(dz('打开后台管理 · 站点配置', 'Open Admin · Site settings')) + ' →</a></div></div>' : '') +
         '</div>' +
       '</div>' +
-      (isAdmin() ? '<div class="mc-card pad" style="margin-top:12px">' +
-        '<div class="mc-h2" style="margin-top:0">' + esc(dz('微信收款码（管理员）', 'WeChat QR (admin)')) + '</div>' +
-        '<p class="mc-p">' + esc(dz('上传你的个人微信收款码。用户升级时看到的就是这张图，金额由系统按订单生成。',
-          'Upload your personal WeChat QR. Users see it at checkout; the amount comes from the order.')) + '</p>' +
-        '<div class="mc-row" style="margin-top:10px"><input type="file" id="mc-qrfile" accept="image/*" class="mc-inp" style="padding-top:5px">' +
-        '<button class="mc-btn pri" data-act="save-qr">' + esc(dz('上传', 'Upload')) + '</button></div>' +
-        '<div id="mc-qrprev" style="margin-top:10px"></div></div>' : '');
+      /* 2026-10-23：删掉「微信收款码（管理员）」上传卡片。
+         现在收款码是**一码一价**，按金额放在 assets/payqr/<分>.jpg，
+         由后端按订单金额选图。让管理员再上传一张"通用码"只会造成两套逻辑
+         并存：传了也用不上，反而让人以为系统在用那张。 */
+      '';
     icons();
   };
 
@@ -1710,7 +1780,8 @@
         '<div class="mc-card"><div class="mc-scroll"><table class="mc-tbl">' +
           '<thead><tr><th>' + esc(dz('用户', 'User')) + '</th><th>' + esc(dz('角色', 'Role')) +
           '</th><th class="num">' + esc(dz('记忆', 'Memories')) + '</th><th>' + esc(dz('接入', 'Setup')) +
-          '</th><th>' + esc(dz('套餐', 'Plan')) + '</th><th>' + esc(dz('注册时间', 'Joined')) +
+          '</th><th>' + esc(dz('套餐', 'Plan')) + '</th><th>' + esc(dz('注册来源', 'Source')) +
+          '</th><th>' + esc(dz('注册时间', 'Joined')) +
           '</th><th>' + esc(dz('最后写入', 'Last write')) + '</th><th></th></tr></thead><tbody>' +
           items.map(function (u) {
             return '<tr><td><div style="display:flex;align-items:center;gap:8px">' +
@@ -1729,16 +1800,27 @@
                     (u.plan_price === -1 ? dz('面议', 'quoted') : dz('免费', 'free'))) + '</div>' +
                 (u.plan_expires ? '<div style="font-size:10px;color:var(--fg3)">' +
                   esc(dz('至 ', 'to ') + u.plan_expires.slice(0, 10)) + '</div>' : '') + '</td>' +
+              '<td>' + esc(providerLabel(u.provider)) + '</td>' +
               '<td style="white-space:nowrap;color:var(--fg3);font-variant-numeric:tabular-nums">' +
                 esc(u.created ? fmtTime(u.created) : '—') + '</td>' +
               '<td style="white-space:nowrap;color:var(--fg3)">' + esc(u.last_write ? ago(u.last_write) : '—') + '</td>' +
-              '<td><button class="mc-btn sm" data-act="view-user" data-email="' + esc(u.email) + '">' +
-                esc(dz('查看数据', 'Inspect')) + '</button></td></tr>';
+              '<td style="white-space:nowrap">' +
+                '<button class="mc-btn sm" data-act="view-user" data-email="' + esc(u.email) + '">' +
+                  esc(dz('查看数据', 'Inspect')) + '</button> ' +
+                '<button class="mc-btn sm" data-act="user-delete" data-email="' + esc(u.email) + '" ' +
+                  'style="color:#b42318">' + esc(dz('删除', 'Delete')) + '</button></td></tr>';
           }).join('') + '</tbody></table></div></div>' +
         '';
       icons();
     });
   };
+
+  /* 注册来源 → 中文。provider 由注册时写入（password / github / google …）。 */
+  function providerLabel(p) {
+    var k = String(p || '').toLowerCase();
+    return ({ password: dz('邮箱注册', 'Email'), github: 'GitHub', google: 'Google',
+              wechat: dz('微信', 'WeChat'), oauth: 'OAuth' })[k] || (k || '—');
+  }
 
   /* 「查看数据」用弹窗而不是行内展开：
      行内展开会把表格推得很长，一次只能看一个人，也没法边看边对照；
@@ -1749,19 +1831,19 @@
       document.body.insertAdjacentHTML('beforeend', '<div id="mc-usermodal"></div>');
       host = document.getElementById('mc-usermodal');
     }
-    host.innerHTML = '<div class="mc-mask" data-act="close-user"><div class="mc-modal" style="max-width:820px" ' +
-      'onclick="event.stopPropagation()"><div class="mb">' + loading() + '</div></div></div>';
+    host.innerHTML = '<div class="mc-mask" data-act="close-user-mask"><div class="mc-modal" style="max-width:820px">' +
+      '<div class="mb">' + loading() + '</div></div></div>';
     api('/api/dash/user?email=' + encodeURIComponent(email)).then(function (r) {
       var d = (r && r.ok && r.body) || {};
       var u = d.user || {}, m = d.memory || {};
       if (!u.email) {
-        host.innerHTML = '<div class="mc-mask" data-act="close-user"><div class="mc-modal" style="max-width:420px">' +
+        host.innerHTML = '<div class="mc-mask" data-act="close-user-mask"><div class="mc-modal" style="max-width:420px">' +
           '<div class="mb"><div class="mc-note bad">' + esc(dz('读取失败', 'Failed')) + '</div></div></div></div>';
         return;
       }
       var max = Math.max(1, Math.max.apply(null, (m.days || []).map(function (x) { return x.n; }).concat([1])));
-      host.innerHTML = '<div class="mc-mask" data-act="close-user"><div class="mc-modal" style="max-width:820px" ' +
-        'onclick="event.stopPropagation()"><div class="mh"><div class="st">' + esc(dz('用户档案', 'User record')) +
+      host.innerHTML = '<div class="mc-mask" data-act="close-user-mask"><div class="mc-modal" style="max-width:820px">' +
+        '<div class="mh"><div class="st">' + esc(dz('用户档案', 'User record')) +
         '</div><h2>' + esc(u.display_name || u.email) + '</h2><p>' + esc(u.email) + ' · ' + esc(u.provider) + '</p></div>' +
         '<div class="mb">' +
         '<div class="mc-row" style="justify-content:flex-end;margin-bottom:8px">' +
@@ -1920,6 +2002,19 @@
      否则它和真实付费订单长得一样，运营会误以为"有人白拿"。 */
   PAGES.orders = function (el) {
     var st = MC.orders || (MC.orders = { status: '', tier: '', q: '', page: 1 });
+    function userTip(o) {
+      var u = o.user || {};
+      return [dz('邮箱：', 'Email: ') + (o.user_id || ''),
+              u.name ? dz('名称：', 'Name: ') + u.name : '',
+              u.registered_at ? dz('注册：', 'Joined: ') +
+                String(u.registered_at).replace('T', ' ').slice(0, 19) : '',
+              u.source ? dz('来源：', 'Source: ') + u.source : '',
+              u.last_login ? dz('最近登录：', 'Last login: ') +
+                String(u.last_login).replace('T', ' ').slice(0, 19) : '',
+              dz('当前层级：', 'Tier: ') + ((o.subscription || {}).tier || 'free'),
+              u.memories ? dz('记忆条数：', 'Memories: ') + u.memories : ''
+             ].filter(Boolean).join('\n');
+    }
     function row(o) {
       var promo = o.is_promotional_row;
       var pill = o.status === 'active'
@@ -1937,7 +2032,14 @@
       var bg = promo ? ' style="background:var(--bg2)"' : '';
       return '<tr' + bg + ' data-act="order-detail" data-id="' + esc(o.id) + '" style="cursor:pointer">' +
         '<td style="font-family:monospace;font-size:11px">' + esc(o.id) + '</td>' +
-        '<td>' + esc(o.user_id) + '</td>' +
+        /* 用户列：邮箱 + 注册时间 + 来源。
+           核对付款必须能对上"这是谁"，只有订单号没法核对（用户原话）。 */
+        '<td data-tip="' + esc(userTip(o)) + '">' +
+          '<div style="font-size:12px">' + esc(o.user_id) + '</div>' +
+          '<div style="font-size:10.5px;color:var(--fg3);margin-top:2px">' +
+            esc((o.user && o.user.registered_at ? dz('注册 ', 'Joined ') +
+                 String(o.user.registered_at).replace('T', ' ').slice(0, 10) : '') +
+                (o.user && o.user.source ? ' · ' + o.user.source : '')) + '</div></td>' +
         '<td><span class="mc-tag">' + esc(o.tier) + '</span></td>' +
         '<td>' + esc(o.billing_interval || '') + '</td>' +
         '<td class="num">' + esc(amt) + '</td>' +
@@ -2102,7 +2204,7 @@
           '<td class="num" style="white-space:nowrap">' + esc(fmtTime(x.at_iso)) + '</td>' +
           '<td class="num" style="white-space:nowrap">' + esc(fmtTime(x.last_seen_iso)) + '</td>' +
           '<td style="font-family:monospace;font-size:11.5px">' + esc(x.ip || '—') + '</td>' +
-          '<td>' + esc(x.country || '—') + (x.city ? ' · ' + esc(x.city) : '') + '</td>' +
+          '<td>' + esc(countryName(x.country)) + (x.city ? ' · ' + esc(x.city) : '') + '</td>' +
           '<td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" ' +
             'title="' + esc((x.paths || []).join(' → ') || x.path || '') + '">' +
             esc(x.path || (x.paths && x.paths[x.paths.length - 1]) || '—') + '</td>' +
@@ -2126,9 +2228,7 @@
             (d.page >= d.pages ? ' disabled' : '') + '>' + esc(dz('下一页', 'Next')) + '</button>' +
         '</span></div>';
 
-      el.innerHTML = head(dz('访问日志', 'Access log'),
-        dz('谁来过、停留多久、是真人还是 AI、有没有被拦。每页 50 条。',
-           'Who visited, for how long, human or bot, allowed or blocked. 50 per page.'),
+      el.innerHTML = head(dz('访问日志', 'Access log'), '',
         '<span class="mc-pill ok"><i></i>' + esc(dz('在线 ' + (d.online_count || 0),
                                                    d.online_count + ' online')) + '</span>') +
         note +
@@ -2166,6 +2266,26 @@
             '<th>' + esc(dz('安全', 'Security')) + '</th>' +
           '</tr></thead><tbody>' + rows + '</tbody></table></div></div>' + pager;
       icons();
+    }
+
+    /* 国家代码 → 中文名。用浏览器内置的 Intl.DisplayNames（Chrome/Safari/Edge
+       都支持），拿不到再退回一个常见国家的兜底表，最后才显示原始代码 ——
+       宁可显示 "KR" 也不要显示空白。 */
+    var CN_FALLBACK = { CN: '中国', HK: '中国香港', TW: '中国台湾', MO: '中国澳门',
+      US: '美国', JP: '日本', KR: '韩国', SG: '新加坡', GB: '英国', DE: '德国',
+      FR: '法国', CA: '加拿大', AU: '澳大利亚', IN: '印度', RU: '俄罗斯',
+      NL: '荷兰', BR: '巴西', VN: '越南', TH: '泰国', MY: '马来西亚', ID: '印度尼西亚' };
+    function countryName(code) {
+      var c = String(code || '').toUpperCase();
+      if (!c) return '—';
+      if (!zhNow()) return c;
+      try {
+        if (window.Intl && Intl.DisplayNames) {
+          var n = new Intl.DisplayNames(['zh-CN'], { type: 'region' }).of(c);
+          if (n && n !== c) return n;
+        }
+      } catch (e) { /* 落到兜底表 */ }
+      return CN_FALLBACK[c] || c;
     }
 
     function fmtTime(s) {
@@ -2840,9 +2960,14 @@
                      'Synced: ' + (b.fetched || 0) + ' fetched, ' + (b.inserted || 0) + ' new'));
             if (MC.accessLoad) MC.accessLoad();
           } else if (b.error === 'not_configured') {
-            toast(dz('未配置 Cloudflare API Token，无法同步', 'Cloudflare API token not configured'));
+            toast(dz('未配置 Cloudflare API Token（CF_API_TOKEN / CF_ZONE_ID），暂时只能看本站访客',
+                     'Cloudflare API token not configured'));
+          } else if (b.error === 'graphql' || b.error === 'http_403' || b.error === 'http_401') {
+            toast(dz('Cloudflare 拒绝了请求：Token 权限不足（需 Zone → Analytics → Read）',
+                     'Cloudflare rejected the token — needs Zone → Analytics → Read'));
           } else {
-            toast(dz('同步失败：' + (b.error || 'unknown'), 'Sync failed: ' + (b.error || 'unknown')));
+            toast(dz('同步失败：' + (b.error || ('HTTP ' + (r && r.status))),
+                     'Sync failed: ' + (b.error || ('HTTP ' + (r && r.status)))));
           }
         });
         break;
@@ -2900,12 +3025,16 @@
       /* 人民币卡内的「月付 / 年付」切换。与页顶的 USD/CNY 切换分开存，
          因为两者是正交的：币种管"用哪个通道付"，周期管"买多久"。 */
       case 'usd-piv': {
-        MC.usdInterval = act.getAttribute('data-piv') || 'month';
+        MC.usdIv = MC.usdIv || {};
+        MC.usdIv[act.getAttribute('data-tier') || ''] =
+          act.getAttribute('data-piv') || 'month';
         paint();
         break;
       }
       case 'cny-piv': {
-        MC.cnyInterval = act.getAttribute('data-piv') || 'month';
+        MC.cnyIv = MC.cnyIv || {};
+        MC.cnyIv[act.getAttribute('data-tier') || ''] =
+          act.getAttribute('data-piv') || 'month';
         paint();
         break;
       }
@@ -2945,6 +3074,7 @@
           bust('/api/billing/order');
           MC.billingCache = null;      /* 订单状态变了，缓存必须失效 */
           paint();
+          reloadRail();
         });
         break;
       }
@@ -2955,6 +3085,7 @@
           bust('/api/billing/order');
           MC.billingCache = null;      /* tier 变了，缓存必须失效 */
           paint();
+          reloadRail();
         });
         break;
       }
@@ -2993,6 +3124,33 @@
       case 'as-user':
         pickUser(act.getAttribute('data-email'), act.getAttribute('data-ns'));
         break;
+      /* 点遮罩关闭用户弹窗（只在点遮罩本身时生效） */
+      case 'close-user-mask': {
+        if (e.target === act) {
+          var uh = document.getElementById('mc-usermodal');
+          if (uh) uh.innerHTML = '';
+        }
+        break;
+      }
+      case 'user-delete': {
+        var dem = act.getAttribute('data-email') || '';
+        if (!dem) break;
+        if (!window.confirm(dz('确定删除账号 ' + dem + ' 吗？此操作不可撤销。',
+                               'Delete ' + dem + '? This cannot be undone.'))) break;
+        post('/api/admin/user/delete', { email: dem }).then(function (r) {
+          var b = (r && r.ok && r.body) || {};
+          if (b.ok) {
+            toast(dz('已删除 ' + dem, 'Deleted ' + dem));
+            MC.data = {};
+            paint();
+          } else if (b.error === 'cannot_delete_owner') {
+            toast(dz('不能删除站长账号', 'Cannot delete the site owner'));
+          } else {
+            toast(dz('删除失败：' + (b.error || 'unknown'), 'Delete failed'));
+          }
+        });
+        break;
+      }
       case 'close-user': {
         var ud = document.getElementById('mc-usermodal');
         if (ud) ud.innerHTML = '';
@@ -3112,6 +3270,56 @@
     go: function (page) { location.hash = '#/dashboard/' + page; },
     setView: function (email, ns) { pickUser(email, ns); }
   };
+
+  /* ---- 全局悬停提示 ------------------------------------------------------
+     需求：记忆内容 / 路径 / UA 这类被截断的文本，鼠标移上去就看全文，
+     不要"必须先点开"。实现要点：
+       · 用**真实溢出**判断（scrollWidth > clientWidth），不靠字段白名单 ——
+         以后新加的列自动生效；
+       · 支持 data-tip 显式覆盖（有些内容不想让 innerText 决定，比如截断前的原文）；
+       · 提示层 pointer-events:none，否则鼠标一碰到提示框就触发 mouseout，
+         会闪成"显示-消失-显示"的抖动。 */
+  (function hoverTip() {
+    var tip = null, cur = null;
+    function ensure() {
+      if (tip) return tip;
+      tip = document.createElement('div');
+      tip.className = 'mn-tip';
+      document.body.appendChild(tip);
+      return tip;
+    }
+    function hide() { if (tip) tip.style.display = 'none'; cur = null; }
+    function show(el, x, y) {
+      var text = el.getAttribute('data-tip') || el.innerText || '';
+      if (!String(text).trim()) return hide();
+      var t = ensure();
+      t.textContent = text;
+      t.style.display = 'block';
+      var w = t.offsetWidth, h = t.offsetHeight;
+      var left = Math.min(x + 12, window.innerWidth - w - 10);
+      var top = y + 16;
+      if (top + h > window.innerHeight - 10) top = Math.max(8, y - h - 12);
+      t.style.left = Math.max(8, left) + 'px';
+      t.style.top = Math.max(8, top) + 'px';
+      cur = el;
+    }
+    document.addEventListener('mouseover', function (e) {
+      var el = e.target;
+      if (!el || el.nodeType !== 1) return;
+      var cand = el.closest('[data-tip], td, th, .mc-clip, .feat span, .mc-kv .v, .mc-code');
+      if (!cand) return hide();
+      var over = cand.scrollWidth > cand.clientWidth + 2 ||
+                 cand.scrollHeight > cand.clientHeight + 2;
+      if (!over && !cand.getAttribute('data-tip')) return hide();
+      show(cand, e.clientX, e.clientY);
+    });
+    document.addEventListener('mouseout', function (e) {
+      if (!cur) return;
+      if (!e.relatedTarget || !cur.contains(e.relatedTarget)) hide();
+    });
+    document.addEventListener('scroll', hide, true);
+    window.addEventListener('resize', hide);
+  })();
 
   window.MNConsole = { render: render, MC: MC };
   MC.render = render;

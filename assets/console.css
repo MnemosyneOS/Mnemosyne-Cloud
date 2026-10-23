@@ -745,3 +745,17 @@ body.dm-full { overflow: hidden; }
 .turn-fold[open] summary::before { content: "▾"; }
 .turn-fold summary:hover { color: var(--fg2); }
 .turn-body { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
+
+/* ---- 全局悬停提示（2026-10-23）-----------------------------------------
+   表格里长文本（记忆内容、路径、UA）会被 CSS 截断成省略号，用户必须点开
+   才知道是什么。这里做"鼠标移上去就显示全文"，不点击。
+   判定标准是真实的溢出（scrollWidth/clientWidth），不是猜哪个字段会截断 ——
+   这样新加的列、新加的卡片自动生效，不用一处处加 title。 */
+.mn-tip{
+  position:fixed; z-index:9999; display:none; max-width:460px;
+  padding:8px 10px; border-radius:6px;
+  background:rgba(22,20,28,.96); color:#fff;
+  font-size:12px; line-height:1.65; letter-spacing:0;
+  white-space:pre-wrap; word-break:break-word;
+  box-shadow:0 8px 28px rgba(0,0,0,.28); pointer-events:none;
+}

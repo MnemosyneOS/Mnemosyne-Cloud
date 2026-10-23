@@ -2631,10 +2631,6 @@ body.docs #view{ display:block !important; }
          「说中文」和「只能用微信付」不是一回事 —— 海外华人、有外卡的中文用户
          如果被语言锁死通道，就付不了钱。 -->
     <div class="mt-12 flex flex-wrap items-center justify-center gap-3 reveal" id="price-switch">
-      <div class="pseg" id="interval-switch" role="group">
-        <button type="button" data-piv="month" aria-pressed="true">月付</button>
-        <button type="button" data-piv="year" aria-pressed="false">年付 · 省两个月</button>
-      </div>
       <div class="pseg" id="currency-switch" role="group">
         <button type="button" data-cur="USD" aria-pressed="true">$ USD</button>
         <button type="button" data-cur="CNY" aria-pressed="false">¥ CNY</button>
@@ -2762,7 +2758,7 @@ body.docs #view{ display:block !important; }
      它只在被 renderDash() 调用时才取 window.MN，所以早加载不会有时序问题；
      晚加载反而会让「直达 #/dashboard/overview」白屏一次。 -->
 <script src="assets/console-graph.js?v=10.8"></script>
-<script src="assets/console.js?v=11.4"></script>
+<script src="assets/console.js?v=11.5"></script>
 <!-- 演示舞台：给商业合作伙伴看的 10 章剧本。独立文件，只在演示页被调用。 -->
 <script src="assets/console-demo.js?v=10.8"></script>
 
@@ -5778,7 +5774,10 @@ body.docs #view{ display:block !important; }
      为什么切换按钮在**每张卡上**、但点击同步全部卡：
        用户看的是某一档的价，视线不会跳到页面顶部找开关；但每张卡各切各的
        会出现"Pro 显示年付价、Team 显示月付价"，同屏两套口径，读者会算错。 */
-  var PRICE_STATE = { interval: 'month', currency: 'USD' };
+  /* 周期按**每张卡**独立记录，默认月付。
+     早前是全局一个 interval，结果"给 Pro 选了年付，Team 也跟着变年付"——
+     用户正在横向比较两档，联动会让人算错。 */
+  var PRICE_STATE = { iv: {}, currency: 'USD' };
 
   /* 取当前要显示的价格行。兼容两种数据形态：
      · 接口来的新形态（t.p.month / t.p.year，各含 usd / cny / 说明文案）
@@ -5788,7 +5787,7 @@ body.docs #view{ display:block !important; }
     if (!t.p) {
       return { iv: 'month', amount: t.price || '', note: t.footnote || '', legacy: true };
     }
-    var iv = (t.hasYear && PRICE_STATE.interval === 'year') ? 'year' : 'month';
+    var iv = (t.hasYear && PRICE_STATE.iv[t.id] === 'year') ? 'year' : 'month';
     var row = t.p[iv] || t.p.month || {};
     var cny = PRICE_STATE.currency === 'CNY';
     return { iv: iv, amount: cny ? row.cny : row.usd, note: cny ? row.noteCny : row.noteUsd };
@@ -5817,10 +5816,10 @@ body.docs #view{ display:block !important; }
     var seg = '';
     if (t.hasYear) {
       seg = '<div class="pseg pseg-sm" role="group">' +
-              '<button type="button" data-piv="month" aria-pressed="' + (p.iv === 'month') + '">' +
-                (zh ? '月付' : 'Monthly') + '</button>' +
-              '<button type="button" data-piv="year" aria-pressed="' + (p.iv === 'year') + '">' +
-                (zh ? '年付 · 省两个月' : 'Yearly · 2 months free') + '</button>' +
+              '<button type="button" data-piv="month" data-tier="' + esc(t.id) + '" ' +
+                'aria-pressed="' + (p.iv === 'month') + '">' + (zh ? '月付' : 'Monthly') + '</button>' +
+              '<button type="button" data-piv="year" data-tier="' + esc(t.id) + '" ' +
+                'aria-pressed="' + (p.iv === 'year') + '">' + (zh ? '年付' : 'Yearly') + '</button>' +
             '</div>';
     }
 
@@ -5869,18 +5868,7 @@ body.docs #view{ display:block !important; }
 
   function syncPriceSwitch() {
     var zh = lang === 'zh';
-    var ivEl = document.getElementById('interval-switch');
     var curEl = document.getElementById('currency-switch');
-    if (ivEl) {
-      var m = ivEl.querySelector('[data-piv="month"]');
-      var y = ivEl.querySelector('[data-piv="year"]');
-      if (m) m.textContent = zh ? '月付' : 'Monthly';
-      if (y) y.textContent = zh ? '年付 · 省两个月' : 'Yearly · 2 months free';
-      Array.prototype.forEach.call(ivEl.querySelectorAll('button'), function (b) {
-        b.setAttribute('aria-pressed',
-          b.getAttribute('data-piv') === PRICE_STATE.interval ? 'true' : 'false');
-      });
-    }
     if (curEl) {
       Array.prototype.forEach.call(curEl.querySelectorAll('button'), function (b) {
         b.setAttribute('aria-pressed',
@@ -5897,7 +5885,10 @@ body.docs #view{ display:block !important; }
     var cu = el.closest('[data-cur]');
     if (!iv && !cu) return;
     e.preventDefault();
-    if (iv) PRICE_STATE.interval = iv.getAttribute('data-piv');
+    if (iv) {
+      var tk = iv.getAttribute('data-tier') || '';
+      PRICE_STATE.iv[tk] = iv.getAttribute('data-piv') || 'month';
+    }
     if (cu) PRICE_STATE.currency = cu.getAttribute('data-cur');
     renderTiers();
   });
@@ -5948,6 +5939,7 @@ body.docs #view{ display:block !important; }
           var cny = t.cny || {};
           var hasYear = !free && Number(t.price_annual) > 0;
           var p = {
+            id: t.id,
             name: t.name,
             badge: free ? (zh ? '免费' : 'FREE')
                  : team ? (zh ? '团队' : 'TEAM')
@@ -5996,6 +5988,7 @@ body.docs #view{ display:block !important; }
           var a = d.addon;
           var acny = (a.cny || {}).price_monthly;
           plans.push({
+            id: 'addon',
             name: zh ? '合规证明包' : 'Compliance Add-on',
             badge: zh ? '加购' : 'ADD-ON',
             desc: zh ? 'Pro / Team 之上的可选加购，不是独立订阅层。'
@@ -8914,7 +8907,7 @@ function renderDash(path) {
   if (!window.__mnConsoleRetry) {
     window.__mnConsoleRetry = 1;
     var s = document.createElement('script');
-    s.src = 'assets/console.js?v=11.4';
+    s.src = 'assets/console.js?v=11.5';
     s.onload = function () { renderDash(path); };
     s.onerror = function () {
       var view = $('#view');
