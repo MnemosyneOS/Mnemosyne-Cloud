@@ -1148,6 +1148,29 @@
   .tier-name{ font-size:16.5px; font-weight:600; letter-spacing:-.01em; color:var(--fg); }
   .tagbox2{ font-family:'DM Mono',monospace; font-size:10.5px; color:var(--fg3); border:1px solid var(--hair); border-radius:5px; padding:3px 8px; white-space:nowrap; }
 
+  /* 2026-10-23 计费切换控件。
+     为什么要自己写而不是用 tailwind 类：这个站点的 tailwind.css 是**预构建**的，
+     任意新增的工具类不会被生成，只有这里出现过的类才有样式。所以控件样式
+     直接写在这里，类名用 pseg-* 避免与既有命名冲突。 */
+  .pseg{
+    display:inline-flex; align-items:center; gap:2px; padding:3px;
+    background:var(--surface); border:1px solid var(--hair); border-radius:8px;
+  }
+  .pseg button{
+    font:inherit; font-size:12.5px; line-height:1; padding:7px 13px;
+    border:0; border-radius:6px; background:transparent; color:var(--fg3);
+    cursor:pointer; transition:background .18s ease, color .18s ease; white-space:nowrap;
+  }
+  .pseg button:hover{ color:var(--fg); }
+  .pseg button[aria-pressed="true"]{
+    background:var(--fg); color:var(--surface); font-weight:600;
+  }
+  .pseg button:disabled{ opacity:.35; cursor:not-allowed; }
+  /* 卡内的小号版本（月付/年付切换） */
+  .pseg-sm{ margin:0 0 14px; }
+  .pseg-sm button{ font-size:11.5px; padding:5px 10px; }
+  .price-note{ font-size:11px; line-height:1.65; color:var(--fg3); margin-top:8px; }
+
   /* Feature rows. The tick used to sit at a hard-coded margin-top:3px, which
      slid off the first text line the moment the resolved font changed
      metrics — that is the misalignment that showed up in the screenshot.
@@ -2603,7 +2626,21 @@ body.docs #view{ display:block !important; }
       <h2 class="h2 mt-6 mx-auto max-w-3xl" data-i18n="price.h2">The open-source tier is free forever, and not crippled.</h2>
       <p class="sub mt-5 mx-auto max-w-2xl" data-i18n="price.sub">The engine is MIT. You pay for multi-tenancy, cloud coordination and compliance delivery — never to unlock a feature.</p>
     </div>
-    <div class="mt-14 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch" id="tiers"></div>
+    <!-- 计费周期 + 币种切换。两个控件都是**显式选择**，不跟语言走：
+         语言只决定默认值（中文默认 CNY、英文默认 USD），因为
+         「说中文」和「只能用微信付」不是一回事 —— 海外华人、有外卡的中文用户
+         如果被语言锁死通道，就付不了钱。 -->
+    <div class="mt-12 flex flex-wrap items-center justify-center gap-3 reveal" id="price-switch">
+      <div class="pseg" id="interval-switch" role="group">
+        <button type="button" data-piv="month" aria-pressed="true">月付</button>
+        <button type="button" data-piv="year" aria-pressed="false">年付 · 省两个月</button>
+      </div>
+      <div class="pseg" id="currency-switch" role="group">
+        <button type="button" data-cur="USD" aria-pressed="true">$ USD</button>
+        <button type="button" data-cur="CNY" aria-pressed="false">¥ CNY</button>
+      </div>
+    </div>
+    <div class="mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch" id="tiers"></div>
     <p class="mt-8 text-center text-[12px] leading-[1.7] text-fg3 max-w-3xl mx-auto" data-i18n="price.note">Final pricing subject to commercial confirmation. A complete free-tier cloud deployment package (managed free VM + free embedding API + free HTTPS tunnel) ships inside the repository.</p>
   </div>
 </section>
@@ -2725,7 +2762,7 @@ body.docs #view{ display:block !important; }
      它只在被 renderDash() 调用时才取 window.MN，所以早加载不会有时序问题；
      晚加载反而会让「直达 #/dashboard/overview」白屏一次。 -->
 <script src="assets/console-graph.js?v=10.8"></script>
-<script src="assets/console.js?v=11.0"></script>
+<script src="assets/console.js?v=11.1"></script>
 <!-- 演示舞台：给商业合作伙伴看的 10 章剧本。独立文件，只在演示页被调用。 -->
 <script src="assets/console-demo.js?v=10.8"></script>
 
@@ -5729,51 +5766,153 @@ body.docs #view{ display:block !important; }
   /* One plan card, shared by the home section and the pricing page.
      Order follows mem0/pricing: name · badge → blurb → price → CTA →
      hairline → feature rows. */
+  /* ===== 价格卡：月付 / 年付 + 币种 =====================================
+     为什么周期和币种都做成「显式选择」而不是跟着语言走：
+       语言决定的是**读什么字**，支付通道决定的是**能用什么付**。
+       中文用户里有一大批只有 PayPal / 外卡的人（海外华人、跨境开发者），
+       英文用户里也有能扫微信的。按语言锁通道 = 让一部分人根本付不了钱。
+     为什么默认 USD 而不是跟着中文默认 CNY：
+       人民币价约为美元价的 1/5（¥9.9 vs $6.9）。如果按浏览器语言自动给
+       人民币价，等于对所有中文环境（含海外华人、能付美元的开发者）发一张
+       五折以下的券。默认取**标价**，折扣由用户自己选，是更保守的做法。
+     为什么切换按钮在**每张卡上**、但点击同步全部卡：
+       用户看的是某一档的价，视线不会跳到页面顶部找开关；但每张卡各切各的
+       会出现"Pro 显示年付价、Team 显示月付价"，同屏两套口径，读者会算错。 */
+  var PRICE_STATE = { interval: 'month', currency: 'USD' };
+
+  /* 取当前要显示的价格行。兼容两种数据形态：
+     · 接口来的新形态（t.p.month / t.p.year，各含 usd / cny / 说明文案）
+     · DICT 里的静态兜底（老形态 t.price / t.unit，只有月付美元）
+     接口挂了也要能显示，所以必须兼容，不能直接取 t.p.month.usd。 */
+  function priceRow(t) {
+    if (!t.p) {
+      return { iv: 'month', amount: t.price || '', note: t.footnote || '', legacy: true };
+    }
+    var iv = (t.hasYear && PRICE_STATE.interval === 'year') ? 'year' : 'month';
+    var row = t.p[iv] || t.p.month || {};
+    var cny = PRICE_STATE.currency === 'CNY';
+    return { iv: iv, amount: cny ? row.cny : row.usd, note: cny ? row.noteCny : row.noteUsd };
+  }
+
+  function priceUnit(t, iv) {
+    var zh = lang === 'zh';
+    if (t.isFree) return zh ? '/ 月' : '/ month';
+    if (iv === 'year') {
+      return t.perSeat ? (zh ? '/ 席位 / 年' : '/ seat / year') : (zh ? '/ 年' : '/ year');
+    }
+    return t.perSeat ? (zh ? '/ 席位 / 月' : '/ seat / month') : (zh ? '/ 月' : '/ month');
+  }
+
   function planHTML(t) {
     var feats = (t.feats || []).map(function (f) {
       return '<li class="feat' + (f[1] ? ' dim' : '') + '">' +
                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' +
                '<span>' + esc(f[0]) + '</span></li>';
     }).join('');
+    var p = priceRow(t);
+    var zh = lang === 'zh';
+
+    /* 卡内周期切换。只有真有两个周期的档才渲染 —— 加购包只做月付，
+       给它一个假的"年付"按钮等于骗人。 */
+    var seg = '';
+    if (t.hasYear) {
+      seg = '<div class="pseg pseg-sm" role="group">' +
+              '<button type="button" data-piv="month" aria-pressed="' + (p.iv === 'month') + '">' +
+                (zh ? '月付' : 'Monthly') + '</button>' +
+              '<button type="button" data-piv="year" aria-pressed="' + (p.iv === 'year') + '">' +
+                (zh ? '年付 · 省两个月' : 'Yearly · 2 months free') + '</button>' +
+            '</div>';
+    }
+
+    /* 年付时点明"等于付 10 个月"，月付时点明年付价 —— 两个方向都给对照，
+       读者不用自己做除法。 */
+    var extra = '';
+    if (t.hasYear && t.p) {
+      var alt = t.p[p.iv === 'year' ? 'month' : 'year'] || {};
+      var altAmt = PRICE_STATE.currency === 'CNY' ? alt.cny : alt.usd;
+      extra = (p.iv === 'year')
+        ? (zh ? '相当于付 10 个月用 12 个月' : '12 months for the price of 10')
+        : (zh ? '年付 ' + altAmt + '，省两个月' : 'Yearly ' + altAmt + ' saves 2 months');
+    }
+
+    /* CTA 直接写明走哪个通道 —— "开通 Pro" 这四个字不回答"我怎么付"。
+       只在接口数据到位后才拼通道名：静态兜底卡没有 isFree 字段，
+       给它拼会得到"免费开始（PayPal）"这种错话。 */
+    var cta = t.cta || '';
+    if (!t.isFree && t.p) {
+      var chan = PRICE_STATE.currency === 'CNY' ? (zh ? '微信' : 'WeChat')
+                                                : (zh ? 'PayPal' : 'PayPal');
+      cta = zh ? cta + '（' + chan + '）' : cta + ' via ' + chan;
+    }
+
     return '<div class="tier' + (t.rec ? ' tier-rec' : '') + '">' +
-             /* flex-wrap：Enterprise / Custom 这种「长名字 + 徽标」在窄列里
-                一行放不下（1024 下实测溢出 19px），允许徽标掉到下一行。 */
              '<div class="flex flex-wrap items-center justify-between gap-3">' +
                '<h3 class="tier-name">' + esc(t.name) + '</h3>' +
                (t.badge ? '<span class="' + (t.rec ? 'pill' : 'tagbox2') + '"' + (t.rec ? ' style="height:24px;padding:0 10px;font-size:11px"' : '') + '>' + esc(t.badge) + '</span>' : '') +
              '</div>' +
              '<p class="mt-3 text-[13px] leading-[1.6] text-fg3">' + esc(t.desc) + '</p>' +
-             '<div class="mt-6 flex items-baseline gap-2">' +
-               '<span class="metric text-[34px] tracking-[-.02em] text-fg">' + esc(t.price) + '</span>' +
-               (t.unit ? '<span class="text-[13px] text-fg3">' + esc(t.unit) + '</span>' : '') +
+             '<div class="mt-5">' + seg + '</div>' +
+             '<div class="flex items-baseline gap-2">' +
+               '<span class="metric text-[34px] tracking-[-.02em] text-fg">' + esc(p.amount) + '</span>' +
+               '<span class="text-[13px] text-fg3">' + esc(priceUnit(t, p.iv)) + '</span>' +
              '</div>' +
-             '<a class="btn ' + (t.rec ? 'btn-accent' : 'btn-ghost') + ' w-full mt-6" href="' + esc(t.href) + '">' +
-               esc(t.cta) +
+             '<p class="price-note">' + esc(p.note || '') +
+               (extra ? '<br>' + esc(extra) : '') + '</p>' +
+             '<a class="btn ' + (t.rec ? 'btn-accent' : 'btn-ghost') + ' w-full mt-5" href="' + esc(t.href) + '">' +
+               esc(cta) +
                '<span class="btn-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg></span>' +
              '</a>' +
              '<div class="rule my-6"></div>' +
-             (t.featLabel ? '<p class="mono text-[11px] uppercase tracking-[.14em] text-fg3 mb-1">' + esc(t.featLabel) + '</p>' : '') +
              '<ul class="flex-1">' + feats + '</ul>' +
-             /* 2026-10-23（指令 §4.2）：两张卡的脚注文案。
-                为什么必须写在这里而不是塞进 feats 列表：feats 是"功能勾选项"，
-                而这两句是**条款性说明**（数据不删 / 按席位计价），
-                混进勾选列表会被当成一条普通功能，读者不会认真看。 */
-             (t.footnote ? '<p class="mt-4 text-[11px] leading-[1.6] text-fg3" style="opacity:.8">' +
-                esc(t.footnote) + '</p>' : '') +
            '</div>';
   }
 
+  function syncPriceSwitch() {
+    var zh = lang === 'zh';
+    var ivEl = document.getElementById('interval-switch');
+    var curEl = document.getElementById('currency-switch');
+    if (ivEl) {
+      var m = ivEl.querySelector('[data-piv="month"]');
+      var y = ivEl.querySelector('[data-piv="year"]');
+      if (m) m.textContent = zh ? '月付' : 'Monthly';
+      if (y) y.textContent = zh ? '年付 · 省两个月' : 'Yearly · 2 months free';
+      Array.prototype.forEach.call(ivEl.querySelectorAll('button'), function (b) {
+        b.setAttribute('aria-pressed',
+          b.getAttribute('data-piv') === PRICE_STATE.interval ? 'true' : 'false');
+      });
+    }
+    if (curEl) {
+      Array.prototype.forEach.call(curEl.querySelectorAll('button'), function (b) {
+        b.setAttribute('aria-pressed',
+          b.getAttribute('data-cur') === PRICE_STATE.currency ? 'true' : 'false');
+      });
+    }
+  }
+
+  /* 一个委托监听管住两处开关（页顶的 + 每张卡里的），不重复绑定 */
+  document.addEventListener('click', function (e) {
+    var el = e.target;
+    if (!el || !el.closest) return;
+    var iv = el.closest('[data-piv]');
+    var cu = el.closest('[data-cur]');
+    if (!iv && !cu) return;
+    e.preventDefault();
+    if (iv) PRICE_STATE.interval = iv.getAttribute('data-piv');
+    if (cu) PRICE_STATE.currency = cu.getAttribute('data-cur');
+    renderTiers();
+  });
+
   function renderTiers() {
     var el = $('#tiers'); if (!el) return;
+    /* 首次进入才拉接口；之后切月/年、切币种只是重渲染，不重复请求 */
+    if (!T._live) { loadLivePricing(); return; }
     el.innerHTML = (T.plans || []).map(planHTML).join('');
-    /* 2026-10-23：价格页与控制台**必须同源**（指令 §4.1/§4.3）。
-       先按静态数据渲染（首屏不空），再异步拉 /v1/pricing 覆盖 ——
-       失败就保持静态值，绝不显示空白或报错。 */
-    loadLivePricing();
+    syncPriceSwitch();
+    if (window.lucide) { try { lucide.createIcons(); } catch (e) {} }
   }
 
   /* 价格数字格式化：6.9 → "6.9"，19.9 → "19.9"，69 → "69"。
-     不做 toFixed(2)，因为 $6.90 在价格页读起来比 $6.9 笨重。 */
+     不做 toFixed(2)，因为 $6.90 在价格页读起来比 $6.90 笨重。 */
   function money(n) {
     var v = Number(n);
     if (!isFinite(v)) return '0';
@@ -5791,23 +5930,30 @@ body.docs #view{ display:block !important; }
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
         if (!d || !d.tiers || !d.tiers.length) return;
-        var zh = (typeof lang !== 'undefined' && lang === 'zh');
-        /* 2026-10-23：**整卡重建**，不再只同步数字。
-           旧做法是保留首页四档、只改价格数字 —— 结果是首页显示
-           Starter/Pro/Enterprise 三个"档"，而客户在控制台看到的是
-           Free/Pro/Team 三个"层"，两套名词 + 两套价格并存，
-           客户会问"我到底买的是哪个 Pro"。现在首页就是订阅线的四张卡
-           （三档 + 加购），数据全部来自 /v1/pricing，不可能再对不上。 */
+        var zh = lang === 'zh';
+
+        /* 通道说明文案：用户最关心的不是"多少钱"，而是"我怎么付"。
+           USD 走 PayPal 自动续费；CNY 走微信扫码 + 人工确认（PayPal 该账户
+           不能收人民币，实测 CURRENCY_NOT_SUPPORTED_FOR_RECEIVER）。 */
+        var noteUsd = zh ? '通过 PayPal 订阅，自动续费，可随时在 PayPal 内取消'
+                         : 'Billed through PayPal Subscriptions — auto-renew, cancel anytime.';
+        var noteCny = zh ? '微信扫码支付，人工确认后开通'
+                         : 'WeChat QR payment, activated after operator confirmation.';
+
         var plans = d.tiers.map(function (t) {
           var free = t.id === 'free';
           var team = t.id === 'team';
           var cny = t.cny || {};
+          var hasYear = !free && Number(t.price_annual) > 0;
           var p = {
             name: t.name,
             badge: free ? (zh ? '免费' : 'FREE')
                  : team ? (zh ? '团队' : 'TEAM')
                  : (zh ? '最受欢迎' : 'POPULAR'),
             rec: t.id === 'pro' ? 1 : 0,
+            isFree: free,
+            perSeat: !!t.per_seat,
+            hasYear: hasYear,
             desc: free
               ? (zh ? '全部 MCP 工具，不用绑卡。先让它替你记住一次。'
                     : 'Every MCP tool, no card required. See what persistent memory does for your agent.')
@@ -5816,35 +5962,34 @@ body.docs #view{ display:block !important; }
                     : 'Per seat. For small teams and compliance-sensitive deployments.')
               : (zh ? '每天都在用 AI 干活的人，记忆不该有保质期。'
                     : 'Permanent memory for individual developers who use AI every day.'),
-            price: free ? '$0' : '$' + money(t.price_monthly),
-            unit: free ? (zh ? '/ 月' : '/ month')
-                  : team ? (zh ? '/ 席位 / 月' : '/ seat / month')
-                  : (zh ? '/ 月' : '/ month'),
             cta: free ? (zh ? '免费开始' : 'Start free')
                  : team ? (zh ? '开通 Team' : 'Start Team')
                  : (zh ? '开通 Pro' : 'Start Pro'),
             href: free ? '#/login' : '#/dashboard/billing',
             feats: (zh ? (t.features_zh || t.features) : (t.features || []))
               .map(function (f) { return [f, 0]; }),
+            p: {
+              month: {
+                usd: free ? '$0' : '$' + money(t.price_monthly),
+                cny: free ? '¥0' : '¥' + money(cny.price_monthly),
+                noteUsd: free ? (zh ? '无需绑卡' : 'No card required') : noteUsd,
+                noteCny: free ? (zh ? '无需绑卡' : 'No card required') : noteCny
+              }
+            }
           };
-          if (free) {
-            /* 免费档的「数据永不删除」已由接口的 features 提供，这里不再补 ——
-               补了会在卡里出现两遍（2026-10-23 实测重复）。 */
-          } else {
-            var annual = Number(t.price_annual) || 0;
-            var cnyLine = (zh && cny.price_monthly)
-              ? ' 人民币 ¥' + money(cny.price_monthly) + '/月（微信收款码，人工确认）。' : '';
-            p.footnote = (zh
-              ? '$' + money(annual) + (team ? '/年 / 席位' : '/年')
-                + ' —— 付 10 个月用 12 个月。' + cnyLine
-              : '$' + money(annual) + (team ? '/year per seat' : '/year')
-                + ' — 12 months for the price of 10. Cancel anytime in PayPal.')
-                + (zh ? ' 通过 PayPal 订阅自动续费。' : ' Billed through PayPal Subscriptions.');
+          if (hasYear) {
+            p.p.year = {
+              usd: '$' + money(t.price_annual),
+              cny: '¥' + money(cny.price_annual),
+              noteUsd: noteUsd,
+              noteCny: noteCny
+            };
           }
           return p;
         });
 
-        /* 加购包：不是独立层级，所以单独一张卡，且在文案里点明"需已有 Pro/Team" */
+        /* 加购包：不是独立层级，单独一张卡，文案里点明"需已有 Pro/Team"，
+           且**只做月付**（不渲染年付切换）。 */
         if (d.addon) {
           var a = d.addon;
           var acny = (a.cny || {}).price_monthly;
@@ -5853,19 +5998,27 @@ body.docs #view{ display:block !important; }
             badge: zh ? '加购' : 'ADD-ON',
             desc: zh ? 'Pro / Team 之上的可选加购，不是独立订阅层。'
                      : 'Optional pack on top of Pro or Team. Not a standalone tier.',
-            price: '$' + money(a.price_monthly),
-            unit: zh ? '/ 月' : '/ month',
+            isFree: false, perSeat: false, hasYear: false,
             cta: zh ? '加到 Pro / Team' : 'Add to Pro or Team',
             href: '#/dashboard/billing',
             feats: (zh ? (a.features_zh || a.features) : (a.features || []))
               .map(function (f) { return [f, 0]; })
               .concat([[zh ? '需已有 Pro 或 Team' : 'Requires Pro or Team', 1]]),
-            footnote: (zh ? '需已有 Pro 或 Team 订阅，只做月付。' : 'Requires an active Pro or Team subscription. Monthly only.')
-              + ((zh && acny) ? ' 人民币 ¥' + money(acny) + '/月。' : ''),
+            p: {
+              month: {
+                usd: '$' + money(a.price_monthly),
+                cny: '¥' + money(acny),
+                noteUsd: zh ? '需已有 Pro 或 Team 订阅，只做月付'
+                            : 'Requires an active Pro or Team subscription. Monthly only.',
+                noteCny: zh ? '需已有 Pro 或 Team 订阅，只做月付，微信扫码'
+                            : 'Requires Pro or Team. Monthly only, paid by WeChat.'
+              }
+            }
           });
         }
 
         T.plans = plans;
+        T._live = true;
 
         if (d.promo && d.promo.active) {
           /* 插到 #tiers **正前方** —— 那里一定在首屏可见区域内。
@@ -5886,11 +6039,9 @@ body.docs #view{ display:block !important; }
             host.insertBefore(bar, tiersEl);
           }
         }
-        el.innerHTML = (T.plans || []).map(planHTML).join('');
-        if (window.lucide) { try { lucide.createIcons(); } catch (e) {} }
+        renderTiers();
       })['catch'](function () { /* 接口不可用：保持静态价格 */ });
   }
-
   /* mem0's resource row: a coloured thumbnail plate over a headline and a
      meta line. The three tones are lifted from mem0's own blog cards —
      yellow, violet, near-black — which is where its palette stops being
@@ -6170,7 +6321,11 @@ body.docs #view{ display:block !important; }
 
     /* the console is a full-viewport app: it hides the marketing header and
        footer, and every other route hands them back */
-    var isDash = (path === 'dashboard' || path.indexOf('dashboard/') === 0);
+    /* #/admin/orders 与 #/admin/visitors 是需求书里的后台路径，同样交给控制台。
+       为什么是 hash：Worker 只回源 /api /auth /v1 /healthz，其余路径由 GitHub
+       Pages 接管，而 Pages 没有 SPA fallback —— 真路径 /admin/orders 会 404 白屏。 */
+    var isDash = (path === 'dashboard' || path.indexOf('dashboard/') === 0 ||
+                  path === 'admin/orders' || path === 'admin/visitors');
     /* the documentation site owns #/docs and #/docs/<slug> */
     var isDocs = (path === 'docs' || path.indexOf('docs/') === 0);
     document.body.classList.toggle('dash', isDash);
@@ -8756,7 +8911,7 @@ function renderDash(path) {
   if (!window.__mnConsoleRetry) {
     window.__mnConsoleRetry = 1;
     var s = document.createElement('script');
-    s.src = 'assets/console.js?v=11.0';
+    s.src = 'assets/console.js?v=11.1';
     s.onload = function () { renderDash(path); };
     s.onerror = function () {
       var view = $('#view');

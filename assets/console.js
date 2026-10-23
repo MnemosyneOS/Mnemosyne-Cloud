@@ -127,8 +127,14 @@
      { id: 'billing', zh: '套餐与用量', en: 'Plan & usage', ic: 'credit-card' },
      { id: 'settings', zh: '设置', en: 'Settings', ic: 'settings' }],
     [{ g: 'admin', admin: 1 },
-     { id: 'orders', zh: '订单管理', en: 'Orders', ic: 'receipt', badge: 'NEW' },
-     { id: 'visitors', zh: '在线用户', en: 'Visitors', ic: 'activity', badge: 'LIVE' },
+     /* 这两项按需求书的路径暴露成 #/admin/orders 与 #/admin/visitors。
+        为什么用 hash 而不是真路径 /admin/orders：Worker 只回源 /api /auth
+        /v1 /healthz 四类前缀，其余路径由 GitHub Pages 接管，而 Pages 对不存在
+        的路径返回 404（没有 SPA fallback），真路径会直接白屏。 */
+     { id: 'orders', zh: '订单管理', en: 'Orders', ic: 'receipt', badge: 'NEW',
+       href: '#/admin/orders' },
+     { id: 'visitors', zh: '在线用户', en: 'Visitors', ic: 'activity', badge: 'LIVE',
+       href: '#/admin/visitors' },
      { id: 'demo', zh: '演示 & 测试', en: 'Demo & test', ic: 'presentation', badge: 'NEW' },
      { id: 'users', zh: '注册用户信息', en: 'Users', ic: 'users' },
      { id: 'tools', zh: '工具台（52）', en: 'Tools (52)', ic: 'wrench' },
@@ -293,7 +299,8 @@
           continue;
         }
         if (skip) continue;
-        out += '<a class="mc-it' + (MC.page === it.id ? ' on' : '') + '" href="#/dashboard/' + it.id + '">' +
+        out += '<a class="mc-it' + (MC.page === it.id ? ' on' : '') + '" href="' +
+          (it.href || ('#/dashboard/' + it.id)) + '">' +
           '<i data-lucide="' + it.ic + '"></i><span class="lb">' +
           esc(zhNow() ? it.zh : it.en) + '</span>' +
           (it.badge ? '<span class="bdg">' + it.badge + '</span>' : '') + '</a>';
@@ -376,7 +383,13 @@
   function render(path) {
     var view = document.getElementById('view');
     if (!view) return;
-    var rest = (path.split('/')[1] || 'overview').split('?')[0];
+    /* 统一入参形态：路由层传 'dashboard/billing'（无 #），而页面内几处
+       调用传的是 '#/dashboard/billing'。以前直接 split('/')[1]，后者会得到
+       'dashboard'，于是「刷新」按钮会把任何页面都弹回概览 —— 这里先剥掉
+       开头的 '#/'，两种写法都能正确解析。 */
+    var norm = String(path || '').replace(/^#\/?/, '');
+    var seg = norm.split('?')[0].split('/');
+    var rest = seg[1] || seg[0] || 'overview';
     var known = Object.keys(TITLES);
     if (known.indexOf(rest) < 0) rest = 'overview';
 
@@ -1212,18 +1225,25 @@
                  'then add the pack.')) + '</div>';
       }
 
-      el.innerHTML = head(dz('套餐与用量', 'Plan & usage'),
-        dz('你的记忆、你的额度。升级后额度立即生效。',
-           'Your memory, your quota. Upgrades take effect immediately.')) +
-        banner + tierCard + usageCard + usdHTML + addonHTML +
-        /* 区块 C / D 走异步填充：它们各自要打一个接口，
-           不能让 key 列表或记忆列表的延迟拖住整个页面的首屏。 */
-        '<div id="mc-keys-block"></div>' +
-        '<div id="mc-mem-block"></div>' +
+      /* ---- 币种 / 通道选择：USD(PayPal) ↔ CNY(微信) ----
+         为什么二选一而不是两块都摆：两块并排会让人以为要买两次，
+         而且币种混在一屏里最容易问"我到底付哪个"。
+         为什么默认 USD：人民币价约为美元价的 1/5（¥9.9 vs $6.9），
+         默认给低价等于对所有中文环境发折扣券 —— 折扣应当由用户主动选。 */
+      var curSel = MC.billingCur || 'USD';
+      var paySwitch = '<div class="mc-row" style="gap:8px;margin:0 0 14px;flex-wrap:wrap">' +
+        [['USD', '$ USD · PayPal'], ['CNY', '¥ CNY · 微信 / WeChat']].map(function (kv) {
+          return '<button class="mc-btn sm' + (curSel === kv[0] ? ' pri' : '') + '" ' +
+                 'aria-pressed="' + (curSel === kv[0] ? 'true' : 'false') + '" ' +
+                 'data-act="billing-cur" data-cur="' + kv[0] + '">' + esc(kv[1]) + '</button>';
+        }).join('') + '</div>';
 
-        '<div class="mc-h2">' + esc(dz('人民币套餐（微信）', 'CNY plans (WeChat)')) + '</div>' +
+      /* 人民币档位单独拼一段，供切换时整体替换（免费档已在上面 tiers 里，这里不再列） */
+      var cnyHTML = '<div class="mc-h2">' +
+        esc(dz('人民币订阅（微信扫码，人工确认）', 'CNY subscription (WeChat QR, operator-confirmed)')) +
+        '</div>' +
         '<div class="mc-grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">' +
-        (plans.plans || []).map(function (p) {
+        (plans.plans || []).filter(function (p) { return p.price > 0; }).map(function (p) {
           var on = p.id === cur;
           var price = p.contact ? dz('面议', 'Talk to us')
                     : (p.price ? '¥' + p.price : dz('免费', 'Free'));
@@ -1257,7 +1277,17 @@
             '<div style="margin:10px 0 12px;flex:1">' + feats.map(function (f) {
               return '<div style="font-size:11.5px;color:var(--fg2);padding:2px 0">✓ ' + esc(f) + '</div>';
             }).join('') + '</div>' + btn + '</div>';
-        }).join('') + '</div>' +
+        }).join('') + '</div>';
+
+      el.innerHTML = head(dz('套餐与用量', 'Plan & usage'),
+        dz('你的记忆、你的额度。升级后额度立即生效。',
+           'Your memory, your quota. Upgrades take effect immediately.')) +
+        banner + tierCard + usageCard + paySwitch +
+        (curSel === 'USD' ? (usdHTML + addonHTML) : cnyHTML) +
+        /* 区块 C / D 走异步填充：它们各自要打一个接口，
+           不能让 key 列表或记忆列表的延迟拖住整个页面的首屏。 */
+        '<div id="mc-keys-block"></div>' +
+        '<div id="mc-mem-block"></div>' +
 
         '<div class="mc-h2">' + esc(dz('我的订单', 'My orders')) + '</div>' +
         ((orders.orders || []).length ? '<div class="mc-card"><div class="mc-scroll"><table class="mc-tbl">' +
@@ -1271,7 +1301,7 @@
                      : '<span class="mc-pill"><i></i>' + esc(dz('待支付', 'Unpaid')) + '</span>';
             return '<tr><td style="font-family:monospace">' + esc(o.id) + '</td>' +
               '<td>' + esc(o.plan_zh || o.plan) + '</td>' +
-              '<td class="num">¥' + Number(o.amount).toFixed(2) + '</td>' +
+              '<td class="num">¥' + Math.round(Number(o.amount) || 0) + '</td>' +
               '<td>' + pill + '</td><td style="white-space:nowrap;color:var(--fg3)">' +
               esc(new Date(o.created * 1000).toLocaleDateString()) + '</td>' +
               '<td>' + (st === 'pending' ? '<button class="mc-btn sm" data-act="pay" data-id="' + esc(o.id) + '">' +
@@ -1395,11 +1425,21 @@
   function showPay(order, qr) {
     var box = document.getElementById('mc-pay');
     if (!box) return;
-    box.innerHTML = '<div class="mc-mask" data-act="close-pay"><div class="mc-modal" style="max-width:520px" ' +
-      'onclick="event.stopPropagation()"><div class="mh"><div class="st">' + esc(dz('微信支付', 'WeChat Pay')) + '</div>' +
-      '<h2>' + esc(dz('扫码支付 ¥', 'Scan to pay ¥') + Number(order.amount).toFixed(2)) + '</h2>' +
-      '<p>' + esc(dz('金额最后两位是订单校验位，请按显示金额原样付款，不要改动。',
-        'The last two decimals identify your order — pay the exact amount.')) + '</p></div>' +
+    /* 人民币一律整数元：标价多少就付多少，没有小数、没有"校验位尾数"。
+       早前给金额加 1~99 分做订单识别，用户看到 ¥10.37 这种数字根本不知道
+       该付多少 —— 对账改由「备注里填订单号」承担。 */
+    var yuan = Math.round(Number(order.amount) || 0);
+    /* ⚠️ 这里原来给 .mc-modal 挂了 onclick="event.stopPropagation()"，
+       本意是"点弹窗内部不要关掉"。但控制台所有按钮都靠 **document 上的
+       事件委托** 分发 data-act —— 在 .mc-modal 上 stopPropagation 等于
+       把弹窗内所有按钮（含「稍后」「我已支付」）的点击全部掐断，
+       请求根本发不出去，用户看到的就是"按钮没反应"。
+       现在改成：遮罩单独一个 close-pay-mask，只在点遮罩本身时关闭。 */
+    box.innerHTML = '<div class="mc-mask" data-act="close-pay-mask"><div class="mc-modal" style="max-width:520px">' +
+      '<div class="mh"><div class="st">' + esc(dz('微信支付', 'WeChat Pay')) + '</div>' +
+      '<h2>' + esc(dz('扫码支付 ¥', 'Scan to pay ¥') + yuan) + '</h2>' +
+      '<p>' + esc(dz('金额就是标价，不需要多付或少付。',
+        'The amount is exactly the list price — nothing more, nothing less.')) + '</p></div>' +
       '<div class="mb" style="display:flex;gap:16px;align-items:flex-start">' +
         (qr ? '<img class="mc-qr" src="' + esc(qr) + '" alt="WeChat QR">'
             : '<div class="mc-qrph">' + esc(dz('管理员还没上传收款码。上传后这里会出现二维码。',
@@ -1410,7 +1450,7 @@
           '<div class="mc-kv"><span class="k">' + esc(dz('套餐', 'Plan')) + '</span><span class="v">' +
             esc(order.plan_zh || order.plan) + '</span></div>' +
           '<div class="mc-kv"><span class="k">' + esc(dz('应付', 'Amount')) + '</span><span class="v">¥' +
-            Number(order.amount).toFixed(2) + '</span></div>' +
+            yuan + '</span></div>' +
           '<div class="mc-note" style="margin-top:10px">' + esc(dz(
             '付款时在备注里填订单号后 6 位，确认会更快。付完点下面的按钮。',
             'Put the last 6 chars of the order id in the note, then press the button.')) + '</div>' +
@@ -2472,7 +2512,7 @@
         if (vs2.kind && vs2.kind !== 'all') q2.push('kind=' + encodeURIComponent(vs2.kind));
         if (vs2.country) q2.push('country=' + encodeURIComponent(vs2.country));
         if (vs2.q) q2.push('q=' + encodeURIComponent(vs2.q));
-        window.location.href = '/api/admin/visitors/online?' + q2.join('&');
+        window.location.href = '/api/admin/visitors/export?' + q2.slice(1).join('&');
         break;
       }
       case 'visitor-detail': {
@@ -2503,8 +2543,16 @@
         });
         break;
       }
-      case 'pay': {
-        var oid = act.getAttribute('data-id');
+      /* 套餐页的币种 / 通道切换：只改状态再重画页面主体。
+         用 paint() 而不是 render()：render 会重建整个外壳（侧栏 + 顶栏），
+         切换一个 tab 不需要动外壳，而且重建外壳会让 Promise.all 重新取一遍
+         数据，网络慢时中间会闪一屏空白。 */
+      case 'billing-cur': {
+        MC.billingCur = act.getAttribute('data-cur') || 'USD';
+        paint();
+        break;
+      }
+      case 'pay': {        var oid = act.getAttribute('data-id');
         api('/api/billing/order?id=' + encodeURIComponent(oid)).then(function (r) {
           var o = ((r && r.ok && r.body) || {}).order;
           if (o) showPay(o, (MC.plans && MC.plans.qr) || '');
@@ -2513,7 +2561,16 @@
       }
       case 'close-pay': {
         var pay = document.getElementById('mc-pay');
-        if (pay && (a === 'close-pay')) pay.innerHTML = '';
+        if (pay) pay.innerHTML = '';
+        break;
+      }
+      /* 点遮罩关闭。必须判断"点的是遮罩本身"——点在弹窗内容里时，
+         closest('[data-act]') 也会命中遮罩，不加这个判断就会点哪都关。 */
+      case 'close-pay-mask': {
+        if (e.target === act) {
+          var payM = document.getElementById('mc-pay');
+          if (payM) payM.innerHTML = '';
+        }
         break;
       }
       case 'paid': {
