@@ -229,9 +229,14 @@ html[data-theme="dark"] .mc { --mc-ok: #4ADE80; --mc-warn: #FBBF24; --mc-bad: #F
   font-size: 10.5px; background: var(--surface-2); border: 1px solid var(--hair); color: var(--fg2);
   margin-right: 4px; white-space: nowrap; }
 .mc-tag.pri { background: var(--accent-bg); border-color: var(--accent-line); color: var(--accent-ink); }
+/* 🔴 white-space:nowrap + flex:0 0 auto：
+   表格列在窄屏/内容多时会把 inline-flex 压到最小宽度，中文就**逐字换行**，
+   "在线"变成"在/线"、"通过"变成"通/过"（用户 2026-10-24 截图指出）。
+   徽标是原子组件，不该参与收缩。 */
 .mc-pill { display: inline-flex; align-items: center; gap: 5px; height: 21px; padding: 0 8px;
-  border-radius: 20px; font-size: 10.5px; border: 1px solid var(--hair); color: var(--fg2); }
-.mc-pill i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  border-radius: 20px; font-size: 10.5px; border: 1px solid var(--hair); color: var(--fg2);
+  white-space: nowrap; flex: 0 0 auto; word-break: keep-all; }
+.mc-pill i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: 0 0 auto; }
 .mc-pill.ok { color: var(--mc-ok); border-color: color-mix(in srgb, var(--mc-ok) 30%, transparent); }
 .mc-pill.bad { color: var(--mc-bad); border-color: color-mix(in srgb, var(--mc-bad) 30%, transparent); }
 .mc-pill.warn { color: var(--mc-warn); border-color: color-mix(in srgb, var(--mc-warn) 30%, transparent); }
