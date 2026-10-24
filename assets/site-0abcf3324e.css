@@ -1,0 +1,12 @@
+.dx-fmrow{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.dx-fmrow .lb{width:74px;font-size:12.5px}
+.dx-fmrow .bar{flex:1;height:7px;border-radius:4px;background:rgba(255,255,255,.09);overflow:hidden}
+.dx-fmrow .bar i{display:block;height:100%;background:linear-gradient(90deg,#7B61FF,#CBB2FF);border-radius:4px}
+.dx-fmrow .num{width:44px;text-align:right;font-size:12px}
+.dx-fmrow .ds{width:210px;color:#9C99B0;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dx-kv{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:12.5px}
+.dx-kv b{font-weight:600}
+.dx-kv b.dim{color:#6E6B80;font-weight:400}
+.dx-pre{margin:0;padding:12px;background:rgba(0,0,0,.28);border-radius:8px;font-size:11.5px;line-height:1.75;white-space:pre-wrap;word-break:break-word;color:#E6E4F0;max-height:320px;overflow:auto}
+.dx-fmrow .ds{display:none}
+@media (min-width:1180px){.dx-fmrow .ds{display:block}}
