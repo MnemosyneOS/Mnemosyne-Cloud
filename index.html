@@ -590,7 +590,11 @@
      为什么用弹窗而不是直接跳 #/login：顶部菜单是**营销入口**，访客点它时
      往往还没决定要不要注册；一上来把人甩进登录表单，"了解产品"就变成了
      "先交账号"，转化和体验都更差。弹窗只说清一件事：这一块要登录后才能用，
-     并给两个出口（去登录 / 先逛逛）。关掉之后菜单还在，随时能再点。 */
+     并给两个出口（注册 / 登录），不再合成一个按钮。
+     2026-10-24 站长要求：删掉「还没有账号可以直接注册」那句，把「登录 / 注册」
+     拆成两枚 ——「注册」白底、「登录」紫罗兰（站点主色）。
+     理由是合成按钮的落点取决于上一次的 authTab：想注册的人点下去
+     可能落在登录表单上，还得自己再找切换链接。 */
   #mn-login-gate{
     position:fixed; inset:0; z-index:140; display:none;
     background:rgba(5,5,10,.55); backdrop-filter:blur(3px);
@@ -609,7 +613,20 @@
     margin:0 0 16px; font-size:13px; line-height:1.7; color:var(--fg2);
   }
   #mn-login-gate .gate-act{ display:flex; gap:8px; flex-wrap:wrap; }
-  #mn-login-gate .gate-act .btn{ flex:1 1 auto; justify-content:center; }
+  #mn-login-gate .gate-act .btn{ flex:1 1 0; justify-content:center; }
+  /* 🔴 2026-10-24 站长要求：两个出口拆开，不要再合成「登录 / 注册」。
+     注册 = 白底（次要动作，但必须一眼看见是"可以注册"）；
+     登录 = 主题紫罗兰（与站点主色一致，是已有账号的人的主路径）。
+     两色都用主题变量推导，不写死色值 —— 亮/暗两套皮肤自动跟随。 */
+  #mn-login-gate .gate-reg{
+    background:#fff; color:#1B1727; border:1px solid rgba(24,24,24,.14);
+  }
+  #mn-login-gate .gate-reg:hover{ background:#F7F5FF; color:#1B1727; }
+  #mn-login-gate .gate-login{
+    background:var(--accent-solid); color:var(--accent-solid-ink);
+    border:1px solid transparent;
+  }
+  #mn-login-gate .gate-login:hover{ opacity:.9; }
   .authcard button:disabled, .authcard input:disabled{ opacity:.5; cursor:not-allowed; }
   .authalt{ margin-top:18px; text-align:center; font-size:12.5px; line-height:1.7; color:var(--fg3); }
   .authalt button{
@@ -2343,10 +2360,10 @@ body.docs #view{ display:block !important; }
 <div id="mn-login-gate" role="dialog" aria-modal="true" aria-labelledby="mn-gate-t">
   <div class="gate-box">
     <h3 id="mn-gate-t" data-i18n="gate.t">登录后查看 Mnemosyne OS SaaS</h3>
-    <p data-i18n="gate.d">控制台里的记忆、配额与套餐都绑定在你的账号上。登录后即可查看；还没有账号可以直接注册。</p>
+    <p data-i18n="gate.d">控制台里的记忆、配额与套餐都绑定在你的账号上。登录后即可查看。</p>
     <div class="gate-act">
-      <a class="btn btn-primary" href="#/login" data-gate-go data-i18n="gate.signin">登录 / 注册</a>
-      <button class="btn btn-ghost" type="button" data-gate-close data-i18n="gate.later">先逛逛</button>
+      <a class="btn gate-reg" href="#/login" data-gate-reg data-i18n="gate.signup">注册</a>
+      <a class="btn gate-login" href="#/login" data-gate-login data-i18n="gate.signin">登录</a>
     </div>
   </div>
 </div>
@@ -2993,7 +3010,9 @@ body.docs #view{ display:block !important; }
     'nav.starShort': 'Star on GitHub',
     'nav.try': 'Try Mnemosyne OS',
     'gate.t': 'Sign in to open the console',
-    'gate.d': 'Your memories, quota and plan live under your account. Sign in to view them — you can create one right here.',
+    'gate.d': 'Your memories, quota and plan live under your account. Sign in to view them.',
+    'gate.signin': 'Sign in',
+    'gate.signup': 'Sign up',
     'theme.cap': 'Appearance',
     'theme.light': 'Light',
     'theme.dark': 'Dark',
@@ -3326,7 +3345,9 @@ body.docs #view{ display:block !important; }
     'nav.starShort': '在 GitHub 上 Star',
     'nav.try': '免费开始',
     'gate.t': '登录后查看 Mnemosyne OS SaaS',
-    'gate.d': '控制台里的记忆、配额与套餐都绑定在你的账号上。登录后即可查看；还没有账号可以直接注册。',
+    'gate.d': '控制台里的记忆、配额与套餐都绑定在你的账号上。登录后即可查看。',
+    'gate.signin': '登录',
+    'gate.signup': '注册',
     'theme.cap': '外观',
     'theme.light': '浅色',
     'theme.dark': '深色',
@@ -9221,7 +9242,9 @@ body.docs #view{ display:block !important; }
     if (!g) { location.hash = '#/login'; return; }
     g.classList.add('on');
     document.body.style.overflow = 'hidden';
-    var b = g.querySelector('[data-gate-go]');
+    /* 焦点落在「登录」——已有账号是多数情况（新访客多半还在了解阶段），
+       把默认动作给主路径，注册按钮仍然并排可见、一键可达。 */
+    var b = g.querySelector('[data-gate-login]');
     if (b) { try { b.focus(); } catch (err) {} }
     /* SESSION 是异步恢复的：刚刷新就点菜单时它可能还没到。
        先弹窗（不让用户干等），同时问一次服务端；真已登录就自动进去。 */
@@ -9255,6 +9278,18 @@ body.docs #view{ display:block !important; }
       return;
     }
 
+    /* 登录弹窗的两个出口：
+       「注册」→ 进 #/login 并直接停在注册表单（authTab='up'）；
+       「登录」→ 进 #/login 停在登录表单（authTab='in'）。
+       以前只有一个「登录 / 注册」，点了落在哪一半取决于上一次的 authTab，
+       用户想注册却看到登录框，还得自己再找一遍切换链接。 */
+    if (t.closest('[data-gate-reg]')) {
+      e.preventDefault(); closeLoginGate(); authTab = 'up'; location.hash = '#/login'; return;
+    }
+    if (t.closest('[data-gate-login]')) {
+      e.preventDefault(); closeLoginGate(); authTab = 'in'; location.hash = '#/login'; return;
+    }
+    /* 兼容旧标记（历史 DOM / 缓存里的老页面） */
     if (t.closest('[data-gate-close]')) { e.preventDefault(); closeLoginGate(); return; }
     if (t.closest('[data-gate-go]')) { closeLoginGate(); return; }
 
