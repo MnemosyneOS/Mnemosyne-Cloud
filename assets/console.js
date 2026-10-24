@@ -2649,6 +2649,18 @@
           esc(p.path || '/') + '</span><span class="v">' + n0(p.count) + '</span></div>';
       }).join('') || '<div class="mc-note" style="border:0;background:none">—</div>';
 
+      /* 数据时间：面板数字是"截至某刻"的累计值，用户拿几小时前的截图来比
+         会以为没更新（2026-10-24 实际发生过）。把它写在卡片上，比任何解释都直接。 */
+      var atLabel = '';
+      try {
+        if (d.generated_at) {
+          var gd = new Date(String(d.generated_at).replace(' ', 'T'));
+          if (!isNaN(gd.getTime())) {
+            atLabel = dz('截至 ', 'as of ') +
+              ('0' + gd.getHours()).slice(-2) + ':' + ('0' + gd.getMinutes()).slice(-2);
+          }
+        }
+      } catch (e) {}
       return '<div class="mc-card pad" style="margin-bottom:12px">' +
         '<div class="mc-row" style="justify-content:space-between;align-items:baseline">' +
           '<b style="font-size:13px">' + esc(dz('数据概览', 'Overview')) + '</b>' +
@@ -2657,11 +2669,14 @@
             esc(dz('近 ' + d.days + ' 天', 'last ' + d.days + ' days')) + '</span></div>' +
         '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));' +
           'gap:10px;margin-top:12px">' +
-          kpi(dz('唯一访问者', 'Unique visitors'), n0(t.uniques), dz('区间去重', 'deduplicated')) +
-          kpi(dz('请求总数', 'Requests'), n0(t.requests), '') +
+          kpi(dz('唯一访问者', 'Unique visitors'), n0(t.uniques),
+              dz('区间去重', 'deduplicated') + (atLabel ? ' · ' + atLabel : '')) +
+          kpi(dz('请求总数', 'Requests'), n0(t.requests),
+              dz('边缘全部请求', 'all edge requests')) +
           kpi(dz('已缓存', 'Cached'), (t.cached_pct != null ? t.cached_pct + '%' : '—'),
-              t.bytes ? fmtBytes(t.bytes) : '') +
-          kpi(dz('威胁 / 被拦', 'Threats'), n0(t.threats), '') +
+              (t.bytes ? fmtBytes(t.bytes) : '') + dz(' · 字节口径', ' · by bytes')) +
+          kpi(dz('威胁 / 被拦', 'Threats'), n0(t.threats),
+              dz('Cloudflare 判定', 'by Cloudflare')) +
         '</div>' +
         '<div style="margin-top:14px">' +
           '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" ' +
@@ -3703,50 +3718,71 @@
   };
 
   /* ---- 全局悬停提示 ------------------------------------------------------
-     需求：记忆内容 / 路径 / UA 这类被截断的文本，鼠标移上去就看全文，
-     不要"必须先点开"。实现要点：
-       · 用**真实溢出**判断（scrollWidth > clientWidth），不靠字段白名单 ——
-         以后新加的列自动生效；
-       · 支持 data-tip 显式覆盖（有些内容不想让 innerText 决定，比如截断前的原文）；
-       · 提示层 pointer-events:none，否则鼠标一碰到提示框就触发 mouseout，
-         会闪成"显示-消失-显示"的抖动。 */
+     需求：被截断的文本，鼠标移上去就看全文，不要"必须先点开"。
+     实现要点：
+       · **全局只能有一个提示层**（window.__mnTipOwner 单例）。index.html 里
+         还有一份 memHoverTip，两套都监听 document 的 mouseover、都响应
+         [data-tip] —— 于是同一个元素上会同时弹出两个浮层（用户 2026-10-24
+         反馈"貌似有二层"）。先注册者生效，后来者直接退出。
+       · 浮层 pointer-events:auto + **延迟隐藏**：长文本要能停下来滚动，
+         鼠标移进浮层不算离开；离开 240ms 后才收，不会抖。
+       · 有 title 就接管（换成可滚动的浮层，并摘掉原生 title 避免两个一起弹）；
+         没有 title 才退回真实溢出检测。 */
   (function hoverTip() {
-    var tip = null, cur = null;
+    if (window.__mnTipOwner) return;
+    window.__mnTipOwner = 'console';
+
+    var tip = null, cur = null, hideTimer = null;
+
     function ensure() {
       if (tip) return tip;
       tip = document.createElement('div');
       tip.className = 'mn-tip';
+      tip.setAttribute('role', 'tooltip');
       document.body.appendChild(tip);
+      /* 鼠标进浮层：取消隐藏，允许滚动查看；离开：延迟收。 */
+      tip.addEventListener('mouseenter', function () {
+        if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+      });
+      tip.addEventListener('mouseleave', function () { scheduleHide(); });
       return tip;
     }
-    function hide() { if (tip) tip.style.display = 'none'; cur = null; }
+    function hide() {
+      if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+      if (tip) tip.style.display = 'none';
+      cur = null;
+    }
+    function scheduleHide() {
+      if (hideTimer) clearTimeout(hideTimer);
+      hideTimer = setTimeout(hide, 240);
+    }
     function show(el, text, x, y) {
       if (!String(text || '').trim()) return hide();
+      if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
       var t = ensure();
       t.textContent = text;
       t.style.display = 'block';
+      t.scrollTop = 0;
       var w = t.offsetWidth, h = t.offsetHeight;
-      var left = Math.min(x + 12, window.innerWidth - w - 10);
-      var top = y + 16;
-      if (top + h > window.innerHeight - 10) top = Math.max(8, y - h - 12);
-      t.style.left = Math.max(8, left) + 'px';
-      t.style.top = Math.max(8, top) + 'px';
+      var left = Math.min(x + 14, window.innerWidth - w - 12);
+      var top = y + 18;
+      if (top + h > window.innerHeight - 12) top = Math.max(12, y - h - 14);
+      t.style.left = Math.max(12, left) + 'px';
+      t.style.top = Math.max(12, top) + 'px';
       cur = el;
     }
 
     /* 为什么必须接管 title：
        审计日志这类表格是**横向滚动**的，单元格不裁切文字（scrollWidth ==
-       clientWidth），所以"溢出检测"永远不触发 —— 上一版悬停就是这么失效的。
-       而这些单元格本来就带原生 title，浏览器会弹一个要等 1 秒、样式无法控制、
-       多行很难看的原生提示。
-       现在：有 title 就换成我们的提示框（并把 title 摘掉避免两个一起弹），
-       没有 title 才退回溢出检测。 */
+       clientWidth），"溢出检测"永远不触发 —— 上一版悬停就是这么失效的。 */
     document.addEventListener('mouseover', function (e) {
       var el = e.target;
       if (!el || el.nodeType !== 1) return;
+      /* 鼠标落在浮层内部：什么都不做，否则会把自己关掉 */
+      if (tip && tip.contains(el)) return;
       var cand = el.closest('[title], [data-tip], td, th, .mc-clip, .feat span, ' +
                             '.mc-kv .v, .mc-code, .mc-note');
-      if (!cand) return hide();
+      if (!cand) { scheduleHide(); return; }
       var text = cand.getAttribute('title');
       if (text) {
         cand.setAttribute('data-mn-tip', text);
@@ -3758,7 +3794,7 @@
       if (explicit) { show(cand, explicit, e.clientX, e.clientY); return; }
       var over = cand.scrollWidth > cand.clientWidth + 2 ||
                  cand.scrollHeight > cand.clientHeight + 2;
-      if (!over) return hide();
+      if (!over) { scheduleHide(); return; }
       show(cand, cand.innerText, e.clientX, e.clientY);
     });
     document.addEventListener('mouseout', function (e) {
@@ -3767,9 +3803,15 @@
       var t = cur.getAttribute('data-mn-tip');
       if (t != null && !cur.hasAttribute('title')) cur.setAttribute('title', t);
       if (cur.hasAttribute('data-mn-tip')) cur.removeAttribute('data-mn-tip');
-      if (!e.relatedTarget || !cur.contains(e.relatedTarget)) hide();
+      var to = e.relatedTarget;
+      /* 移到浮层里不算离开 —— 允许用户把长文滚到底 */
+      if (to && (cur.contains(to) || (tip && tip.contains(to)))) return;
+      scheduleHide();
     });
-    document.addEventListener('scroll', hide, true);
+    document.addEventListener('scroll', function (e) {
+      if (tip && tip.contains(e.target)) return;   /* 浮层内部滚动不隐藏 */
+      scheduleHide();
+    }, true);
     window.addEventListener('resize', hide);
   })();
 

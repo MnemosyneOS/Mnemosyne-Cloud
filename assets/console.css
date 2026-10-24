@@ -752,11 +752,21 @@ body.dm-full { overflow: hidden; }
    判定标准是真实的溢出（scrollWidth/clientWidth），不是猜哪个字段会截断 ——
    这样新加的列、新加的卡片自动生效，不用一处处加 title。 */
 .mn-tip{
-  position:fixed; z-index:9999; display:none; max-width:460px;
-  max-height:60vh; overflow:auto;
-  padding:8px 10px; border-radius:6px;
-  background:rgba(22,20,28,.96); color:#fff;
+  position:fixed; z-index:2147483000; display:none;
+  max-width:min(680px,92vw); max-height:72vh; overflow:auto;
+  padding:10px 12px; border-radius:8px;
+  background:rgba(22,20,28,.97); color:#fff;
   font-size:12px; line-height:1.65; letter-spacing:0;
   white-space:pre-wrap; word-break:break-word;
-  box-shadow:0 8px 28px rgba(0,0,0,.28); pointer-events:none;
+  box-shadow:0 10px 32px rgba(0,0,0,.34);
+  border:1px solid rgba(255,255,255,.12);
+  /* 🔴 pointer-events:auto —— 长文本必须能停下来滚动。
+     之前是 none：鼠标一碰浮层就穿透到下层元素，滚轮滚的是页面不是浮层，
+     于是 6000 字的记忆永远"看不全"（用户 2026-10-24 第二次反馈）。
+     改成 auto 后由 JS 的延迟隐藏负责"移开才收"，不会再抖动。 */
+  pointer-events:auto;
+  overscroll-behavior:contain;
 }
+.mn-tip::-webkit-scrollbar{ width:8px; height:8px }
+.mn-tip::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.22); border-radius:4px }
+.mn-tip::-webkit-scrollbar-track{ background:transparent }
