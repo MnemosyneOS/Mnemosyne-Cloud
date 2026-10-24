@@ -53,10 +53,42 @@
 <main>
 <h1>服务状态</h1>
 <p class="lede">Mnemosyne OS 服务可用性与历史事件。</p>
-<p>Mnemosyne OS 跑在你的数据所在的地方，所以这里的"状态"指的是你自己节点的健康状况，而不是我们的可用性。三条命令足以覆盖，且全部可断网运行。</p>
-<h2>内容</h2>
+<p><strong>Mnemosyne OS 跑在你的数据所在的地方，所以这里的"状态"指的是你自己节点的健康状况，而不是我们的可用性。三条命令足以覆盖，且全部可断网运行。</strong></p>
 <h3>检查你自己的节点</h3>
+<pre><code class="lang-bash"># 进程体检：完整性、记录数、磁盘、向量后端、图边规模
+mnemosyne --dir ./mem doctor --json
+
+# 运行计数：写入、召回、节省的 token
+mnemosyne --dir ./mem status --json
+
+# 账本完整性 —— 若被改过，会指出是哪一条
+mnemosyne --dir ./mem verify-integrity --json</code></pre>
+<h3>recall_health 报什么</h3>
 <p>7.0.2 新增这一面是有具体原因的：记忆栈可以"活着"却正在变差。随会话时长退化的召回质量，在可用性检查里完全隐形，所以这一面报的是质量，不只是存活。</p>
+<h4>calls / empty_result_rate</h4>
+<p>召回被调用多少次，以及"没有相关记忆"这个诚实答案出现多少次。</p>
+<h4>floor_rejections</h4>
+<p>在被模型看到之前，有多少候选被相关性下限剔除。</p>
+<h4>latency p50 / max</h4>
+<p>检索延迟的中位与尾部。</p>
+<h4>channel_hits</h4>
+<p>五路召回通道里，实际贡献了分数的是哪几路。</p>
+<h4>sem_top1 / sem_background</h4>
+<p>候选余弦的 top1 与语料中位数 —— 用来发现阈值漂移的信号。</p>
+<h4>capsule_cache</h4>
+<p>胶囊缓存命中率，这正是上游提示缓存能持续命中的原因。</p>
+<h4>vector_ops / breaker</h4>
+<p>向量写入与删除的结果，以及熔断器状态与按原因分类的丢弃计数。</p>
+<h4>graph</h4>
+<p>边数、实体数、qualifier 覆盖率与回填状态。</p>
+<h3>健康的节点会报</h3>
+<ul>
+<li><b>chain_valid: true</b>，且记录数与你预期一致。</li>
+<li><b>没有丢弃的向量写入。</b> 熔断器是闭合的，dropped_unavailable 为 0。</li>
+<li><b>图边存在。</b> 边数非零，说明知识图谱通道是真的在承担召回，而不是名义上存在。</li>
+<li><b>胶囊缓存命中率非零</b> —— 在跑过几次召回之后。</li>
+</ul>
+<blockquote><p>每个版本的更新记录（包括发现并修掉的缺陷）都在仓库的 CHANGELOG.md 里。把失效模式公开，本身就是产品的一部分。</p></blockquote>
 <a class="cta" href="/#status">进入交互版</a>
 <a class="cta ghost" href="/docs/">阅读完整文档</a>
 </main>

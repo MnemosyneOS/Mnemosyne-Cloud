@@ -53,10 +53,37 @@
 <main>
 <h1>集成</h1>
 <p class="lede">与主流 Agent 框架、IDE、聊天客户端的集成方式。</p>
-<p>为你已经建好的智能体框架、编码工具与语音管道加上持久记忆。下面每一条都走公开的 MCP 面或 Python SDK —— 没有分叉的客户端，也没有厂商插件。</p>
-<h2>内容</h2>
-<h3>搜索集成…</h3>
-<p>claude mcp add mnemosyne -- python -m mnemosyne.webui.mcp_server --brain-dir ./mem</p>
+<p><strong>为你已经建好的智能体框架、编码工具与语音管道加上持久记忆。下面每一条都走公开的 MCP 面或 Python SDK —— 没有分叉的客户端，也没有厂商插件。</strong></p>
+<h4>Claude Code（MCP · stdio）</h4>
+<p>连上就出现 52 个工具。智能体在会话之间记住决策，不需要被重新告知。</p>
+<pre><code class="lang-text">claude mcp add mnemosyne -- python -m mnemosyne.webui.mcp_server --brain-dir ./mem</code></pre>
+<h4>DeepSeek Harness（MCP · stdio）</h4>
+<p>Patch 式部署：宿主配置只增补不覆盖，改动可回退。</p>
+<pre><code class="lang-text">python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace dsh</code></pre>
+<h4>Hermes Agent（MCP · stdio）</h4>
+<p>常驻智能体获得一层跨越它所有会话的长期记忆。</p>
+<pre><code class="lang-text">python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace hermes</code></pre>
+<h4>Codex（MCP · stdio）</h4>
+<p>任何支持 MCP 的命令行智能体都能挂上同一个服务端；工具面里没有宿主专属的东西。</p>
+<pre><code class="lang-text">python -m mnemosyne.webui.mcp_server --brain-dir ./mem</code></pre>
+<h4>OpenWebUI（MCP · HTTP）</h4>
+<p>地址指向 Streamable HTTP 网关，带上 Bearer 令牌。对话前端从此不再忘记它在跟谁说话。</p>
+<pre><code class="lang-text">python -m mnemosyne.webui.mcp_server --http --brain-dir ./mem --port 8788</code></pre>
+<h4>任何 MCP 宿主（MCP · HTTP）</h4>
+<p>Streamable HTTP 是一次部署唯一需要对外暴露的端口，网络面因此收敛为一个。</p>
+<pre><code class="lang-text">MNEMOSYNE_MCP_TOKEN=&lt;token&gt; python -m mnemosyne.webui.mcp_server --http --port 8788</code></pre>
+<h4>LangChain（Python SDK）</h4>
+<p>可运行示例：把 MemoryBrain 作为检索与记忆组件接进链里。</p>
+<pre><code class="lang-text">python examples/langchain_integration.py</code></pre>
+<h4>Ollama（本地模型）</h4>
+<p>全本地闭环 —— 本地模型加本地记忆，没有任何请求离开这台机器。</p>
+<pre><code class="lang-text">python examples/ollama_integration.py</code></pre>
+<h4>进程内嵌入（Python SDK）</h4>
+<p>直接把 brain 导进你自己的进程。没有守护进程、没有端口、没有 IPC。</p>
+<pre><code class="lang-text">from mnemosyne import MemoryBrain; MemoryBrain("./mem").ensure_init()</code></pre>
+<h4>插件目录（插件 SDK）</h4>
+<p>八个带文档的插件 —— numpy、qdrant、reranker、crypto、hrr、async、context-engine 与 SDK 本身。</p>
+<pre><code class="lang-text">MNEMOSYNE_PLUGINS=numpy_vector,reranker python -m mnemosyne.webui.web_server</code></pre>
 <a class="cta" href="/#integrations">进入交互版</a>
 <a class="cta ghost" href="/docs/">阅读完整文档</a>
 </main>

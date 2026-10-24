@@ -53,16 +53,103 @@
 <main>
 <h1>API 参考</h1>
 <p class="lede">Mnemosyne OS HTTP API：记忆写入、召回、图谱、审计链。</p>
-<p>一个 Python 类、一套命令行、一个 HTTP 面、52 个 MCP 工具 —— 底下是同一个 SQLite 文件。没有任何一个是定制接口，所以智能体能用 SDK，控制台也能读同一个存储。</p>
-<h2>内容</h2>
+<p><strong>一个 Python 类、一套命令行、一个 HTTP 面、52 个 MCP 工具 —— 底下是同一个 SQLite 文件。没有任何一个是定制接口，所以智能体能用 SDK，控制台也能读同一个存储。</strong></p>
 <h3>Python —— MemoryBrain</h3>
 <p>一个对象持有整个存储。写入、更正、召回、生成上下文快照都通过它。</p>
+<pre><code class="lang-python">from mnemosyne import MemoryBrain
+
+brain = MemoryBrain("./memories", enable_embeddings=False)
+brain.ensure_init()
+
+# 写入 —— 指纹去重、实体抽取、版本链全部自动完成
+brain.retain("The user's GPU is an RTX 4090", fast=True)
+
+# 更正之前的说法，而不删除历史
+brain.retain("The user swapped to an RTX 5090", supersedes=old_id)
+
+# 会话历史，以及给下一轮的上下文快照
+brain.add_conversation_turn("session-1", "user", "Tell me about Apple")
+hits = brain.search_conversations("Apple", session_id="session-1")
+snapshot = brain.build_context_prompt(query="Apple", max_chars=2000)</code></pre>
 <h3>带 token 预算的召回</h3>
 <p>预算是一条硬约束，不是提示。放不进正文的条目会被降级为可寻址的胶囊（稳定指针 + 关键原子），而不是被静默丢弃。账目会如实告诉你发生了什么。</p>
+<pre><code class="lang-python">results, cost = brain.recall("what GPU do I use", k=5, budget_tokens=100)
+
+cost["budget_limit"]      # 100
+cost["budget_used"]       # 实际注入的 token 数
+cost["budget_respected"]  # True
+cost["capsule_count"]     # 被降级为胶囊的条数
+cost["dropped_count"]     # 恒为 0 —— 没有东西被直接扔掉</code></pre>
 <h3>MCP 工具 —— 52 个，走 stdio 或 Streamable HTTP</h3>
 <p>完整的工具面：四十一个原生（含 8.1.0 新增的二十一个记忆形成层工具），外加十一个沿用通行 Agent 记忆工具名的别名，既有 MCP 客户端无需重写。智能体只要声明它们就获得了记忆能力，不需要胶水代码，也不需要自写工具层。</p>
+<h4>retain</h4>
+<p>写入一条记忆。</p>
+<h4>recall</h4>
+<p>在 token 预算内召回记忆；回传置信带与胶囊层级。</p>
+<h4>retain_batch</h4>
+<p>批量写入并透传元数据 —— 吞吐约为逐条写入的 15 倍。</p>
+<h4>capsule</h4>
+<p>把一条记忆压成 AIC 胶囊：稳定指针 + 结构化事实 + 关键原子。</p>
+<h4>expand</h4>
+<p>按指针取回原文，并做内容哈希校验。</p>
+<h4>recall_health</h4>
+<p>检索质量遥测：命中分布、被相关性下限剔除的条数、延迟、胶囊缓存命中率。</p>
+<h4>stats</h4>
+<p>运行计数 —— 写入、召回、节省的 token。</p>
+<h4>graph_query</h4>
+<p>从某个实体出发，沿知识图谱走 N 跳。</p>
+<h4>temporal_query</h4>
+<p>查询版本链 —— 某个时间点曾成立的事实，而不只是现在成立的。</p>
+<h4>list_projects</h4>
+<p>列出这个存储里隔离的命名空间。</p>
+<h4>doctor</h4>
+<p>体检：完整性、记录数、磁盘、向量后端、图边规模。</p>
+<h4>audit</h4>
+<p>读取审计轨迹。</p>
+<h4>confidence_history</h4>
+<p>系统当时有多确定，以及这份确定随时间如何变化。</p>
+<h4>consolidate</h4>
+<p>把高度相似或同义的多条记忆合并为一条代表记录；原文标记为 consolidated，绝不删除。</p>
+<h4>reflect</h4>
+<p>按类型 / 层 / 事实类型 / 置信度汇总，附高频实体、事实冲突检测与时间密度。</p>
+<h4>dedup</h4>
+<p>通过内容指纹与相似度检出重复与近重复；dry_run 只报告不写库。</p>
+<h4>forget</h4>
+<p>按 memory_id 或自然语言 query 遗忘一条记忆 —— 默认软遗忘，审计链保持完整。</p>
+<h4>memory/export-v1</h4>
+<p>通过记忆交换协议导出。</p>
+<h4>memory/import-v1</h4>
+<p>通过记忆交换协议导入。</p>
+<h4>memory/claim</h4>
+<p>把外部导出中的记忆认领进当前命名空间。</p>
+<h4>add_memory</h4>
+<p>客户端兼容别名 —— 为用户或智能体保存文本或对话历史。</p>
+<h4>search_memories</h4>
+<p>客户端兼容别名 —— 带过滤条件的语义检索。</p>
+<h4>get_memories</h4>
+<p>客户端兼容别名 —— 结构化过滤 + 分页列举。</p>
+<h4>get_memory</h4>
+<p>客户端兼容别名 —— 按 id 取回单条。</p>
+<h4>update_memory</h4>
+<p>客户端兼容别名 —— 覆盖文本与 / 或元数据。</p>
+<h4>delete_memory</h4>
+<p>客户端兼容别名 —— 删除单条。</p>
+<h4>delete_all_memories</h4>
+<p>客户端兼容别名 —— 清空一个作用域。</p>
+<h4>delete_entities</h4>
+<p>客户端兼容别名 —— 删除实体并级联。</p>
+<h4>list_entities</h4>
+<p>客户端兼容别名 —— 列出用户 / 智能体 / 应用 / 运行。</p>
+<h4>list_events</h4>
+<p>客户端兼容别名 —— 列出记忆操作。</p>
+<h4>get_event_status</h4>
+<p>客户端兼容别名 —— 轮询异步操作状态。</p>
 <h3>HTTP 与控制台</h3>
 <p>同一个存储，在本地暴露出来。控制台随包发布、不依赖任何外部 CDN，REST 端点就是它跑的那一套。</p>
+<pre><code class="lang-bash">python -m mnemosyne.webui.web_server --port 9090
+# 然后打开 http://127.0.0.1:9090
+# 首次运行会创建 admin / mnemosyne —— 登录后请改密码</code></pre>
+<blockquote><p>协议版本 2024-11-05 / 2025-03-26 / 2025-06-18 三档，在 initialize 时协商：客户端提议的版本在支持列表内就照它回，否则回服务端自己最高的那一档。MCP 工具面保持向后兼容：7.0.0 是 13 个，7.0.1 是 14 个，7.0.2 是 20 个，8.0.0 是 31 个，8.1.0 是 52 个，每次增加都是纯增量。</p></blockquote>
 <a class="cta" href="/#api">进入交互版</a>
 <a class="cta ghost" href="/docs/">阅读完整文档</a>
 </main>

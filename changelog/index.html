@@ -53,14 +53,50 @@
 <main>
 <h1>更新记录</h1>
 <p class="lede">Mnemosyne OS 版本变更历史。</p>
-<p>每一个版本，包括它发现并修掉的缺陷。完整文档与代码一起做版本管理 —— 这里是摘要。</p>
-<h2>内容</h2>
+<p><strong>每一个版本，包括它发现并修掉的缺陷。完整文档与代码一起做版本管理 —— 这里是摘要。</strong></p>
 <h3>8.1.0 —— 2026 年 10 月 20 日</h3>
 <p>这一版把"零依赖"从口号变成可验证的架构约束，同时让 Mnemosyne 的记忆 API 能够与既有 Agent 记忆代码直接互操作 —— 改一行 import 即可切换。</p>
+<ul>
+<li><b>记忆 API。</b> <code>Memory</code> / <code>AsyncMemory</code> / <code>MemoryClient</code>，包顶层直接可 import：<code>from mnemosyne import Memory</code>。参数名、默认值、关键字限定、返回信封与错误码均已固定为契约。</li>
+<li><b>四维作用域，物理隔离。</b> <code>user_id</code> / <code>agent_id</code> / <code>run_id</code> / <code>app_id</code> —— 每个组合一个独立 SQLite 文件，而不是"共享行 + 过滤条件"。命名空间由排序后 + 长度前缀哈希导出，因此 <code>(a, bc)</code> 与 <code>(ab, c)</code> 不碰撞，键顺序也不影响结果。</li>
+<li><b>完整过滤语言</b> —— <code>eq</code> <code>ne</code> <code>gt</code> <code>gte</code> <code>lt</code> <code>lte</code> <code>in</code> <code>nin</code> <code>contains</code> <code>icontains</code> <code>startswith</code> <code>endswith</code> 与通配符，支持 <code>AND</code> / <code>OR</code> / <code>NOT</code> 任意嵌套。</li>
+<li><b>72 个可选 provider</b> —— LLM 20、嵌入 13、向量库 28、重排 5、图存储 6。凡走 HTTP 的都在标准库 <code>urllib</code> 上实现，因此 <code>install_requires</code> 仍是空列表。</li>
+<li><b>MCP 工具面 20 → 31。</b> 二十个原生，外加十一个沿用通行 Agent 记忆工具名的别名，既有 MCP 客户端无需重写工具定义即可指向 Mnemosyne。</li>
+<li><b>服务面。</b> REST <code>/v1</code>、<code>/v2</code>、<code>/v3</code> 与控制台共用同一监听端口，带令牌鉴权与异步事件 id；兼容命令集并支持 <code>--agent</code> JSON 信封；提供 Claude、Codex、Cursor、Kimi 的清单；集成 LangChain、LlamaIndex、CrewAI、Dify、n8n 与 Vercel AI SDK。</li>
+<li><b>修复九个真实缺陷，每个都有回归覆盖。</b> 最严重的一个：<code>meta</code> 不在列清单里，每次 <code>INSERT</code> 都静默丢弃它，读取路径随即<i>伪造</i>一个替代值 —— 用户元数据在重启后消失。<code>meta</code> 现已是真实列，并对存量库提供幂等迁移。</li>
+<li><b>破坏性变更。</b> 客户端 API 移至 <code>mnemosyne/api/</code>，辅助模块同步改名。记忆存储格式、REST 路由与 MCP 工具名不受影响。</li>
+</ul>
 <h3>7.0.2 —— 2026 年 9 月 15 日</h3>
 <p>这一版把"精准记忆、精准召回、极短上下文下的精确压缩"从声称的能力，变成了可复现、可断言的事实。</p>
+<ul>
+<li><b>AIC 记忆胶囊。</b> 把压缩重新定义为"分层 + 可寻址" —— 稳定指针 + 结构化事实 + 内容原子 —— 并以断言保证无损可逆、零生成、事实守恒。工具数 18 → 20。</li>
+<li><b>相关性下限。</b> 此前每一路打分都对自身最大值归一化，导致融合分没有绝对含义。经过标定的下限让召回可以诚实地返回空。</li>
+<li><b>去掉访问计数正反馈。</b> 此前仅仅先问过六个无关问题，就足以把干扰项抬到正确答案前面。现在加成是乘性的，且封顶 5%。</li>
+<li><b>图通道真正承担召回。</b> 边写入时丢掉了记忆 id，导致图遍历从未真正返回过数据却仍占着融合权重。已修复，并对存量库回填。</li>
+<li><b>时间通道纠正。</b> 正文里写了日期的记忆反而因为"更具体"被扣分。现在除非查询显式带时间意图，否则用记录自身的时效。</li>
+<li><b>写入侧语义去重</b>，并附一条硬约束：改一个字就是另一个事实的片段，相似度再高也绝不合并。</li>
+<li><b>recall_health</b> 与三段式 doctor —— 记忆栈可以活着却在变差，所以指标面必须报质量，而不只是存活。</li>
+</ul>
 <h3>7.0.1 —— 2026 年 9 月 14 日</h3>
+<ul>
+<li><b>forget</b> 工具，默认软遗忘：置信度归零、状态标记为 deleted、审计链保持完整。工具数 13 → 14。</li>
+<li><b>记忆更正</b>，通过 retain(supersedes=…) —— 旧说法被标记为 superseded 而非删除，召回会回传哪条已被取代。</li>
+<li><b>Qdrant 向量后端插件</b>，内置熔断器、代理绕过、预热与健康探测 —— 一个跨进程持久的向量索引。</li>
+<li><b>快速写入路径补上向量索引</b>，让经它写入的记忆也能参与语义召回。</li>
+<li><b>三份新文档</b>，以及一套参数化的 21 项断言生命周期脚本。</li>
+</ul>
+<h3>7.0.0 —— 2026 年 8 月 25 日</h3>
 <p>第一个正式版：一套零依赖、本地优先的记忆系统。</p>
+<ul>
+<li>SQLite + FTS5，WAL 模式，兼容 JSONL，并提供 migrate 迁移路径。</li>
+<li>SHA-256 哈希链账本，verify_chain() 可指出被篡改的那一条记录。</li>
+<li>写入时公证：来源指纹、交叉印证、注入检测、时间一致性检查。</li>
+<li>插件体系：numpy_vector、crypto、reranker、hrr、async、context-engine。</li>
+<li>MCP 服务端，支持令牌鉴权与多租户命名空间隔离。13 个工具。</li>
+<li>记忆交换协议导出与导入。</li>
+<li>遗忘经济学：低价值记忆迁移至温 / 冷层，gzip 归档加布隆过滤 —— 而不是删除。</li>
+<li>Token 预算器、字段级脱敏、本地暗色控制台与异步 API。</li>
+</ul>
 <a class="cta" href="/#changelog">进入交互版</a>
 <a class="cta ghost" href="/docs/">阅读完整文档</a>
 </main>

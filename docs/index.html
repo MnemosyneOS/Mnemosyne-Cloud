@@ -53,16 +53,65 @@
 <main>
 <h1>文档</h1>
 <p class="lede">Mnemosyne OS 的完整使用文档：安装、快速开始、记忆 API、MCP 工具。</p>
-<p>Mnemosyne OS 让 AI 智能体的记忆活得比会话更久。装一个包，在代码旁边留一个 SQLite 文件，然后让智能体自己决定什么值得记住。</p>
-<h2>内容</h2>
+<p><strong>Mnemosyne OS 让 AI 智能体的记忆活得比会话更久。装一个包，在代码旁边留一个 SQLite 文件，然后让智能体自己决定什么值得记住。</strong></p>
 <h3>记住你的第一个记忆</h3>
 <p>五分钟快速入门。不需要账号、不需要 API 密钥、不发网络请求 —— 引擎只跑 Python 标准库。</p>
+<pre><code class="lang-python">pip install mnemosyne-os
+
+from mnemosyne import MemoryBrain
+
+brain = MemoryBrain("./my_memories", enable_embeddings=False)
+brain.ensure_init()
+
+brain.retain("Apple Inc. was founded in 1976", fast=True)
+
+results = brain.recall("Apple", k=5)
+for score, record, reasons in results:
+print(f"{score:.4f}  {record['content']}")</code></pre>
 <h3>给你的编码代理增加内存</h3>
 <p>先从 Claude Code 开始，然后任何支持 MCP 的宿主都可以。它们都指向同一个 stdio 服务端，所以记忆是共享的，而不是每个编辑器各存一份。</p>
+<h4>Claude Code / Claude Desktop</h4>
+<p>把客户端指向 stdio 服务端，20 个工具直接出现，不用写适配层。</p>
+<h4>Cursor</h4>
+<p>同一段配置放进 mcp.json，编辑器就能跨会话记住你的项目决策。</p>
+<h4>DeepSeek Harness</h4>
+<p>Patch 式部署指南 —— 只增补宿主配置，不覆盖你原有的内容。</p>
+<h4>OpenWebUI</h4>
+<p>地址指向 Streamable HTTP 网关，带上 Bearer 令牌，其他都不用改。</p>
 <h3>让智能体自行注册</h3>
 <p>四条命令建好存储、命名空间与令牌。不需要邮箱、不需要控制面板、不需要注册表单 —— 开跑所需的一切都在仓库里。</p>
+<pre><code class="lang-bash"># 1 · 初始化存储（SQLite + SHA-256 哈希链账本）
+mnemosyne --dir ./mem init
+
+# 2 · 写入，再读回来
+mnemosyne --dir ./mem retain --content "Founded in 1976"
+mnemosyne --dir ./mem recall "founded" --k 5
+
+# 3 · 用租户令牌通过 MCP 暴露出去
+export MNEMOSYNE_MCP_TOKEN="your-secret-token"
+python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace default
+
+# 4 · 打开本地控制台：记忆浏览、图谱视图、运行统计
+python -m mnemosyne.webui.web_server --port 9090</code></pre>
 <h3>仓库里的文档</h3>
 <p>十四份文档与十个可运行示例，全部与代码一起做版本管理。</p>
+<h4>README_CN.md</h4>
+<p>完整中文说明；另有八种语言的对应 README。</p>
+<h4>docs/RECALL_STRATEGY.md</h4>
+<p>召回是怎么组装的，以及每轮记忆注入是如何对照 token 预算被评估的。</p>
+<h4>docs/ACCEPTANCE_GUIDE.md</h4>
+<p>握手、子进程环境逐键对齐、冷热延迟预算、命名空间隔离、审计链。</p>
+<h4>docs/KNOWN_DEFECTS.md</h4>
+<p>已确证缺陷，逐项给出事实、实测证据、影响面与修法 —— 公开而不是藏起来。</p>
+<h4>docs/DEPLOY_DEEPSEEK_HARNESS.md</h4>
+<p>通过 MCP 把 Mnemosyne OS 接进宿主的部署指南，Patch 式，不覆盖任何原内容。</p>
+<h4>docs/plugins/</h4>
+<p>八份插件文档：numpy、qdrant、reranker、crypto、hrr、async、context-engine、sdk。</p>
+<h4>examples/</h4>
+<p>十个可运行脚本，从基础召回一直到 LangChain 链与进程内嵌入。</p>
+<h4>CHANGELOG.md</h4>
+<p>版本历史，以及每一次机制变更背后的证据。</p>
+<blockquote><p>以上全部可离线运行。唯一需要联网的是两个可选的向量插件，且断网时会软退回本地 FTS5 索引。</p></blockquote>
 <a class="cta" href="/#docs">进入交互版</a>
 <a class="cta ghost" href="/docs/">阅读完整文档</a>
 </main>

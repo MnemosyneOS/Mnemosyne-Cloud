@@ -53,16 +53,55 @@
 <main>
 <h1>MCP 集成</h1>
 <p class="lede">把 Mnemosyne OS 接入 Claude Desktop、Cursor 等 MCP 客户端，52 个工具开箱可用。</p>
-<p>MCP 服务端跑 stdio JSON-RPC，支持可选的令牌鉴权与多租户命名空间。三十一个工具、一条命令，没有需要长期维护的适配层。</p>
-<h2>内容</h2>
+<p><strong>MCP 服务端跑 stdio JSON-RPC，支持可选的令牌鉴权与多租户命名空间。三十一个工具、一条命令，没有需要长期维护的适配层。</strong></p>
 <h3>启动服务端</h3>
 <p>桌面客户端走 stdio，跑在端口后面的一切走 Streamable HTTP。</p>
+<pre><code class="lang-bash"># stdio —— 每个桌面客户端都认的形状
+export MNEMOSYNE_MCP_TOKEN="your-secret-token"   # 可选，但建议开启
+python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace default
+
+# 客户端一侧就是三个键加一条命令
+{
+"mcpServers": {
+"mnemosyne": {
+"command": "python",
+"args": ["-m", "mnemosyne.webui.mcp_server",
+"--brain-dir", "./mem", "--namespace", "default"],
+"env": { "MNEMOSYNE_MCP_TOKEN": "your-secret-token" }
+}
+}
+}</code></pre>
 <h3>现在就能挂上的宿主</h3>
 <p>下面每一条都只是配置项，不是一个集成项目。</p>
+<h4>Claude Code / Claude Desktop</h4>
+<p>stdio JSON-RPC，连上就出现全部 52 个工具。</p>
+<h4>Cursor</h4>
+<p>通过 mcp.json 走 stdio，项目决策跨会话留存。</p>
+<h4>OpenWebUI</h4>
+<p>Streamable HTTP 加一个 Bearer 令牌。</p>
+<h4>Hermes Agent</h4>
+<p>stdio。常驻智能体由此获得一层跨越它所有会话的记忆。</p>
+<h4>DeepSeek Harness</h4>
+<p>按仓库部署指南走 stdio。</p>
+<h4>任何 MCP 宿主</h4>
+<p>凡实现 Model Context Protocol 就能用 —— 上面每一条都不是私有接口。</p>
 <h3>租户隔离是物理的</h3>
 <p>令牌映射命名空间，命名空间映射各自的存储。这不是在一张共享表上做权限过滤。</p>
+<ul>
+<li><b>一把令牌，一个命名空间。</b> 服务端从令牌解析命名空间，客户端无法索取别人的。</li>
+<li><b>每个命名空间一个独立 SQLite 文件与独立向量集合。</b></li>
+<li><b>每个命名空间一条独立的哈希链审计轨迹</b>，审查一个租户的账本不需要暴露另一个。</li>
+<li><b>list_projects</b> 只枚举这把令牌有权看到的命名空间。</li>
+</ul>
 <h3>默认的安全姿态</h3>
 <p>不配置也合理，配置了可审查。</p>
+<ul>
+<li><b>连接时做令牌鉴权</b>；纯本地 stdio 用途可以不开。</li>
+<li><b>每次写入前都过安全公证</b>：凭据检测、不可见 Unicode 检测、HTML 注入检测，然后做字段级脱敏。</li>
+<li><b>显式传入的置信度不会被覆盖。</b> 调用方写入 confidence 0，得到的是撤回，而不是被静默改写。</li>
+<li><b>默认软遗忘。</b> confidence 归零、记录标记为 deleted，审计链保持完整；物理删除需要显式 evict=true。</li>
+</ul>
+<blockquote><p>一个已知边界，如实说明：与库内任何内容都没有词面或标签锚点的纯改写问句，可能落到相关性下限之下并返回空。这是刻意的取舍 —— 对智能体而言，空结果比五条无关记忆安全得多。重排插件存在的意义就是补上剩下的缺口。</p></blockquote>
 <a class="cta" href="/#mcp">进入交互版</a>
 <a class="cta ghost" href="/docs/">阅读完整文档</a>
 </main>

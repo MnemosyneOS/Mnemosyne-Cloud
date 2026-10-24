@@ -53,12 +53,30 @@
 <main>
 <h1>命令行</h1>
 <p class="lede">mnemosyne 命令行工具：初始化、写入、召回、健康检查。</p>
-<p>Python API 里的每一项能力都有对应命令。没有任何东西藏在 SDK 后面 —— 所以命令行也是验证引擎是否正常的最快方式。</p>
-<h2>内容</h2>
+<p><strong>Python API 里的每一项能力都有对应命令。没有任何东西藏在 SDK 后面 —— 所以命令行也是验证引擎是否正常的最快方式。</strong></p>
 <h3>日常命令</h3>
-<p>这三条值得放进定时任务或 CI 步骤。</p>
+<pre><code class="lang-bash">mnemosyne --dir ./mem init
+mnemosyne --dir ./mem retain --content "Apple Inc. was founded in 1976"
+mnemosyne --dir ./mem recall "Apple" --k 5
+mnemosyne --dir ./mem consolidate --dry-run</code></pre>
 <h3>体检、图谱与审计</h3>
+<p>这三条值得放进定时任务或 CI 步骤。</p>
+<pre><code class="lang-bash">mnemosyne --dir ./mem status --json
+mnemosyne --dir ./mem doctor --json
+
+mnemosyne --dir ./mem graph-query "Steve Jobs" --depth 2 --json
+
+mnemosyne --dir ./mem verify-integrity --json
+mnemosyne --dir ./mem ledger-audit &lt;memory_id&gt;</code></pre>
+<h3>数据进出</h3>
+<pre><code class="lang-bash">mnemosyne --dir ./mem export --format json --out ./memories.json
+mnemosyne --dir ./mem import ./memories.json
+# migrate 只对旧版 JSONL 后端有效（SQLite 库没有 index.jsonl）:
+mnemosyne --dir ./old migrate --jsonl ./old/index.jsonl</code></pre>
+<h3>本地控制台</h3>
 <p>暗色管理界面由包自身提供 —— 不依赖外部 CDN、无遥测、无需账号。含记忆浏览器、图谱视图与运行统计。</p>
+<pre><code class="lang-bash">python -m mnemosyne.webui.web_server --port 9090
+# http://127.0.0.1:9090 —— 默认账号 admin / mnemosyne</code></pre>
 <a class="cta" href="/#cli">进入交互版</a>
 <a class="cta ghost" href="/docs/">阅读完整文档</a>
 </main>
