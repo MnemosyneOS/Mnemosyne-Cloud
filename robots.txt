@@ -1,17 +1,19 @@
 # ai-memory.net — Mnemosyne OS
-# Updated 2026-09-24
+# Updated 2026-10-24
 #
-# The landing page and the documentation exist to be found and read. The two
-# paths below are excluded because neither is a crawl target: /stats/ is a
-# password-protected dashboard and /api/ answers POSTs, not GETs.
-# Machine-readable summary of the project: https://ai-memory.net/llms.txt
+# 🔴 2026-10-24 变更：/docs/ /pricing/ /mcp/ 等 15 个内容页已预渲染成
+# 独立静态 HTML（见 deploy/build_seo_pages.py），现在**可被索引**。
+# 此前它们是 hash 路由（#/docs），搜索引擎完全看不到 —— 14 天里搜索引擎
+# 只产生 43 次请求（占落地页 1.2%），这是自然流量接近零的直接原因。
+#
+# 机器可读摘要：https://ai-memory.net/llms.txt
 
 User-agent: *
 Allow: /
 Disallow: /api/
+Disallow: /auth/
 Disallow: /stats/
 Disallow: /admin/
-Disallow: /auth/
 
 # AI crawlers are named explicitly so the position is on the record rather
 # than inferred from a wildcard. The site is MIT-licensed and the repository
@@ -22,17 +24,25 @@ User-agent: OAI-SearchBot
 User-agent: ChatGPT-User
 User-agent: ClaudeBot
 User-agent: Claude-Web
+User-agent: Claude-SearchBot
 User-agent: PerplexityBot
 User-agent: CCBot
 User-agent: Google-Extended
 User-agent: Applebot-Extended
 User-agent: meta-externalagent
 User-agent: Bytespider
+User-agent: Qwenbot
+User-agent: MoonshotBot
+User-agent: KimiBot
+User-agent: Hunyuan
+User-agent: GrokBot
+User-agent: cohere-ai
+User-agent: YouBot
 Allow: /
 Disallow: /api/
+Disallow: /auth/
 Disallow: /stats/
 Disallow: /admin/
-Disallow: /auth/
 
 # Social preview fetchers must be allowed to reach the page, or every shared
 # link renders as a bare URL instead of a card.

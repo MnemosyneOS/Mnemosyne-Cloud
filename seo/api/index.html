@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>API 参考 · Mnemosyne OS</title>
+<meta name="description" content="Mnemosyne OS HTTP API：记忆写入、召回、图谱、审计链。" />
+<link rel="canonical" href="https://ai-memory.net/#api" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Mnemosyne OS" />
+<meta property="og:title" content="API 参考 · Mnemosyne OS" />
+<meta property="og:description" content="Mnemosyne OS HTTP API：记忆写入、召回、图谱、审计链。" />
+<meta property="og:url" content="https://ai-memory.net/api/" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<style>
+  :root{--fg:#111;--fg2:#555;--bg:#fff;--line:#e5e5e5;--accent:#6d28d9}
+  @media(prefers-color-scheme:dark){:root{--fg:#eee;--fg2:#aaa;--bg:#0b0b0c;--line:#26262a}}
+  *{box-sizing:border-box}
+  body{margin:0;font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--fg);background:var(--bg)}
+  .wrap{max-width:760px;margin:0 auto;padding:48px 24px 96px}
+  header{display:flex;align-items:center;gap:12px;padding-bottom:24px;border-bottom:1px solid var(--line);margin-bottom:40px}
+  header a{color:var(--fg);text-decoration:none;font-weight:650;font-size:17px}
+  nav{margin-left:auto;display:flex;gap:18px;flex-wrap:wrap}
+  nav a{color:var(--fg2);text-decoration:none;font-size:14px}
+  nav a:hover{color:var(--accent)}
+  h1{font-size:32px;line-height:1.25;margin:0 0 16px;letter-spacing:-.02em}
+  .lede{font-size:18px;color:var(--fg2);margin:0 0 32px}
+  h2{font-size:20px;margin:36px 0 12px}
+  p{margin:0 0 14px}
+  ul{padding-left:22px;margin:0 0 18px}
+  li{margin:6px 0}
+  code{background:rgba(125,125,125,.12);padding:2px 6px;border-radius:5px;font-size:.9em}
+  pre{background:rgba(125,125,125,.1);padding:16px;border-radius:10px;overflow:auto;font-size:13.5px;line-height:1.6}
+  .cta{display:inline-block;margin:32px 12px 0 0;padding:12px 22px;background:var(--accent);color:#fff;text-decoration:none;border-radius:10px;font-weight:600}
+  .cta.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+  footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--line);color:var(--fg2);font-size:13px}
+  footer a{color:var(--fg2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <a href="/">Mnemosyne OS</a>
+  <nav>
+    <a href="/docs/">文档</a>
+    <a href="/mcp/">MCP</a>
+    <a href="/pricing/">价格</a>
+    <a href="/#/login">登录</a>
+  </nav>
+</header>
+<main>
+<h1>API 参考</h1>
+<p class="lede">Mnemosyne OS HTTP API：记忆写入、召回、图谱、审计链。</p>
+<p>一个 Python 类、一套命令行、一个 HTTP 面、52 个 MCP 工具 —— 底下是同一个 SQLite 文件。没有任何一个是定制接口，所以智能体能用 SDK，控制台也能读同一个存储。</p>
+<h2>内容</h2>
+<h3>Python —— MemoryBrain</h3>
+<p>一个对象持有整个存储。写入、更正、召回、生成上下文快照都通过它。</p>
+<h3>带 token 预算的召回</h3>
+<p>预算是一条硬约束，不是提示。放不进正文的条目会被降级为可寻址的胶囊（稳定指针 + 关键原子），而不是被静默丢弃。账目会如实告诉你发生了什么。</p>
+<h3>MCP 工具 —— 52 个，走 stdio 或 Streamable HTTP</h3>
+<p>完整的工具面：四十一个原生（含 8.1.0 新增的二十一个记忆形成层工具），外加十一个沿用通行 Agent 记忆工具名的别名，既有 MCP 客户端无需重写。智能体只要声明它们就获得了记忆能力，不需要胶水代码，也不需要自写工具层。</p>
+<h3>HTTP 与控制台</h3>
+<p>同一个存储，在本地暴露出来。控制台随包发布、不依赖任何外部 CDN，REST 端点就是它跑的那一套。</p>
+<a class="cta" href="/#api">进入交互版 →</a>
+<a class="cta ghost" href="/#/docs">阅读完整文档</a>
+</main>
+<footer>
+  <p>Mnemosyne OS · AI 智能体的默认记忆层 ·
+  <a href="/">首页</a> · <a href="/legal.html">法律条款</a> ·
+  <a href="https://github.com/MnemosyneOS/mnemosyne">GitHub</a></p>
+</footer>
+</div>
+</body>
+</html>

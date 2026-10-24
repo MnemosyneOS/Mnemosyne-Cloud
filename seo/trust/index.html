@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>信任中心 · Mnemosyne OS</title>
+<meta name="description" content="安全模型、合规映射（HIPAA / 等保 / GDPR / PIPL）与 SHA-256 哈希链审计。" />
+<link rel="canonical" href="https://ai-memory.net/#trust" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Mnemosyne OS" />
+<meta property="og:title" content="信任中心 · Mnemosyne OS" />
+<meta property="og:description" content="安全模型、合规映射（HIPAA / 等保 / GDPR / PIPL）与 SHA-256 哈希链审计。" />
+<meta property="og:url" content="https://ai-memory.net/trust/" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<style>
+  :root{--fg:#111;--fg2:#555;--bg:#fff;--line:#e5e5e5;--accent:#6d28d9}
+  @media(prefers-color-scheme:dark){:root{--fg:#eee;--fg2:#aaa;--bg:#0b0b0c;--line:#26262a}}
+  *{box-sizing:border-box}
+  body{margin:0;font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--fg);background:var(--bg)}
+  .wrap{max-width:760px;margin:0 auto;padding:48px 24px 96px}
+  header{display:flex;align-items:center;gap:12px;padding-bottom:24px;border-bottom:1px solid var(--line);margin-bottom:40px}
+  header a{color:var(--fg);text-decoration:none;font-weight:650;font-size:17px}
+  nav{margin-left:auto;display:flex;gap:18px;flex-wrap:wrap}
+  nav a{color:var(--fg2);text-decoration:none;font-size:14px}
+  nav a:hover{color:var(--accent)}
+  h1{font-size:32px;line-height:1.25;margin:0 0 16px;letter-spacing:-.02em}
+  .lede{font-size:18px;color:var(--fg2);margin:0 0 32px}
+  h2{font-size:20px;margin:36px 0 12px}
+  p{margin:0 0 14px}
+  ul{padding-left:22px;margin:0 0 18px}
+  li{margin:6px 0}
+  code{background:rgba(125,125,125,.12);padding:2px 6px;border-radius:5px;font-size:.9em}
+  pre{background:rgba(125,125,125,.1);padding:16px;border-radius:10px;overflow:auto;font-size:13.5px;line-height:1.6}
+  .cta{display:inline-block;margin:32px 12px 0 0;padding:12px 22px;background:var(--accent);color:#fff;text-decoration:none;border-radius:10px;font-weight:600}
+  .cta.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+  footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--line);color:var(--fg2);font-size:13px}
+  footer a{color:var(--fg2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <a href="/">Mnemosyne OS</a>
+  <nav>
+    <a href="/docs/">文档</a>
+    <a href="/mcp/">MCP</a>
+    <a href="/pricing/">价格</a>
+    <a href="/#/login">登录</a>
+  </nav>
+</header>
+<main>
+<h1>信任中心</h1>
+<p class="lede">安全模型、合规映射（HIPAA / 等保 / GDPR / PIPL）与 SHA-256 哈希链审计。</p>
+<p>没有东西离开这台机器，所以信任边界就是文件系统。我们要声明的不是 Mnemosyne OS 持有某张证书 —— 而是它的行为可以被审查，下面每一条都能对应到你可以读的代码。</p>
+<h2>内容</h2>
+<h3>信任边界就是一个文件</h3>
+<p>链路里没有任何托管控制面。记忆是磁盘上的一个 SQLite 文件，账本在同一个数据库里，核心不导入 Python 标准库之外的任何东西。删掉那个文件就是一次完整、可审计的删除 —— 没有副本需要追。</p>
+<h3>篡改从一开始就可被发现</h3>
+<p>每次写入都串进 SHA-256 账本。校验不只告诉你"有东西被改过"，而是指出是哪一条记录被改 —— 这让篡改从"可否认"变成"可检测"。</p>
+<h3>安全公证</h3>
+<p>写入前的检查阶段，SDK、命令行、MCP 与批量路径全都会走。</p>
+<h3>合规</h3>
+<p>HIPAA、等保、GDPR 与 PIPL 的映射与账本一起维护，因此合规审查可以用证据回答，而不是填一份问卷。</p>
+<a class="cta" href="/#trust">进入交互版 →</a>
+<a class="cta ghost" href="/#/docs">阅读完整文档</a>
+</main>
+<footer>
+  <p>Mnemosyne OS · AI 智能体的默认记忆层 ·
+  <a href="/">首页</a> · <a href="/legal.html">法律条款</a> ·
+  <a href="https://github.com/MnemosyneOS/mnemosyne">GitHub</a></p>
+</footer>
+</div>
+</body>
+</html>

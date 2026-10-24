@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>研究 · Mnemosyne OS</title>
+<meta name="description" content="记忆召回质量与延迟的实测数据，附可复现脚本。" />
+<link rel="canonical" href="https://ai-memory.net/#research" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Mnemosyne OS" />
+<meta property="og:title" content="研究 · Mnemosyne OS" />
+<meta property="og:description" content="记忆召回质量与延迟的实测数据，附可复现脚本。" />
+<meta property="og:url" content="https://ai-memory.net/research/" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<style>
+  :root{--fg:#111;--fg2:#555;--bg:#fff;--line:#e5e5e5;--accent:#6d28d9}
+  @media(prefers-color-scheme:dark){:root{--fg:#eee;--fg2:#aaa;--bg:#0b0b0c;--line:#26262a}}
+  *{box-sizing:border-box}
+  body{margin:0;font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--fg);background:var(--bg)}
+  .wrap{max-width:760px;margin:0 auto;padding:48px 24px 96px}
+  header{display:flex;align-items:center;gap:12px;padding-bottom:24px;border-bottom:1px solid var(--line);margin-bottom:40px}
+  header a{color:var(--fg);text-decoration:none;font-weight:650;font-size:17px}
+  nav{margin-left:auto;display:flex;gap:18px;flex-wrap:wrap}
+  nav a{color:var(--fg2);text-decoration:none;font-size:14px}
+  nav a:hover{color:var(--accent)}
+  h1{font-size:32px;line-height:1.25;margin:0 0 16px;letter-spacing:-.02em}
+  .lede{font-size:18px;color:var(--fg2);margin:0 0 32px}
+  h2{font-size:20px;margin:36px 0 12px}
+  p{margin:0 0 14px}
+  ul{padding-left:22px;margin:0 0 18px}
+  li{margin:6px 0}
+  code{background:rgba(125,125,125,.12);padding:2px 6px;border-radius:5px;font-size:.9em}
+  pre{background:rgba(125,125,125,.1);padding:16px;border-radius:10px;overflow:auto;font-size:13.5px;line-height:1.6}
+  .cta{display:inline-block;margin:32px 12px 0 0;padding:12px 22px;background:var(--accent);color:#fff;text-decoration:none;border-radius:10px;font-weight:600}
+  .cta.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+  footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--line);color:var(--fg2);font-size:13px}
+  footer a{color:var(--fg2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <a href="/">Mnemosyne OS</a>
+  <nav>
+    <a href="/docs/">文档</a>
+    <a href="/mcp/">MCP</a>
+    <a href="/pricing/">价格</a>
+    <a href="/#/login">登录</a>
+  </nav>
+</header>
+<main>
+<h1>研究</h1>
+<p class="lede">记忆召回质量与延迟的实测数据，附可复现脚本。</p>
+<p>大多数记忆系统都假定有一个向量数据库、一个嵌入服务和一个云端控制面。Mnemosyne OS 一个都不假定，然后测量这件事的代价与收益。下面是架构与证据。</p>
+<h2>内容</h2>
+<h3>业界公认的三大基准测试</h3>
+<p>记忆系统之间比的就是这三个公开基准。Mnemosyne OS 三项全部实测，并列出 Mem0 自己公开的分数作对照。</p>
+<h3>五路召回，融合成一个结果</h3>
+<p>召回不是一次相似度检索。五路独立信号并行给每个候选打分，再由重排器收敛，最后由相关性下限决定到底有没有东西配得上进入模型。</p>
+<h3>可逆压缩，而不是有损摘要</h3>
+<p>用语言模型去摘要一条记忆，得到的是更短、但已经不再是那条记忆的东西：生成文本可能引入原文里根本没有的数字、日期和结论。AIC 胶囊走的是相反的路 —— 按结构压缩，并让原文始终可取回。</p>
+<h3>是测出来的，不是声称的</h3>
+<p>下面每个数字都由仓库里的脚本产出，跑在真实存储上，而这套测量脚本是发版前第一个要跑的东西。</p>
+<h3>它所在的市场</h3>
+<p>记忆之所以成为一个独立的基础设施品类，是因为「长上下文」被证明并不等于记忆。截至 2026 年的公开研究在主流模型上都测到：输入变长，准确率就下降 —— 这正是专用记忆层被推上台前的失效模式。</p>
+<a class="cta" href="/#research">进入交互版 →</a>
+<a class="cta ghost" href="/#/docs">阅读完整文档</a>
+</main>
+<footer>
+  <p>Mnemosyne OS · AI 智能体的默认记忆层 ·
+  <a href="/">首页</a> · <a href="/legal.html">法律条款</a> ·
+  <a href="https://github.com/MnemosyneOS/mnemosyne">GitHub</a></p>
+</footer>
+</div>
+</body>
+</html>
