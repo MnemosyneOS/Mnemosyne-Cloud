@@ -585,6 +585,31 @@
     box-shadow:var(--shadow); transition:opacity .22s ease, transform .22s ease;
   }
   #mn-toast.on{ opacity:1; transform:translate(-50%,0); }
+
+  /* 未登录点「Mnemosyne OS SaaS」弹出的登录提示。
+     为什么用弹窗而不是直接跳 #/login：顶部菜单是**营销入口**，访客点它时
+     往往还没决定要不要注册；一上来把人甩进登录表单，"了解产品"就变成了
+     "先交账号"，转化和体验都更差。弹窗只说清一件事：这一块要登录后才能用，
+     并给两个出口（去登录 / 先逛逛）。关掉之后菜单还在，随时能再点。 */
+  #mn-login-gate{
+    position:fixed; inset:0; z-index:140; display:none;
+    background:rgba(5,5,10,.55); backdrop-filter:blur(3px);
+    padding:16px; align-items:center; justify-content:center;
+  }
+  #mn-login-gate.on{ display:flex; }
+  #mn-login-gate .gate-box{
+    width:100%; max-width:430px; background:var(--surface);
+    border:1px solid var(--hair-hi); border-radius:12px;
+    box-shadow:var(--shadow); padding:22px 22px 18px;
+  }
+  #mn-login-gate h3{
+    margin:0 0 8px; font-size:16px; font-weight:650; letter-spacing:-.01em; color:var(--fg);
+  }
+  #mn-login-gate p{
+    margin:0 0 16px; font-size:13px; line-height:1.7; color:var(--fg2);
+  }
+  #mn-login-gate .gate-act{ display:flex; gap:8px; flex-wrap:wrap; }
+  #mn-login-gate .gate-act .btn{ flex:1 1 auto; justify-content:center; }
   .authcard button:disabled, .authcard input:disabled{ opacity:.5; cursor:not-allowed; }
   .authalt{ margin-top:18px; text-align:center; font-size:12.5px; line-height:1.7; color:var(--fg3); }
   .authalt button{
@@ -1137,14 +1162,51 @@
   /* ---------------------------------------------------------- pricing
      Geometry read off mem0/pricing: 390px cards, tight padding, small
      radius, rows parted by a hairline. */
+  /* ---------------------------------------------------------- pricing
+     2026-10-24 重做。站长截图指出：四张卡"大小不统一"，不像商务报价单。
+     根因是卡高由内容决定（Free 5 条特性 / 增值包 6 条），一排放四张就是
+     四个不同高度，报价、按钮、特性列表的基线全错位。
+     修法不是给每张卡写死高度（换语言/换文案就崩），而是让网格自己拉平：
+       · #tiers 用 align-items:stretch + 每张卡 height:100%，同排必然等高；
+       · 卡内用 flex:1 的弹性占位把"报价 + 按钮"钉在固定段，
+         特性列表放在下方扩展区，长短差异只体现在这里；
+       · 报价区与按钮加 min-height，四张卡的价目数字与 CTA 横向对齐；
+       · 间距改为 8 的倍数节奏（24/16/12），圆角统一 12px，
+         主推档用一圈 accent 描边 + 极淡渐变底，做出"推荐"的层次，
+         而不是靠加粗边框把卡片撑变形。 */
   .tier{
     display:flex; flex-direction:column; background:var(--surface);
-    border:1px solid var(--hair); border-radius:8px; padding:24px 22px 22px;
-    transition:border-color .26s ease;
+    border:1px solid var(--hair); border-radius:12px;
+    padding:26px 22px 22px; height:100%; box-sizing:border-box;
+    transition:border-color .26s ease, box-shadow .26s ease, transform .26s ease;
   }
-  .tier:hover{ border-color:var(--hair-hi); }
-  .tier-rec{ border-color:var(--accent-line); }
+  .tier:hover{
+    border-color:var(--hair-hi);
+    box-shadow:0 8px 28px rgba(8,8,16,.07);
+    transform:translateY(-2px);
+  }
+  .tier-rec{
+    border-color:var(--accent-line);
+    background:linear-gradient(180deg, var(--accent-wash, rgba(120,90,255,.05)) 0%, var(--surface) 42%);
+  }
   .tier-rec:hover{ border-color:var(--accent); }
+
+  /* 报价区：数字与单位对齐，四张卡高度一致 */
+  .tier .tier-price{ display:flex; align-items:baseline; gap:6px; min-height:44px; }
+  .tier .tier-note{ min-height:34px; }
+
+  /* CTA 固定在报价下方，四张卡按钮同一水平线 */
+  .tier .tier-cta{
+    display:flex; align-items:center; justify-content:center; gap:7px;
+    width:100%; min-height:42px; margin-top:auto;
+    border-radius:9px; font-size:13.5px; font-weight:600; letter-spacing:-.005em;
+  }
+
+  /* 特性列表：弹性扩展区，长短差异只在这里体现，不影响上方对齐 */
+  .tier .tier-feats{ flex:1 1 auto; }
+
+  /* 四张卡同排时留出等宽间距，窄屏自动落到两列/一列 */
+  #tiers{ align-items:stretch; }
   .tier-name{ font-size:16.5px; font-weight:600; letter-spacing:-.01em; color:var(--fg); }
   .tagbox2{ font-family:'DM Mono',monospace; font-size:10.5px; color:var(--fg3); border:1px solid var(--hair); border-radius:5px; padding:3px 8px; white-space:nowrap; }
 
@@ -2275,6 +2337,20 @@ body.docs #view{ display:block !important; }
   </div>
 </div>
 
+<!-- 未登录时点顶部「Mnemosyne OS SaaS」弹出的登录提示。
+     菜单本身保持可见（那是产品入口），但**进控制台之前必须先登录** ——
+     未登录不得进入控制台，更不得看到任何管理界面。 -->
+<div id="mn-login-gate" role="dialog" aria-modal="true" aria-labelledby="mn-gate-t">
+  <div class="gate-box">
+    <h3 id="mn-gate-t" data-i18n="gate.t">登录后查看 Mnemosyne OS SaaS</h3>
+    <p data-i18n="gate.d">控制台里的记忆、配额与套餐都绑定在你的账号上。登录后即可查看；还没有账号可以直接注册。</p>
+    <div class="gate-act">
+      <a class="btn btn-primary" href="#/login" data-gate-go data-i18n="gate.signin">登录 / 注册</a>
+      <button class="btn btn-ghost" type="button" data-gate-close data-i18n="gate.later">先逛逛</button>
+    </div>
+  </div>
+</div>
+
 <div id="home">
 
 <!-- ================================ HERO ================================ -->
@@ -2632,8 +2708,8 @@ body.docs #view{ display:block !important; }
          如果被语言锁死通道，就付不了钱。 -->
     <div class="mt-12 flex flex-wrap items-center justify-center gap-3 reveal" id="price-switch">
       <div class="pseg" id="currency-switch" role="group">
-        <button type="button" data-cur="USD" aria-pressed="true">$ USD</button>
-        <button type="button" data-cur="CNY" aria-pressed="false">¥ CNY</button>
+        <button type="button" data-cur="CNY" aria-pressed="true">¥ CNY · 微信</button>
+        <button type="button" data-cur="USD" aria-pressed="false">$ USD · PayPal</button>
       </div>
     </div>
     <div class="mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch" id="tiers"></div>
@@ -2758,7 +2834,7 @@ body.docs #view{ display:block !important; }
      它只在被 renderDash() 调用时才取 window.MN，所以早加载不会有时序问题；
      晚加载反而会让「直达 #/dashboard/overview」白屏一次。 -->
 <script src="assets/console-graph.js?v=10.8"></script>
-<script src="assets/console.js?v=11.10"></script>
+<script src="assets/console.js?v=11.13"></script>
 <!-- 演示舞台：给商业合作伙伴看的 10 章剧本。独立文件，只在演示页被调用。 -->
 <script src="assets/console-demo.js?v=10.8"></script>
 
@@ -2888,6 +2964,8 @@ body.docs #view{ display:block !important; }
     'nav.pip': 'pip',
     'nav.starShort': 'Star on GitHub',
     'nav.try': 'Try Mnemosyne OS',
+    'gate.t': 'Sign in to open the console',
+    'gate.d': 'Your memories, quota and plan live under your account. Sign in to view them — you can create one right here.',
     'theme.cap': 'Appearance',
     'theme.light': 'Light',
     'theme.dark': 'Dark',
@@ -2971,6 +3049,10 @@ body.docs #view{ display:block !important; }
     'foot.tag': 'local-first since day one',
 
     nav: [
+      /* The paid product sits first — a visitor should see the console exists
+         before anything else. Always visible (no auth flag); clicking it hits
+         the login gate when signed out. Admin surfaces stay owner-only. */
+      { label: 'Console', href: '#/dashboard/overview', console: 1 },
       { label: 'Developers', items: [
         { t: 'Documentation', d: 'Integrate Mnemosyne OS into your product', href: '#/docs' },
         { t: 'API Reference', d: 'The API for integrating memory', href: '#/api' },
@@ -2980,7 +3062,6 @@ body.docs #view{ display:block !important; }
         { t: 'Trust Center', d: 'Security, compliance and certification', href: '#/trust' },
         { t: 'Status', d: 'Runtime health and event history', href: '#/status' }
       ] },
-      { label: 'Console', href: '#/dashboard/overview', auth: 1 },
       { label: 'Resources', mega: [
         { t: 'Research', href: '#/research' },
         { t: 'Blog', href: '#/blog' },
@@ -3201,6 +3282,8 @@ body.docs #view{ display:block !important; }
     'nav.pip': 'pip',
     'nav.starShort': '在 GitHub 上 Star',
     'nav.try': '免费开始',
+    'gate.t': '登录后查看 Mnemosyne OS SaaS',
+    'gate.d': '控制台里的记忆、配额与套餐都绑定在你的账号上。登录后即可查看；还没有账号可以直接注册。',
     'theme.cap': '外观',
     'theme.light': '浅色',
     'theme.dark': '深色',
@@ -3288,6 +3371,11 @@ body.docs #view{ display:block !important; }
     'foot.tag': 'local-first since day one',
 
     nav: [
+      /* 「Mnemosyne OS SaaS」放在**第一位**：它是我们的付费产品，访客进站第一眼
+         就该知道有这个服务。它常显（不带 auth:1，否则未登录看不见），
+         但带 console:1 —— 点击时由登录门控分流：未登录弹登录框，已登录才进控制台。
+         管理界面另有铁律：只有站长本人（OWNER_ID = gh:MnemosyneOS）可见。 */
+      { label: 'Mnemosyne OS SaaS', href: '#/dashboard/overview', console: 1 },
       { label: '开发人员', items: [
         { t: '文档', d: '将 Mnemosyne OS 集成到您的产品中', href: '#/docs' },
         { t: 'API 参考', d: '用于集成内存的 API', href: '#/api' },
@@ -3296,7 +3384,6 @@ body.docs #view{ display:block !important; }
         { t: '信任中心', d: '安全、合规与认证', href: '#/trust' },
         { t: '状态', d: '运行时健康与事件历史', href: '#/status' }
       ] },
-      { label: 'Mnemosyne OS SaaS', href: '#/dashboard/overview', auth: 1 },
       { label: '资源', mega: [
         { t: '研究', href: '#/research' },
         { t: '博客', href: '#/blog' },
@@ -5301,6 +5388,15 @@ body.docs #view{ display:block !important; }
       return !item.auth || signedInNav();
     }).map(function (item, i) {
       if (!item.items && !item.mega) {
+        /* 控制台入口常显，但带 data-need-login：点击层统一处理 ——
+           未登录弹登录框，已登录才真的跳进控制台。href 仍指向控制台，
+           万一脚本没跑到，路由侧 ensureRole 还会把他送回 #/login，
+           两层兜底，不会出现"点进去是一个空壳管理员界面"。 */
+        if (item.console) {
+          var ch = esc(item.href || '#/dashboard/overview');
+          return '<a class="navbtn plain" href="' + ch + '" data-need-login data-href="' + ch + '">' +
+                 esc(item.label) + '</a>';
+        }
         return '<a class="navbtn plain" href="' + esc(item.href || '#') + '">' + esc(item.label) + '</a>';
       }
 
@@ -5348,6 +5444,11 @@ body.docs #view{ display:block !important; }
   function sheetNavHTML() {
     return (T.nav || []).map(function (item) {
       if (!item.items && !item.mega) {
+        if (item.console) {
+          var ch = esc(item.href || '#/dashboard/overview');
+          return '<a class="block py-3.5 text-[16px] text-fg border-b" style="border-color:var(--hair)" href="' +
+                 ch + '" data-need-login data-href="' + ch + '">' + esc(item.label) + '</a>';
+        }
         return '<a class="block py-3.5 text-[16px] text-fg border-b" style="border-color:var(--hair)" href="' +
                esc(item.href || '#') + '">' + esc(item.label) + '</a>';
       }
@@ -5777,7 +5878,11 @@ body.docs #view{ display:block !important; }
   /* 周期按**每张卡**独立记录，默认月付。
      早前是全局一个 interval，结果"给 Pro 选了年付，Team 也跟着变年付"——
      用户正在横向比较两档，联动会让人算错。 */
-  var PRICE_STATE = { iv: {}, currency: 'USD' };
+  /* 2026-10-24 站长要求：**默认人民币 + 微信支付**，美元 PayPal 放第二位。
+     原来默认 USD 的理由是"人民币价约为美元价 1/5，默认低价等于发折扣券"，
+     但站长明确要国内用户第一眼看到微信支付 —— 支付通道的可达性优先于价格锚点。
+     首页的币种切换器仍在，想按美元付的人一键可切。 */
+  var PRICE_STATE = { iv: {}, currency: 'CNY' };
 
   /* 取当前要显示的价格行。兼容两种数据形态：
      · 接口来的新形态（t.p.month / t.p.year，各含 usd / cny / 说明文案）
@@ -5803,6 +5908,16 @@ body.docs #view{ display:block !important; }
   }
 
   function planHTML(t) {
+    /* 美元档除了跳转链接，再挂一个**页内 PayPal 按钮**（与控制台
+       「套餐与用量」完全同一种交互）：能原地付款的人不该被先甩到控制台。
+       按钮容器带 data-pp-plan，真正的 SDK 注入在两处统一做（见 mountPagePayPal）。
+       微信（CNY）没有等价的页内 SDK，仍走原链接，落到控制台的扫码卡片。 */
+    var ppPlan = '';
+    if (!t.isFree && t.ppPlanId && PRICE_STATE.currency === 'USD') {
+      ppPlan = '<div class="pp-slot-page" data-plan-id="' + esc(t.ppPlanId) + '"' +
+               ' data-tier="' + esc(t.id) + '" style="max-width:100%;min-height:44px;margin-top:8px"></div>';
+    }
+
     var feats = (t.feats || []).map(function (f) {
       return '<li class="feat' + (f[1] ? ' dim' : '') + '">' +
                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' +
@@ -5839,6 +5954,9 @@ body.docs #view{ display:block !important; }
        给它拼会得到"免费开始（PayPal）"这种错话。 */
     var cta = t.cta || '';
     if (!t.isFree && t.p) {
+      /* 站长要求两个通道都能在定价页直接下单：人民币走微信（默认），
+         美元走 PayPal（第二）。按钮文案必须写清走哪条通道，
+         否则用户点下去才发现是另一套收款方式。 */
       var chan = PRICE_STATE.currency === 'CNY' ? (zh ? '微信' : 'WeChat')
                                                 : (zh ? 'PayPal' : 'PayPal');
       cta = zh ? cta + '（' + chan + '）' : cta + ' via ' + chan;
@@ -5851,18 +5969,22 @@ body.docs #view{ display:block !important; }
              '</div>' +
              '<p class="mt-3 text-[13px] leading-[1.6] text-fg3">' + esc(t.desc) + '</p>' +
              '<div class="mt-5">' + seg + '</div>' +
-             '<div class="flex items-baseline gap-2">' +
+             /* 报价区：min-height 让四张卡的价目数字落在同一条基线 */
+             '<div class="tier-price flex items-baseline gap-2">' +
                '<span class="metric text-[34px] tracking-[-.02em] text-fg">' + esc(p.amount) + '</span>' +
                '<span class="text-[13px] text-fg3">' + esc(priceUnit(t, p.iv)) + '</span>' +
              '</div>' +
-             '<p class="price-note">' + esc(p.note || '') +
+             '<p class="price-note tier-note">' + esc(p.note || '') +
                (extra ? '<br>' + esc(extra) : '') + '</p>' +
-             '<a class="btn ' + (t.rec ? 'btn-accent' : 'btn-ghost') + ' w-full mt-5" href="' + esc(t.href) + '">' +
+             /* CTA 用统一的 tier-cta 度量：四张卡按钮等高、等宽、同一水平线。
+                保留原本的 <a href> 行为与图标，只接管盒子尺寸。 */
+             '<a class="btn ' + (t.rec ? 'btn-accent' : 'btn-ghost') + ' tier-cta mt-5" href="' + esc(t.href) + '">' +
                esc(cta) +
                '<span class="btn-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg></span>' +
              '</a>' +
+             ppPlan +
              '<div class="rule my-6"></div>' +
-             '<ul class="flex-1">' + feats + '</ul>' +
+             '<ul class="flex-1 tier-feats">' + feats + '</ul>' +
            '</div>';
   }
 
@@ -5893,6 +6015,114 @@ body.docs #view{ display:block !important; }
     renderTiers();
   });
 
+  /* ------------------------------------------------- PayPal 页内按钮（定价页）
+     2026-10-24 站长要求：定价页的支付体验必须和「套餐与用量」一致 ——
+     既然控制台能原地弹 PayPal 付款，定价页就不该只有一条"跳转"链接。
+     实现与 assets/console.js 的 mountPayPal **同一套参数**：
+       · vault=true & intent=subscription（订阅必需，否则没有 subscription.create）；
+       · currency 固定 USD —— 人民币走微信扫码，不经 PayPal；
+       · locale 显式传，避免中国 IP 被推断成韩文弹窗；
+       · custom_id 用登录邮箱，服务端 paypal-confirm 会拿它比对会话，防冒认。
+     不重复造一套计费逻辑：付款确认仍打 /api/billing/paypal-confirm。 */
+  var PP_PAGE = { loading: false, cbs: [], failed: false };
+
+  function loadPayPalSdkPage(clientId, cb) {
+    if (window.paypal && window.paypal.Buttons) return cb(true);
+    if (PP_PAGE.failed) return cb(false);
+    PP_PAGE.cbs.push(cb);
+    if (PP_PAGE.loading) return;
+    PP_PAGE.loading = true;
+    var s = document.createElement('script');
+    var loc = lang === 'zh' ? 'zh_CN' : 'en_US';
+    s.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(clientId) +
+            '&vault=true&intent=subscription&components=buttons&currency=USD' +
+            '&locale=' + loc + '&buyer-country=CN';
+    s.async = true;
+    s.onload = function () {
+      PP_PAGE.loading = false;
+      var q = PP_PAGE.cbs; PP_PAGE.cbs = [];
+      q.forEach(function (f) { try { f(true); } catch (e) {} });
+    };
+    s.onerror = function () {
+      PP_PAGE.loading = false; PP_PAGE.failed = true;
+      var q = PP_PAGE.cbs; PP_PAGE.cbs = [];
+      q.forEach(function (f) { try { f(false); } catch (e) {} });
+    };
+    document.head.appendChild(s);
+  }
+
+  /* 定价页的按钮挂载：只处理 .pp-slot-page，不与控制台的 .pp-slot 抢节点 */
+  function mountPagePayPal(clientId) {
+    var slots = document.querySelectorAll('.pp-slot-page');
+    if (!slots.length) return;
+    loadPayPalSdkPage(clientId, function (okSdk) {
+      if (!okSdk || !window.paypal || !window.paypal.Buttons) {
+        /* SDK 打不开（国内网络常见）：不留空槽，写一句可读的说明，
+           用户仍能点上面的 CTA 进控制台用微信或跳转支付。 */
+        Array.prototype.forEach.call(slots, function (slot) {
+          if (slot.getAttribute('data-mounted')) return;
+          slot.setAttribute('data-mounted', '1');
+          slot.innerHTML = '<div style="font-size:11.5px;line-height:1.6;color:var(--fg3);' +
+            'text-align:center">' +
+            esc(lang === 'zh' ? 'PayPal 按钮未能加载，请点上方按钮进入控制台用微信支付。'
+                              : 'PayPal could not load. Use the button above and pay in the console.') +
+            '</div>';
+        });
+        return;
+      }
+      var me = SESSION || {};
+      Array.prototype.forEach.call(slots, function (slot) {
+        if (slot.getAttribute('data-mounted')) return;
+        var planId = slot.getAttribute('data-plan-id') || '';
+        if (!planId) return;
+        slot.setAttribute('data-mounted', '1');
+        try {
+          window.paypal.Buttons({
+            style: { shape: 'rect', color: 'gold', layout: 'vertical',
+                     label: 'pay', height: 40, tagline: false },
+            createSubscription: function (data, actions) {
+              return actions.subscription.create({
+                plan_id: planId,
+                /* 未登录时给空串：服务端会拒（它拿这个和会话邮箱比对）。
+                   定价页对访客也显示按钮，但真正付款必须落在自己账号上。 */
+                custom_id: String((me && (me.email || me.id)) || '')
+              });
+            },
+            onApprove: function (data) {
+              fetch('/api/billing/paypal-confirm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ subscription_id: data.subscriptionID })
+              }).then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (b) {
+                  if (b && b.ok && b.tier && b.tier !== 'free') {
+                    toast((lang === 'zh' ? '订阅已生效：' : 'Subscription active: ') +
+                          String(b.tier).toUpperCase());
+                    location.hash = '#/dashboard/billing';
+                  } else {
+                    toast(lang === 'zh'
+                      ? 'PayPal 已扣款，状态同步中，几秒后自动刷新'
+                      : 'Paid — syncing your subscription, refresh in a moment');
+                  }
+                })['catch'](function () {
+                  toast(lang === 'zh' ? '确认失败，请刷新后查看订阅状态'
+                                      : 'Could not confirm — refresh to check your plan.');
+                });
+            },
+            onError: function () {
+              toast(lang === 'zh' ? 'PayPal 按钮加载失败，请改用微信或跳转支付'
+                                  : 'PayPal failed to load — use WeChat or the link above.');
+            }
+          }).render(slot);
+        } catch (e) { /* 单卡失败不影响其它卡 */ }
+      });
+    });
+  }
+
+  /* 每次重渲染卡片后重新挂载（切月/年、切币种都会重建 DOM） */
+  var PP_CLIENT = '';
+
   function renderTiers() {
     var el = $('#tiers'); if (!el) return;
     /* 首次进入才拉接口；之后切月/年、切币种只是重渲染，不重复请求 */
@@ -5900,6 +6130,8 @@ body.docs #view{ display:block !important; }
     el.innerHTML = (T.plans || []).map(planHTML).join('');
     syncPriceSwitch();
     if (window.lucide) { try { lucide.createIcons(); } catch (e) {} }
+    /* 美元档重画后要重新挂载页内按钮：旧的按钮节点随 innerHTML 一起没了 */
+    if (PP_CLIENT && PRICE_STATE.currency === 'USD') mountPagePayPal(PP_CLIENT);
   }
 
   /* 价格数字格式化：6.9 → "6.9"，19.9 → "19.9"，69 → "69"。
@@ -5960,6 +6192,9 @@ body.docs #view{ display:block !important; }
                  : team ? (zh ? '开通 Team' : 'Start Team')
                  : (zh ? '开通 Pro' : 'Start Pro'),
             href: free ? '#/login' : '#/dashboard/billing',
+            /* PayPal 计划 id（月付优先）：定价页要渲染页内 PayPal 按钮，
+               需要和「套餐与用量」拿到同一个 plan id，两条路才不会买成两样。 */
+            ppPlanId: ((t.paypal_plan_id || {}).month) || ((t.paypal_plan_id || {}).year) || '',
             feats: (zh ? (t.features_zh || t.features) : (t.features || []))
               .map(function (f) { return [f, 0]; }),
             p: {
@@ -5996,6 +6231,7 @@ body.docs #view{ display:block !important; }
             isFree: false, perSeat: false, hasYear: false,
             cta: zh ? '加到 Pro / Team' : 'Add to Pro or Team',
             href: '#/dashboard/billing',
+            ppPlanId: ((a.paypal_plan_id || {}).month) || '',
             feats: (zh ? (a.features_zh || a.features) : (a.features || []))
               .map(function (f) { return [f, 0]; })
               .concat([[zh ? '需已有 Pro 或 Team' : 'Requires Pro or Team', 1]]),
@@ -6014,6 +6250,9 @@ body.docs #view{ display:block !important; }
 
         T.plans = plans;
         T._live = true;
+        /* 记住公开 client_id：每次切换月/年、切换币种都会重建卡片 DOM，
+           重建后要重新挂载 PayPal 按钮（否则切一次就永久消失）。 */
+        PP_CLIENT = d.paypal_client_id || '';
 
         if (d.promo && d.promo.active) {
           /* 插到 #tiers **正前方** —— 那里一定在首屏可见区域内。
@@ -7047,6 +7286,25 @@ body.docs #view{ display:block !important; }
   function doSignOut() {
     SESSION = null;
     GHS = { signedIn: false };
+    /* 登出必须**连角色一起清**。角色是"上次会话的结论"，不是站点常量：
+       旧代码只置 SESSION，CONSOLE.isAdmin / DX_ROLE.loaded / 控制台的
+       MC.isAdmin / MC.me 全部留着上一轮的真值。于是
+       「管理员登录 → 退出 → 打开 /console」时，控制台仍认为 signedIn 为真、
+       isAdmin 为真，整组管理菜单与 ADMIN 徽标照旧渲染，只有名字因为
+       SESSION 已空而显示「未登录」—— 2026-10-24 泄露截图就是这个状态。 */
+    CONSOLE.isAdmin = false;
+    CONSOLE.admins = [];
+    DX_ROLE = { loaded: false, loading: null };
+    if (window.MCConsole && window.MCConsole.MC) {
+      var MCc = window.MCConsole.MC;
+      MCc.isAdmin = false;
+      MCc.me = null;
+      MCc.roleChecked = false;   /* 下次进控制台必须重新校验 */
+      MCc.roleAt = 0;
+      MCc.signedOut = true;
+      MCc.data = {};
+      MCc.view = null;
+    }
     api('/api/auth/logout', { method: 'POST' }).then(function () {
       afterAuth(lang === 'zh' ? '已退出登录。' : 'You are signed out.');
     });
@@ -7108,9 +7366,13 @@ body.docs #view{ display:block !important; }
   }
 
   function isAdmin() {
-    if (CONSOLE.isAdmin) return true;                /* decided by the server */
+    /* 角色只有在"当前存在有效会话"时才有意义。旧写法把
+       `if (CONSOLE.isAdmin) return true;` 放在最前面短路，等于让上次会话的
+       结论凌驾于当前会话之上：会话没了，角色还活着。它和 doSignOut 不清角色
+       叠加，就是"登出后仍是管理员"的第二条路径。先确认已登录，再谈角色。 */
     var u = uidOf(SESSION);
     if (!u) return false;
+    if (CONSOLE.isAdmin === true) return true;        /* decided by the server */
     return (CONSOLE.admins || []).some(function (r) { return r.owner_id === u; });
   }
 
@@ -8316,7 +8578,9 @@ body.docs #view{ display:block !important; }
        （总览 / 留言 / 账号安全），虽然拿不到任何管理数据，但那是**后台的壳**，
        客户/成员看到会以为自己进了管理端。成员的账号设置已经搬进
        Mnemosyne OS SaaS「设置」，这里直接送回 Mnemosyne OS SaaS。 */
-    if (path === 'admin' && !(DX_ROLE.loaded && isAdmin())) {
+    /* 同样先判会话：DX_ROLE.loaded 可能是上一次会话留下的，
+       未登录时 `loaded && isAdmin()` 会直接放行后台壳。 */
+    if (path === 'admin' && !(uidOf(SESSION) && DX_ROLE.loaded && isAdmin())) {
       if (!DX_ROLE.loaded) { dxEnsureRole().then(function () { route(); }); return; }
       view.innerHTML = '<div class="shell"><div style="max-width:520px;margin:12vh auto;text-align:center">' +
         '<h1 style="font-size:20px;font-weight:600;margin:0 0 8px">' +
@@ -8849,6 +9113,64 @@ body.docs #view{ display:block !important; }
   /* Account: the delegated handlers sit on the document, so the header chip
      and the routed views share one implementation. */
   document.addEventListener('click', function (e) { onAccountClick(e); onConsoleClick(e); });
+
+  /* ------------------------------------------------- 登录门控（SaaS 入口）
+     规则只有一条：**未登录不得进入控制台**。
+     顶部菜单照常显示（产品入口要让人看见），点下去时在这里分流：
+       已登录 → 正常跳转；未登录 → 弹登录框，路由不动。
+     为什么点击层要做，而不是把菜单藏起来：藏起来=访客根本不知道我们有 SaaS；
+     直接跳 #/login=把"了解"变成"先注册"。弹窗是这两者之间唯一不伤转化的做法。 */
+  function openLoginGate() {
+    var g = document.getElementById('mn-login-gate');
+    if (!g) { location.hash = '#/login'; return; }
+    g.classList.add('on');
+    document.body.style.overflow = 'hidden';
+    var b = g.querySelector('[data-gate-go]');
+    if (b) { try { b.focus(); } catch (err) {} }
+    /* SESSION 是异步恢复的：刚刷新就点菜单时它可能还没到。
+       先弹窗（不让用户干等），同时问一次服务端；真已登录就自动进去。 */
+    api('/api/auth/me').then(function (r) {
+      if (!(r && r.ok && r.body && r.body.signedIn)) return;
+      SESSION = r.body;
+      GHS = r.body;
+      renderAccountNav();
+      closeLoginGate();
+      location.hash = '#/dashboard/overview';
+    })['catch'](function () { /* 探测失败就停在弹窗，用户自己点登录 */ });
+  }
+
+  function closeLoginGate() {
+    var g = document.getElementById('mn-login-gate');
+    if (!g) return;
+    g.classList.remove('on');
+    document.body.style.overflow = '';
+  }
+
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (!t || !t.closest) return;
+
+    /* 控制台入口（桌面导航 / 移动端抽屉都带这个标记） */
+    var need = t.closest('[data-need-login]');
+    if (need) {
+      if (signedInNav()) return;          /* 已登录：交给浏览器正常跳转 */
+      e.preventDefault();
+      openLoginGate();
+      return;
+    }
+
+    if (t.closest('[data-gate-close]')) { e.preventDefault(); closeLoginGate(); return; }
+    if (t.closest('[data-gate-go]')) { closeLoginGate(); return; }
+
+    var gate = document.getElementById('mn-login-gate');
+    if (!gate || !gate.classList.contains('on')) return;
+    /* 点遮罩空白处 / 打开其它菜单 → 收起，别让它挡着页面 */
+    if (t === gate || t.closest('[data-menu]')) closeLoginGate();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' || e.keyCode === 27) closeLoginGate();
+  });
   document.addEventListener('submit', function (e) { onAccountSubmit(e); onConsoleSubmit(e); });
 
   /* Restore a persisted session if one exists, and keep the header in step
@@ -8922,7 +9244,7 @@ function renderDash(path) {
   if (!window.__mnConsoleRetry) {
     window.__mnConsoleRetry = 1;
     var s = document.createElement('script');
-    s.src = 'assets/console.js?v=11.10';
+    s.src = 'assets/console.js?v=11.13';
     s.onload = function () { renderDash(path); };
     s.onerror = function () {
       var view = $('#view');

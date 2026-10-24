@@ -65,39 +65,106 @@
   function toast(t) { var m = mn(); if (m.toast) m.toast(t); }
   function icons() { var m = mn(); if (m.icons) m.icons(); }
   function sess() { var m = mn(); return (m.session && m.session()) || {}; }
-  function isAdmin() {
-    /* 角色以服务端 /api/console 的答复为准（MC.isAdmin）。站点的 isAdmin()
-       依赖它自己异步加载的状态，控制台首次渲染时往往还没到 —— 那会让管理员
-       在「注册用户信息」页被兜回概览，看起来像"权限丢了"。 */
-    if (MC.isAdmin !== undefined) return MC.isAdmin;
-    var m = mn();
-    return !!(m.isAdmin && m.isAdmin());
+  /* ----------------------------------------------- 身份 / 角色（单一真值）
+     2026-10-24 越权修复。旧实现用两个后端口回答同一个问题：
+       · 名字取自站点 SESSION（mn().session()，只由 /api/auth/me 异步恢复）；
+       · 角色取自 MC.isAdmin（/api/console 异步返回）。
+     两个请求独立发起、独立返回。只要有一条先到，railHTML() 就会画出
+     「未登录」+「站点管理员」+ ADMIN，navHTML() 同时整组渲染管理菜单 ——
+     身份说没人、角色说有管理员，界面自相矛盾，并且把管理员面泄漏给未登录访客。
+
+     所以身份与角色只认一个来源：/api/console 的 me。**同源才能同步**；
+     不同源时无论渲染层怎么写，都会被两条异步的先后顺序拉开一道缝。
+     角色未知（MC.isAdmin === undefined）一律按无权限处理：fail-closed，
+     宁可少给一次权限，也绝不默认放行。 */
+  function signedIn() { return !!(MC.me && MC.me.signedIn === true); }
+
+  /* ---- 唯一的站点管理员（铁律）----
+     需求方明确：除站长本人（OWNER_ID = gh:MnemosyneOS）之外，任何人 ——
+     包括已登录的普通成员，也包括服务端 admins 名单里被误加的人 ——
+     都不得看到「管理」菜单、不得看到 ADMIN 徽标、不得进管理员页面。
+     这是**独立于服务端 isAdmin 的第二道闸**：服务端说"可以"只代表它没拦住，
+     这里还要再问一句"是不是站长本人"。两道都过才放行。
+     后端若将来直接下发 me.owner === true（服务端断言本人），这里无需改动即可生效。 */
+  var OWNER_ID = 'gh:MnemosyneOS';
+  function ownerId() {
+    var me = MC.me || {};
+    if (me.id) return String(me.id);
+    if (me.login) return 'gh:' + String(me.login);
+    return '';
+  }
+  function isOwner() {
+    if (!signedIn()) return false;
+    if (MC.me && MC.me.owner === true) return true;   /* 服务端断言：本人 */
+    return ownerId() === OWNER_ID;
+  }
+  function adminOf() { return signedIn() && MC.isAdmin === true && isOwner(); }
+
+  /* 把一次 /api/console 的答复落成状态。**先落地身份，再谈角色** ——
+     顺序反了就会留下"角色已定、身份未定"的中间态，那正是泄漏的形状。 */
+  function applyRole(b) {
+    b = b || {};
+    MC.me = (b.me && b.me.signedIn === true) ? b.me : null;
+    MC.isAdmin = (b.isAdmin === true);
+    MC.roleChecked = true;
+    MC.roleAt = Date.now();
+    if (!signedIn()) {
+      MC.signedOut = true;
+      location.hash = '#/login';
+      return false;
+    }
+    MC.signedOut = false;
+    return MC.isAdmin;
   }
 
   function ensureRole() {
-    if (MC.rolePromise) return MC.rolePromise;
+    /* roleChecked 为假就必须重新问一次：会话可能在两次渲染之间过期，
+       也可能用户刚点了退出（index.html 的 doSignOut 会把它清成 false）。
+       缓存的 true 本身就是越权入口，不能当常量用。 */
+    if (MC.roleChecked && MC.rolePromise) return MC.rolePromise;
     MC.rolePromise = api('/api/console').then(function (r) {
-      var b = (r && r.ok && r.body) || {};
-      MC.isAdmin = !!b.isAdmin;
-      MC.me = b.me || {};
-      /* 未登录直达 #/dashboard/* 时不能画一个空壳控制台 —— 满屏 401、
-         侧栏还显示"未登录"，比直接回登录页更让人困惑。 */
-      if (!MC.me || MC.me.signedIn !== true) {
-        MC.signedOut = true;
-        location.hash = '#/login';
-        return false;
-      }
-      return MC.isAdmin;
+      return applyRole((r && r.ok && r.body) || {});
     }).catch(function () {
+      /* 请求失败 / 超时 / 解析异常：一律「未登录 + 非管理员」。
+         必须连 me 一起清 —— 只清 isAdmin 会留下"有身份、没角色"的中间态；
+         不清 roleChecked 会让 render() 误以为已经校验过而直接放行。 */
+      MC.me = null;
       MC.isAdmin = false;
+      MC.roleChecked = true;
+      MC.signedOut = true;
+      location.hash = '#/login';
       return false;
     });
     return MC.rolePromise;
+  }
+
+  /* 每次进控制台都复核一次"你还登录着吗"。
+     返回 true = 结论变了（需要重画）；结论没变就不重画，避免 render() 自我触发。 */
+  function verifyRole() {
+    var wasSigned = signedIn();
+    var wasAdmin = adminOf();
+    return api('/api/console').then(function (r) {
+      applyRole((r && r.ok && r.body) || {});
+      return (wasSigned !== signedIn()) || (wasAdmin !== adminOf());
+    }).catch(function () {
+      MC.me = null;
+      MC.isAdmin = false;
+      MC.roleChecked = true;
+      MC.signedOut = true;
+      location.hash = '#/login';
+      return wasSigned || wasAdmin;
+    });
   }
   function zhNow() { var m = mn(); return m.lang ? m.lang() === 'zh' : true; }
 
   var MC = {
     page: 'overview',
+    /* 角色校验状态。roleChecked=false = 还没问过服务端，或刚刚登出 ——
+       下一次 render() 必须先 ensureRole() 再画。true 也不代表永久有效：
+       render() 每次进控制台仍会 verifyRole() 复核一次。 */
+    roleChecked: false,
+    signedOut: false,
+    roleAt: 0,
     data: {},
     busy: false,
     view: null,              // 管理员正在查看的用户 {email, ns, name}
@@ -269,15 +336,42 @@
   /* ---------------------------------------------------------------- shell */
 
   function railHTML() {
-    var me = sess();
-    var name = (MC.view && (MC.view.display_name || MC.view.email)) ||
-               me.display_name || me.name || me.email || dz('未登录', 'Signed out');
-    var sub = MC.view ? dz('正在查看该用户', 'Viewing user') :
-              (isAdmin() ? dz('站点管理员', 'Site administrator') : dz('成员', 'Member'));
-    return '<button class="mc-who" data-act="switch-user" aria-haspopup="true">' +
-        '<span class="av">' + (me.avatar ? '<img src="' + esc(me.avatar) + '" alt="">' : esc(initials(name))) + '</span>' +
+    /* 名字、副标题、徽章三样必须来自**同一次** /api/console 答复（MC.me）。
+       旧实现名字取站点 SESSION、角色取 MC.isAdmin，两个异步源一旦不同步，
+       就会出现「未登录」旁边挂着「站点管理员 + ADMIN」这种自相矛盾的卡。
+       sess() 只用来补头像 —— 它不再参与任何身份判定。 */
+    var user = sess();
+    var me = MC.me || {};
+    var signed = signedIn();
+    var admin = adminOf();
+    var viewing = MC.view && (MC.view.display_name || MC.view.email);
+    var name, sub, act, av;
+    if (viewing) {
+      name = viewing;
+      sub = dz('正在查看该用户', 'Viewing user');
+      act = 'switch-user';
+      av = esc(initials(name));
+    } else if (!signed) {
+      /* 未登录：需求方明确要求直接显示「请登录」。
+         「未登录」那种被动文案读起来像状态说明，却把 ADMIN 徽标和整组管理
+         菜单留在旁边 —— 访客看到的第一句话不该是"你不在"，而是"你可以进来"。 */
+      name = dz('请登录', 'Sign in');
+      sub = dz('登录后使用控制台', 'Sign in to open the console');
+      act = 'signin';
+      av = '<i data-lucide="log-in" style="width:14px;height:14px"></i>';
+    } else {
+      name = me.display_name || me.email || me.name || dz('已登录账号', 'Signed-in account');
+      sub = admin ? dz('站点管理员', 'Site administrator') : dz('成员', 'Member');
+      act = 'switch-user';
+      av = (me.avatar || user.avatar)
+        ? '<img src="' + esc(me.avatar || user.avatar) + '" alt="">'
+        : esc(initials(name));
+    }
+    return '<button class="mc-who" data-act="' + act + '" aria-haspopup="true">' +
+        '<span class="av">' + av + '</span>' +
         '<span class="txt"><span class="line1"><span class="nm">' + esc(name) + '</span>' +
-          (isAdmin() ? '<span class="badge-admin">ADMIN</span>' : '') + '</span>' +
+          /* 徽章只在 adminOf()（已登录 且 服务端说是管理员）时为真 */
+          (admin ? '<span class="badge-admin">ADMIN</span>' : '') + '</span>' +
           '<span class="sub">' + esc(sub) + '</span></span>' +
         '<svg class="chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>' +
       '</button>' +
@@ -287,7 +381,9 @@
   }
 
   function navHTML() {
-    var admin = isAdmin();
+    /* adminOf()，不是 isAdmin()：后者只要 MC.isAdmin 残留为真就放行，
+       未登录也会渲染整组管理菜单。这里要求"已登录 且 服务端说是管理员"。 */
+    var admin = adminOf();
     var out = '';
     /* 分组标记只负责"要不要显示这个组"，它管不了组里的条目。
        早先写成 `if (it.admin && !admin) return;` 只跳过了组标题，
@@ -319,7 +415,13 @@
      早前只读 MC.planName（旧五档字段），所以升到 Team 年付后左下角
      还写着「入门版」、条数也停在旧配额（2026-10-23 用户截图指出）。 */
   function tierOf() {
-    var s = (MC.overview && MC.overview.subscription) || {};
+    /* 优先用独立的订阅源：MC.subscription 来自 /api/me/subscription（boot 时拉取，
+       升级确认时也会重拉），它永远带真实 tier，不受 overview 数据源
+       （/api/dash/analytics 不含 subscription）影响 —— 这正是「升 Team 后左下角
+       还写入门版」的根因：之前只从 MC.overview.subscription 读，而 overview 是
+       analytics，没有 subscription 字段，于是永远回退到旧档 MC.planName（starter）。 */
+    var s = (MC.subscription && MC.subscription.tier) ? MC.subscription
+              : ((MC.overview && MC.overview.subscription) || {});
     return String(s.tier || MC.planName || 'free').toLowerCase();
   }
 
@@ -352,7 +454,18 @@
   function reloadRail() {
     bust('/api/console/overview');
     api('/api/console/overview').then(function (r) {
-      if (r && r.ok && r.body) { MC.overview = r.body; refreshRail(); }
+      if (r && r.ok && r.body) {
+        MC.overview = r.body;
+        /* 升级确认后，订阅源也要同步刷新，否则侧栏 tier 仍停在旧档。 */
+        if (r.body.subscription && r.body.subscription.tier) {
+          MC.subscription = r.body.subscription;
+        }
+        refreshRail();
+      }
+    });
+    /* 顺手用权威接口补一次，确保 MC.subscription 永远是真值。 */
+    api('/api/me/subscription').then(function (r) {
+      if (r && r.ok && r.body) MC.subscription = r.body;
     });
   }
 
@@ -423,7 +536,11 @@
 
     /* 角色未知时先问一次再画：否则管理员直达 /dashboard/users 会被误判成
        成员、静默兜回概览，而 URL 还停在 users —— 最典型的"菜单点不动"。 */
-    if (MC.isAdmin === undefined) {
+    /* signedOut 只说明"上一次的结论是没登录"，不代表"这次也没登录"：
+       用户可能刚在同一页面里完成登录。把它归零成未校验，让下面的 ensureRole()
+       重新问一次服务端 —— 既不会拿着旧结论画管理员壳，也不会卡死在未登录页。 */
+    if (MC.signedOut) { MC.roleChecked = false; }
+    if (!MC.roleChecked) {
       var v0 = document.getElementById('view');
       if (v0) { v0.hidden = false; v0.innerHTML = '<div style="padding:60px;display:flex;gap:10px;align-items:center;font-size:13px"><span class="mc-spin"></span>加载中…</div>'; }
       var home0 = document.getElementById('home');
@@ -434,9 +551,22 @@
       });
       return;
     }
-    if (!isAdmin() && (rest === 'users' || rest === 'tools' || rest === 'audit'
+    /* 校验过一次 ≠ 永远有效。旧守卫是 `MC.isAdmin === undefined`，一旦被赋值过
+       （哪怕值是登出前残留的 true）ensureRole() **再也不会跑**，管理菜单就
+       永远挂在那里。现在每次进控制台都在后台复核一次，结论变了才重画；
+       1500ms 内的复核跳过 —— 那是刚问过的答案，没必要连打两枪。 */
+    if (!MC._verifying && !(MC.roleAt && (Date.now() - MC.roleAt) < 1500)) {
+      MC._verifying = true;
+      verifyRole().then(function (changed) {
+        MC._verifying = false;
+        if (changed && !MC.signedOut) render(path);
+      }, function () { MC._verifying = false; });
+    }
+    /* accesslog 原先漏在名单外：非管理员直接敲 #/admin/accesslog 能进页面
+       （数据层仍 401，但那已经是"后台的壳"）。既然是管理员页，就在这里一起拦。 */
+    if (!adminOf() && (rest === 'users' || rest === 'tools' || rest === 'audit'
                        || rest === 'demo' || rest === 'orders'
-                       || rest === 'visitors')) rest = 'overview';
+                       || rest === 'visitors' || rest === 'accesslog')) rest = 'overview';
 
     document.body.classList.add('dash');
     var home = document.getElementById('home');
@@ -472,13 +602,19 @@
     jobs.push(get('/api/dash/analytics' + nsq({ days: 30 })).then(function (d) {
       MC.overview = d;
     }));
+    /* 订阅层级**单独**从 /api/me/subscription 拉，存到 MC.subscription。
+       这是「升级后还写入门版」的权威修复点：analytics 不含 subscription，
+       只有这个接口永远带真实 tier。侧栏配额卡 / 套餐页都据此显示。 */
+    jobs.push(api('/api/me/subscription').then(function (r) {
+      if (r && r.ok && r.body) MC.subscription = r.body;
+    }));
     jobs.push(get('/api/dash/setup').then(function (d) {
       MC.setup = d;
       /* 套餐名从服务端取：侧栏配额卡与「套餐与用量」页必须说同一件事，
          否则用户刚升级完，侧栏还写着「入门版」。 */
       if (d && d.plan) MC.planName = d.plan;
     }));
-    if (isAdmin()) {
+    if (adminOf()) {
       jobs.push(get('/api/dash/users').then(function (d) { MC.users = d; }));
     }
     return Promise.all(jobs).catch(function () {});
@@ -784,8 +920,18 @@
           '</th><th class="num">' + esc(dz('置信度', 'Confidence')) +
           '</th><th class="num">' + esc(dz('召回', 'Hits')) + '</th></tr></thead><tbody>' +
           items.map(function (m) {
+            /* 🔴 2026-10-24 悬停显示全文（用户第三次指出这个问题）：
+               内容格里是 excerpt（200 字摘要）且 CSS 做了 ellipsis 裁切，
+               但**没有挂 data-tip** —— 而 hoverTip 的溢出检测兜底查的是
+               最内层元素，td 本身并不溢出（scrollWidth == clientWidth），
+               所以检测永不触发，悬停毫无反应。
+               服务端 _x_memories 已经把全文放在 content 字段里（不截断），
+               这里直接用它做 data-tip。 */
+            var fullText = String(m.content != null ? m.content : (m.excerpt || ''));
             return '<tr data-mem="' + esc(m.id) + '" style="cursor:pointer">' +
-              '<td style="max-width:520px"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
+              '<td style="max-width:520px">' +
+                '<div data-tip="' + esc(fullText) + '" ' +
+                  'style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
                 esc(m.excerpt) + '</div></td>' +
               '<td><span class="mc-tag pri">' + esc(m.kind || '—') + '</span></td>' +
               '<td>' + (m.tags || []).slice(0, 3).map(function (t) {
@@ -1290,22 +1436,29 @@
               }).join('') + '</div>'
           : '';
 
-        return '<div class="mc-card pad"' + (on ? ' style="border-color:var(--accent-deep)"' : '') + '>' +
+        /* 四张卡（Pro / Team / 增值包 + 当前计划）内容长短不一，卡高由内容决定
+           就会出现"大小不统一"。这里统一成 flex 列 + height:100%：
+           · 头/价/说明固定在上，特性列表 flex:1 吸收差异，CTA 钉在底部；
+           · 报价行给 min-height，四张卡的金额落在同一条基线上。 */
+        return '<div class="mc-card pad" style="display:flex;flex-direction:column;height:100%' +
+          (on ? ';border-color:var(--accent-deep);box-shadow:0 0 0 1px var(--accent-line)' : '') + '">' +
           '<b style="font-size:14px">' + esc(t.name) + '</b>' +
           (t.per_seat ? ' <span class="mc-tag">' + esc(dz('按席位', 'per seat')) + '</span>' : '') +
           '<div style="margin-top:10px">' + seg + '</div>' +
-          '<div style="font-size:22px;font-weight:700;margin:4px 0 2px">$' + amt +
+          '<div style="font-size:22px;font-weight:700;margin:4px 0 2px;min-height:32px;' +
+          'display:flex;align-items:baseline;gap:2px">$' + amt +
           '<span style="font-size:11.5px;font-weight:400;color:var(--fg3)">' +
           esc(period) + '</span></div>' +
           '<div style="font-size:11px;color:var(--fg3);margin:4px 0 8px;line-height:1.6;min-height:34px">' +
             esc(t.per_seat ? dz('面向小团队与合规敏感型部署。',
                                 'For small teams and compliance-sensitive deployments.')
                            : dz('适合每天都在用 AI 干活的人。', 'For daily AI work.')) + '</div>' +
-          '<div style="margin-bottom:10px">' +
+          '<div style="margin-bottom:10px;flex:1 1 auto">' +
             ((zhNow() ? (t.features_zh || t.features) : t.features) || []).map(function (f) {
               return '<div style="font-size:11.5px;color:var(--fg2);padding:2px 0">✓ ' + esc(f) + '</div>';
             }).join('') + '</div>' +
-          payCta(t.id, iv, planId, on, promotional) +
+          /* CTA 用 margin-top:auto 收到卡片底部，四张卡按钮同一水平线 */
+          '<div style="margin-top:auto">' + payCta(t.id, iv, planId, on, promotional) + '</div>' +
           '</div>';
       });
 
@@ -1316,8 +1469,8 @@
         var ad = pricing.addon;
         var addonOn = !!sub.addon_active;
         var adPlanId = ((ad.paypal_plan_id || {})[ 'month' ]) || '';
-        usdCards.push('<div class="mc-card pad"' +
-          (addonOn ? ' style="border-color:var(--accent-deep)"' : '') + '>' +
+        usdCards.push('<div class="mc-card pad" style="display:flex;flex-direction:column;height:100%' +
+          (addonOn ? ';border-color:var(--accent-deep);box-shadow:0 0 0 1px var(--accent-line)' : '') + '">' +
           '<div class="mc-row" style="justify-content:space-between;align-items:center">' +
             '<b style="font-size:14px">' + esc(dz('增值包', 'Add-on')) + '</b>' +
             (addonOn ? '<span class="mc-pill ok"><i></i>' + esc(dz('已开通', 'Active')) + '</span>' : '') +
@@ -1328,7 +1481,7 @@
           '<div style="font-size:11px;color:var(--fg3);margin:4px 0 8px;line-height:1.6;min-height:34px">' +
             esc(dz('在 Pro / Team 之上再加一层，不单独售卖。',
                    'Sits on top of Pro / Team; not sold standalone.')) + '</div>' +
-          '<div style="margin-bottom:10px">' +
+          '<div style="margin-bottom:10px;flex:1 1 auto">' +
             ((zhNow() ? (ad.features_zh || ad.features) : ad.features) || []).map(function (f) {
               return '<div style="font-size:11.5px;color:var(--fg2);padding:2px 0">✓ ' + esc(f) + '</div>';
             }).join('') + '</div>' +
@@ -1341,7 +1494,8 @@
 
       var usdHTML = usdCards.length ? '<div class="mc-h2">' +
         esc(dz('美元订阅（PayPal）', 'USD subscription (PayPal)')) + '</div>' +
-        '<div class="mc-grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">' +
+        '<div class="mc-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));' +
+        'align-items:stretch">' +
         usdCards.join('') + '</div>' : '';
 
       /* 增值包已并入上面的三卡网格，这里不再单独渲染 */
@@ -1352,9 +1506,11 @@
          而且币种混在一屏里最容易问"我到底付哪个"。
          为什么默认 USD：人民币价约为美元价的 1/5（¥9.9 vs $6.9），
          默认给低价等于对所有中文环境发折扣券 —— 折扣应当由用户主动选。 */
-      var curSel = MC.billingCur || 'USD';
+      /* 站长要求：默认人民币 + 微信支付，美元 PayPal 排第二。
+         币种选择记在 MC.billingCur，切换后本次会话内保持。 */
+      var curSel = MC.billingCur || 'CNY';
       var paySwitch = '<div class="mc-row" style="gap:8px;margin:0 0 14px;flex-wrap:wrap">' +
-        [['USD', '$ USD · PayPal'], ['CNY', '¥ CNY · 微信 / WeChat']].map(function (kv) {
+        [['CNY', '¥ CNY · 微信 / WeChat'], ['USD', '$ USD · PayPal']].map(function (kv) {
           return '<button class="mc-btn sm' + (curSel === kv[0] ? ' pri' : '') + '" ' +
                  'aria-pressed="' + (curSel === kv[0] ? 'true' : 'false') + '" ' +
                  'data-act="billing-cur" data-cur="' + kv[0] + '">' + esc(kv[1]) + '</button>';
@@ -1417,14 +1573,15 @@
             esc(dz('支付', 'Pay')) + '</button>';
         }
 
-        return '<div class="mc-card pad" style="display:flex;flex-direction:column;' +
+        return '<div class="mc-card pad" style="display:flex;flex-direction:column;height:100%;' +
             (on ? 'border-color:var(--accent-deep);box-shadow:0 0 0 1px var(--accent-line)' : '') + '">' +
           '<div class="mc-row" style="justify-content:space-between;align-items:center">' +
             '<b style="font-size:14px">' + esc(zh ? base.zh : base.en) + '</b>' +
             (on ? '<span class="mc-pill ok"><i></i>' + esc(dz('当前', 'Current')) + '</span>'
                 : '<span class="mc-tag">' + esc(base.badge || '') + '</span>') + '</div>' +
           '<div style="margin-top:10px">' + seg + '</div>' +
-          '<div style="font-size:24px;font-weight:700;margin:4px 0 2px;letter-spacing:-.02em">¥' + esc(pk.price) +
+          '<div style="font-size:24px;font-weight:700;margin:4px 0 2px;letter-spacing:-.02em;' +
+            'min-height:34px;display:flex;align-items:baseline;gap:2px">¥' + esc(pk.price) +
             '<span style="font-size:11.5px;font-weight:400;color:var(--fg3)">' + esc(period) + '</span></div>' +
           '<div style="font-size:11.5px;color:var(--fg3);min-height:44px;line-height:1.6">' +
             esc(zh ? base.zh_desc : base.en_desc) + '</div>' +
@@ -1435,7 +1592,8 @@
 
       var cnyHTML = '<div class="mc-h2">' +
         esc(dz('人民币订阅（微信支付）', 'CNY subscription (WeChat Pay)')) + '</div>' +
-        '<div class="mc-grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">' +
+        '<div class="mc-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));' +
+        'align-items:stretch">' +
         cnyCards + '</div>';
 
       el.innerHTML = head(dz('套餐与用量', 'Plan & usage'),
@@ -1474,7 +1632,7 @@
               '<td style="white-space:nowrap">' +
               (st === 'pending' ? '<button class="mc-btn sm" data-act="pay" data-id="' + esc(o.id) + '">' +
                 esc(dz('去支付', 'Pay')) + '</button> ' : '') +
-              (st === 'paid' && isAdmin() ? '<button class="mc-btn sm pri" data-act="confirm" data-id="' +
+              (st === 'paid' && adminOf() ? '<button class="mc-btn sm pri" data-act="confirm" data-id="' +
                 esc(o.id) + '">' + esc(dz('确认到账', 'Confirm')) + '</button> ' : '') +
               '<button class="mc-btn sm" data-act="order-del" data-id="' + esc(o.id) + '" ' +
                 'style="color:#b42318">' + esc(dz('删除', 'Delete')) + '</button>' +
@@ -1658,7 +1816,10 @@
     if (!slots.length) return;
     loadPayPalSdk(clientId, function (okSdk) {
       if (!okSdk || !window.paypal || !window.paypal.Buttons) return;
-      var me = sess() || {};
+      /* custom_id 必须是当前登录邮箱，服务端会拿它和会话邮箱比对。
+         身份取 MC.me（与角色同源），站点 SESSION 只在它缺席时兜底 ——
+         否则 SESSION 没到时会拿空串去下单，服务端只能拒。 */
+      var me = (MC.me && (MC.me.email || MC.me.id)) ? MC.me : (sess() || {});
       Array.prototype.forEach.call(slots, function (slot) {
         if (slot.getAttribute('data-mounted')) return;
         var planId = slot.getAttribute('data-plan-id') || '';
@@ -1770,7 +1931,8 @@
 
   /* ---- 设置 ------------------------------------------------------------- */
   PAGES.settings = function (el) {
-    var me = sess();
+    /* 与侧栏身份卡同一来源：显示"我是谁"的地方不能和"我有什么权限"打架 */
+    var me = (MC.me && (MC.me.email || MC.me.display_name)) ? MC.me : sess();
     el.innerHTML = head(dz('设置', 'Settings'),
       dz('账户与外观。站点级配置在后台管理里。', 'Account and appearance. Site settings live in Admin.')) +
       '<div class="mc-grid mc-g2">' +
@@ -1784,7 +1946,7 @@
         '</div>' +
         '<div class="mc-card pad"><div class="mc-h2" style="margin-top:0">' + esc(dz('关于这个账号', 'About this account')) + '</div>' +
           '<div class="mc-kv"><span class="k">' + esc(dz('角色', 'Role')) + '</span><span class="v">' +
-            esc(isAdmin() ? dz('站点管理员', 'Administrator') : dz('成员', 'Member')) + '</span></div>' +
+            esc(adminOf() ? dz('站点管理员', 'Administrator') : dz('成员', 'Member')) + '</span></div>' +
           '<div class="mc-kv"><span class="k">' + esc(dz('命名空间', 'Namespace')) + '</span><span class="v" style="font-family:monospace;font-size:11px">' +
             esc((MC.setup && MC.setup.namespace) || '—') + '</span></div>' +
           '<div class="mc-kv"><span class="k">' + esc(dz('套餐', 'Plan')) + '</span><span class="v">' +
@@ -1794,7 +1956,7 @@
             'Theme and language now live in the top-right corner, matching the site.')) + '</p>' +
           /* 模型 / 邮件 / 品牌这些是**站点级**配置，属于后台管理，不在个人设置里。
              之前我把入口说成"设置 → 模型"，用户找不到 —— 这里给一条直达链接。 */
-          (isAdmin() ? '<div class="mc-note" style="margin-top:12px">' + esc(dz(
+          (adminOf() ? '<div class="mc-note" style="margin-top:12px">' + esc(dz(
               '模型、邮件、品牌与文案属于站点级配置，在「后台管理 → 站点配置」里。',
               'Model, mail, brand and copy are site-wide — they live in Admin → Site settings.')) +
             '<div style="margin-top:8px"><a class="mc-btn sm" href="#/admin" data-ctab="site">' +
@@ -2483,7 +2645,7 @@
             esc(dz('近 ' + d.days + ' 天', 'last ' + d.days + ' days')) + '</span></div>' +
         '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));' +
           'gap:10px;margin-top:12px">' +
-          kpi(dz('唯一访问者', 'Unique visitors'), n0(t.uniques), dz('逐日相加', 'sum of daily')) +
+          kpi(dz('唯一访问者', 'Unique visitors'), n0(t.uniques), dz('区间去重', 'deduplicated')) +
           kpi(dz('请求总数', 'Requests'), n0(t.requests), '') +
           kpi(dz('已缓存', 'Cached'), (t.cached_pct != null ? t.cached_pct + '%' : '—'),
               t.bytes ? fmtBytes(t.bytes) : '') +
@@ -2625,7 +2787,7 @@
     if (q) items = items.filter(function (u) {
       return (u.email + ' ' + (u.display_name || '')).toLowerCase().indexOf(q) >= 0;
     });
-    var meEmail = sess().email;
+    var meEmail = (MC.me && MC.me.email) || sess().email;
     var html = '<div class="mc-switch"><div class="hd">' + esc(dz('切换查看的账号', 'View data as')) + '</div>' +
       '<input class="q" id="mc-switch-q" placeholder="' + esc(dz('搜索邮箱…', 'Search email…')) + '">' +
       '<div class="list">' +
@@ -2877,7 +3039,12 @@
 
     switch (a) {
       case 'switch-user':
-        if (isAdmin()) toggleSwitch();
+        /* 高亮原本是 isAdmin()：未登录点身份卡也会弹"切换查看的账号"。
+           现在未登录时那个按钮走 signin 分支，这里只对真管理员开。 */
+        if (adminOf()) toggleSwitch();
+        break;
+      case 'signin':
+        location.hash = '#/login';
         break;
       case 'go':
         location.hash = '#/dashboard/' + act.getAttribute('data-to');
