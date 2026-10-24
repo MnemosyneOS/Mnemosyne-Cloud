@@ -2858,12 +2858,40 @@ body.docs #view{ display:block !important; }
     <div class="mt-14 pt-8 hair-t">
       <div class="flex flex-wrap items-center gap-2" id="foot-badges"></div>
 
+      <!-- 🔴 2026-10-24：静态站点地图（服务端渲染的纯 HTML 链接）。
+           为什么必须有：页脚那 5 列是 renderFooter() 用 JS 渲染的，
+           Google 抓静态 HTML 时看不到任何 <a>，于是 15 个预渲染页成了
+           「孤儿页面」—— GSC 显示「网址尚未收录到 Google / 无引荐站点地图 /
+           未检测到引荐来源网页」。这里用纯 HTML 再写一份，JS 挂了也不影响爬虫。
+           ⚠️ 新增内容页时，这里和 T.footCols 都要加。 -->
+      <nav class="mt-8" aria-label="Sitemap">
+        <h4 class="k-label mb-3">Sitemap</h4>
+        <ul class="flex flex-wrap gap-x-5 gap-y-2 text-[12px]">
+          <li><a class="text-fg3 hover:text-fg transition-colors" href="/docs/">Documentation</a></li>
+          <li><a class="text-fg3 hover:text-fg transition-colors" href="/api-reference/">API Reference</a></li>
+          <li><a class="text-fg3 hover:text-fg transition-colors" href="/mcp/">MCP Integration</a></li>
+          <li><a class="text-fg3 hover:text-fg transition-colors" href="/cli/">CLI</a></li>
+          <li><a class="text-fg3 hover:text-fg transition-colors" href="/trust/">Trust Center</a></li>
+          <li><a class="text-fg3 hover:text-fg transition-colors" href="/status/">Status</a></li>
+          <li><a class="text-fg3 hover:text-fg transition-colors" href="/research/">Research</a></li>
+          <li><a class="text-fg3 hover:text-fg transition-colors" href="/blog/">Blog</a></li>
+          <li><a class="text-fg3 hover:text-fg transition-colors" href="/integrations/">Integrations</a></li>
+          <li><a class="text-fg3 hover:text-fg transition-colors" href="/changelog/">Release notes</a></li>
+          <li><a class="text-fg3 hover:text-fg transition-colors" href="/pricing/">Pricing</a></li>
+          <li><a class="text-fg3 hover:text-fg transition-colors" href="/about/">About us</a></li>
+          <li><a class="text-fg3 hover:text-fg transition-colors" href="/contact/">Contact us</a></li>
+          <li><a class="text-fg3 hover:text-fg transition-colors" href="/careers/">Careers</a></li>
+          <li><a class="text-fg3 hover:text-fg transition-colors" href="/startup/">Startup program</a></li>
+          <li><a class="text-fg3 hover:text-fg transition-colors" href="/legal.html">Legal</a></li>
+        </ul>
+      </nav>
+
       <div class="mt-8 flex flex-col sm:flex-row sm:items-center gap-3">
         <p class="text-[12px] text-fg3" data-i18n="foot.copy">© 2026 Mnemosyne OS · MIT License · Built by 胡景堃 (Jingkun Hu)</p>
         <div class="sm:ml-auto flex flex-wrap items-center gap-x-5 gap-y-2">
-          <a class="text-[12px] text-fg3 hover:text-fg transition-colors" href="#/trust" data-i18n="foot.privacy">Privacy</a>
-          <a class="text-[12px] text-fg3 hover:text-fg transition-colors" href="#/trust" data-i18n="foot.terms">Terms</a>
-          <a class="text-[12px] text-fg3 hover:text-fg transition-colors" href="#/changelog" data-i18n="foot.releases">Release notes</a>
+          <a class="text-[12px] text-fg3 hover:text-fg transition-colors" href="/trust/" data-i18n="foot.privacy">Privacy</a>
+          <a class="text-[12px] text-fg3 hover:text-fg transition-colors" href="/trust/" data-i18n="foot.terms">Terms</a>
+          <a class="text-[12px] text-fg3 hover:text-fg transition-colors" href="/changelog/" data-i18n="foot.releases">Release notes</a>
           <span class="mono text-[11px] text-faint" data-i18n="foot.tag">local-first since day one</span>
         </div>
       </div>
@@ -3310,22 +3338,28 @@ body.docs #view{ display:block !important; }
     ],
 
     footCols: [
+      /* 🔴 2026-10-24：链接从 `#/docs` 改成 `/docs/`（真实静态路径）。
+         原因：hash 路由的 fragment 永远不发给服务器，Google 爬首页时
+         走不到任何子页 —— GSC 里 15 个页面全部「网址尚未收录到 Google」，
+         且显示「无引荐站点地图 / 未检测到引荐来源网页」。
+         现在每个内容页都有预渲染的 /<slug>/index.html，用绝对路径链接
+         既能被 Google 爬取，用户点击也能正常打开（静态页里有「进入交互版」）。 */
       { title: 'Developers', links: [
-        ['Documentation', '#/docs'], ['API Reference', '#/api'], ['MCP Integration', '#/mcp'],
-        ['CLI', '#/cli'], ['Trust Center', '#/trust'], ['Status', '#/status']] },
+        ['Documentation', '/docs/'], ['API Reference', '/api-reference/'], ['MCP Integration', '/mcp/'],
+        ['CLI', '/cli/'], ['Trust Center', '/trust/'], ['Status', '/status/']] },
       { title: 'Resources', links: [
-        ['Research', '#/research'], ['Blog', '#/blog'], ['Integrations', '#/integrations'],
-        ['Release notes', '#/changelog'], ['GitHub', REPO]] },
+        ['Research', '/research/'], ['Blog', '/blog/'], ['Integrations', '/integrations/'],
+        ['Release notes', '/changelog/'], ['GitHub', REPO]] },
       { title: 'Product', links: [
-        ['Pricing', '#/pricing'], ['Core capabilities', '#product'], ['How it works', '#how'],
+        ['Pricing', '/pricing/'], ['Core capabilities', '#product'], ['How it works', '#how'],
         ['Architecture (BEAM)', '#architecture'], ['Benchmarks', '#benchmarks']] },
       { title: 'Use cases', links: [
         ['Customer support', '#/use-cases/customer-support'], ['Healthcare', '#/use-cases/healthcare'],
         ['Education', '#/use-cases/education'], ['Sales & CRM', '#/use-cases/sales-crm'],
         ['E-commerce', '#/use-cases/ecommerce']] },
       { title: 'Company', links: [
-        ['About us', '#/about'], ['Contact us', '#/contact'], ['Careers', '#/careers'],
-        ['Startup program', '#/startup'], ['Known defects', REPO + '/blob/main/docs/KNOWN_DEFECTS.md'],
+        ['About us', '/about/'], ['Contact us', '/contact/'], ['Careers', '/careers/'],
+        ['Startup program', '/startup/'], ['Known defects', REPO + '/blob/main/docs/KNOWN_DEFECTS.md'],
         ['PyPI package', 'https://pypi.org/project/mnemosyne-os/']] }
     ],
 
@@ -3649,22 +3683,23 @@ body.docs #view{ display:block !important; }
     ],
 
     footCols: [
+      /* 2026-10-24：同 EN，改为真实静态路径，理由见 EN 段的注释。 */
       { title: '开发人员', links: [
-        ['文档', '#/docs'], ['API 参考', '#/api'], ['MCP 集成', '#/mcp'],
-        ['命令行界面', '#/cli'], ['信任中心', '#/trust'], ['状态', '#/status']] },
+        ['文档', '/docs/'], ['API 参考', '/api-reference/'], ['MCP 集成', '/mcp/'],
+        ['命令行界面', '/cli/'], ['信任中心', '/trust/'], ['状态', '/status/']] },
       { title: '资源', links: [
-        ['研究', '#/research'], ['博客', '#/blog'], ['集成', '#/integrations'],
-        ['发行说明', '#/changelog'], ['GitHub', REPO]] },
+        ['研究', '/research/'], ['博客', '/blog/'], ['集成', '/integrations/'],
+        ['发行说明', '/changelog/'], ['GitHub', REPO]] },
       { title: '产品', links: [
-        ['定价', '#/pricing'], ['核心能力', '#product'], ['工作原理', '#how'],
+        ['定价', '/pricing/'], ['核心能力', '#product'], ['工作原理', '#how'],
         ['架构（BEAM）', '#architecture'], ['性能基准', '#benchmarks']] },
       { title: '用例', links: [
         ['客户支持', '#/use-cases/customer-support'], ['卫生保健', '#/use-cases/healthcare'],
         ['教育', '#/use-cases/education'], ['销售与客户关系管理', '#/use-cases/sales-crm'],
         ['电子商务', '#/use-cases/ecommerce']] },
       { title: '公司', links: [
-        ['关于我们', '#/about'], ['联系我们', '#/contact'], ['职业生涯', '#/careers'],
-        ['创业计划', '#/startup'], ['已知缺陷', REPO + '/blob/main/docs/KNOWN_DEFECTS.md'],
+        ['关于我们', '/about/'], ['联系我们', '/contact/'], ['职业生涯', '/careers/'],
+        ['创业计划', '/startup/'], ['已知缺陷', REPO + '/blob/main/docs/KNOWN_DEFECTS.md'],
         ['PyPI 包', 'https://pypi.org/project/mnemosyne-os/']] }
     ],
 
