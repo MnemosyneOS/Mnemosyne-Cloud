@@ -3773,6 +3773,43 @@
     window.addEventListener('resize', hide);
   })();
 
+  /* ---- 版本守卫：服务端发布了新前端就自动整页刷新 ----------------------
+     为什么必须有：用户会把控制台开一整天，SPA 内部切页只改 hash，**永远不会
+     重新请求 index.html**。于是"今天上午修好的东西"，他下午还在看旧界面，
+     反复反馈"修了没用"。这不是缓存没清，是页面根本没有重新加载的机会。
+     这里每 4 分钟问一次服务端版本（/api/site 是几 KB 的 JSON，no-store），
+     发现更高就 reload。节流 10 分钟：HTML 自身有 10 分钟缓存，reload 后可能
+     仍是旧页，没有节流会变成死循环。 */
+  (function versionGuard() {
+    var s = document.querySelector('script[src*="console.js?v="]');
+    var cur = '';
+    try { cur = (String((s && s.src) || '').match(/[?&]v=([0-9][0-9.]*)/) || [])[1] || ''; } catch (e) {}
+    if (!cur) return;
+    var KEY = 'mn_ver_reload_at';
+    function cmp(a, b) {                 /* 逐段数字比较：11.20 > 11.9 */
+      var x = String(a).split('.'), y = String(b).split('.');
+      for (var i = 0; i < Math.max(x.length, y.length); i++) {
+        var n = parseInt(x[i] || '0', 10), m = parseInt(y[i] || '0', 10);
+        if (n !== m) return n - m;
+      }
+      return 0;
+    }
+    function check() {
+      api('/api/site').then(function (r) {
+        var b = (r && r.ok && r.body) || {};
+        var sv = String(b.console_version || '');
+        if (!sv || cmp(sv, cur) <= 0) return;
+        var last = 0;
+        try { last = Number(sessionStorage.getItem(KEY) || 0); } catch (e) {}
+        if (Date.now() - last < 600000) return;      /* 10 分钟节流 */
+        try { sessionStorage.setItem(KEY, String(Date.now())); } catch (e) {}
+        location.reload();
+      })['catch'](function () {});
+    }
+    setTimeout(check, 60000);
+    setInterval(check, 240000);
+  })();
+
   window.MNConsole = { render: render, MC: MC };
   MC.render = render;
 
