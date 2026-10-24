@@ -7878,9 +7878,10 @@ body.docs #view{ display:block !important; }
   }
 
   /* 单条记忆的完整内容单元格。
-     默认折叠到 4 行，点「展开全文」看全部 —— 直接全量铺开会把 6200 字的长
-     记忆一次撑满整页，管理员反而找不到下一行。但**数据是全的**，只是视觉
-     上默认收着，这与之前"只给 300 字、剩下的根本取不到"是两件事。 */
+     视觉上仍默认折叠到约 4 行（max-height 裁切），但**整段全文挂到 data-tip**，
+     鼠标悬停即弹出完整内容 —— 不再提供「展开全文」按钮（2026-10-24 用户要求：
+     取消所有展开全文，改为悬停显示全文）。全文数据本来就是全量下发的，这里只是
+     换了呈现方式：折叠看个大概，悬停看全部，互不冲突。 */
   function memContentCell(m) {
     var full = String(m.content != null ? m.content : (m.excerpt || ''));
     var chars = m.chars || full.length;
@@ -7893,20 +7894,64 @@ body.docs #view{ display:block !important; }
         esc(lang === 'zh' ? '（这条记忆没有正文，只有元数据）' : '(no body — metadata only)') +
         '</span>';
     }
+    /* 折叠只做视觉收口；data-tip 始终带全文，悬停即可看全。 */
     var collapsed = chars > 260;
     var html =
       '<div class="memtxt" id="memtxt-' + esc(id) + '"' +
+        ' data-tip="' + esc(full) + '"' +
         (collapsed ? ' style="max-height:5.6em;overflow:hidden"' : '') + '>' +
         esc(full) +
       '</div>';
-    if (collapsed) {
-      html += '<button type="button" class="btn btn-ghost btn-sm" style="margin-top:6px" ' +
-        'data-act="mem-toggle" data-v="' + esc(id) + '" data-n="' + chars + '">' +
-        esc(lang === 'zh' ? '展开全文（' + chars + ' 字）' : 'Show all (' + chars + ' chars)') +
-        '</button>';
-    }
     return html;
   }
+
+  /* 悬停提示：读 [data-tip] 属性，鼠标移上去弹一个浮层显示全文。
+     2026-10-24 用户要求：取消所有「展开全文」按钮，改为悬停即看全。
+     浮层 pointer-events:none，否则鼠标碰到浮层会触发 mouseout 抖动；
+     长文浮层限高 + 内部滚动，避免 6000 字把整屏糊住。 */
+  (function memHoverTip() {
+    var tip = null, cur = null;
+    function ensure() {
+      if (tip) return tip;
+      tip = document.createElement('div');
+      tip.className = 'mem-tip';
+      tip.style.cssText = 'position:fixed;z-index:99999;display:none;max-width:540px;' +
+        'max-height:62vh;overflow:auto;background:#1f2430;color:#e8edf5;' +
+        'padding:10px 12px;border-radius:8px;font-size:12.5px;line-height:1.6;' +
+        'white-space:pre-wrap;word-break:break-word;box-shadow:0 10px 30px rgba(0,0,0,.35);' +
+        'border:1px solid rgba(255,255,255,.14);pointer-events:none';
+      document.body.appendChild(tip);
+      return tip;
+    }
+    function hide() { if (tip) tip.style.display = 'none'; cur = null; }
+    function show(el, text, x, y) {
+      if (!String(text || '').trim()) return hide();
+      var t = ensure();
+      t.textContent = text;
+      t.style.display = 'block';
+      var w = t.offsetWidth, h = t.offsetHeight;
+      var left = Math.min(x + 14, window.innerWidth - w - 12);
+      var top = y + 18;
+      if (top + h > window.innerHeight - 12) top = Math.max(12, y - h - 14);
+      t.style.left = Math.max(12, left) + 'px';
+      t.style.top = Math.max(12, top) + 'px';
+      cur = el;
+    }
+    document.addEventListener('mouseover', function (e) {
+      var el = e.target;
+      if (!el || el.nodeType !== 1) return;
+      var cand = el.closest('[data-tip]');
+      if (!cand) { if (cur) hide(); return; }
+      var txt = cand.getAttribute('data-tip');
+      if (txt) show(cand, txt, e.clientX, e.clientY);
+    });
+    document.addEventListener('mouseout', function (e) {
+      if (!cur) return;
+      if (!e.relatedTarget || !cur.contains(e.relatedTarget)) hide();
+    });
+    document.addEventListener('scroll', hide, true);
+    window.addEventListener('resize', hide);
+  })();
 
   function mnemDetailHTML(ns, b, items) {
     var zh = lang === 'zh';
@@ -7940,8 +7985,6 @@ body.docs #view{ display:block !important; }
           : '') +
       '</div>' +
       '<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">' +
-        '<button type="button" class="btn btn-ghost btn-sm" data-act="mem-expand-all" data-ns="' + esc(ns) + '">' +
-          esc(zh ? '全部展开' : 'Expand all') + '</button>' +
         '<button type="button" class="btn btn-ghost btn-sm" data-act="mem-clear" data-ns="' + esc(ns) + '">' +
           esc(zh ? '清空此库（管理员）' : 'Clear this store (admin)') + '</button>' +
       '</div>' +
@@ -8097,36 +8140,8 @@ body.docs #view{ display:block !important; }
       return;
     }
 
-    /* 单条记忆：展开 / 收起全文。
-       数据本来就是全量下发的，这里只切换视觉折叠 —— 不再需要回服务端取。 */
-    var memTog = t.closest('[data-act="mem-toggle"]');
-    if (memTog) {
-      var tid = memTog.getAttribute('data-v') || '';
-      var cell = document.getElementById('memtxt-' + tid);
-      if (cell) {
-        var collapsed = cell.style.maxHeight !== '' && cell.style.maxHeight !== 'none';
-        cell.style.maxHeight = collapsed ? 'none' : '5.6em';
-        cell.style.overflow = collapsed ? 'visible' : 'hidden';
-        var n = memTog.getAttribute('data-n') || '';
-        memTog.textContent = collapsed
-          ? dz('收起', 'Collapse')
-          : dz('展开全文（' + n + ' 字）', 'Show all (' + n + ' chars)');
-      }
-      return;
-    }
-
-    /* 全部展开：把当前表格里所有折叠的内容一次性铺开。 */
-    var expAll = t.closest('[data-act="mem-expand-all"]');
-    if (expAll) {
-      var nodes = document.querySelectorAll('#memn-detail .memtxt');
-      for (var i = 0; i < nodes.length; i++) {
-        nodes[i].style.maxHeight = 'none';
-        nodes[i].style.overflow = 'visible';
-      }
-      var btns = document.querySelectorAll('#memn-detail [data-act="mem-toggle"]');
-      for (var j = 0; j < btns.length; j++) btns[j].textContent = dz('收起', 'Collapse');
-      return;
-    }
+    /* 记忆内容改用「悬停显示全文」（见 memContentCell 的 data-tip + memHoverTip），
+       不再需要展开/收起/全部展开按钮，相关点击分支已移除。 */
 
     /* 删除单条记忆。
        默认**软删除**（引擎 delete_memory：status=deleted、记录与审计链仍在），
