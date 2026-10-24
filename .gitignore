@@ -30,7 +30,10 @@ worker/
 .github/
 
 # 内部设计文档与截图（站点里的 docs/ 链接指向 GitHub，不指向本地路径）
-docs/
+# ⚠️ 2026-10-24 修复：原来写 `docs/` 会**连 seo/docs/ 一起忽略**（gitignore 的
+#    无斜杠前缀规则匹配任意层级）。导致 15 个 SEO 预渲染页里 docs 那一个
+#    静默没进仓库、线上 404。改成锚定根目录的 `/docs/`。
+/docs/
 
 # 站点访问统计与埋点（法律页声明 /stats/ 受 Basic 认证保护，Pages 无法提供该保护）
 stats/
