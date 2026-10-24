@@ -2728,6 +2728,34 @@ body.docs #view{ display:block !important; }
   </div>
 </section>
 
+<!-- ============================ COMMUNITY ============================ -->
+<section id="community" class="section-pad hair-t">
+  <div class="max-w-shell mx-auto px-5 sm:px-8">
+    <div class="text-center reveal">
+      <span class="pill" data-i18n="comm.eyebrow">Community</span>
+      <h2 class="h2 mt-6 mx-auto max-w-3xl" data-i18n="comm.h2">Building in the open, one star at a time</h2>
+      <p class="sub mt-5 mx-auto max-w-2xl" data-i18n="comm.sub">Stars are how a local-first project like this one gets discovered. Each milestone below is a public commitment — when we reach it, the unlock ships to everyone in the same release.</p>
+    </div>
+    <div class="mt-12 max-w-[720px] mx-auto card card-pad reveal">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <div class="metric text-[40px] leading-none text-fg"><span id="comm-count">38</span><span class="text-[18px] text-fg3" id="comm-goal">&nbsp;/&nbsp;100</span></div>
+          <div class="k-label mt-2" data-i18n="comm.label">stars to our next milestone</div>
+        </div>
+        <a class="btn btn-dark" href="https://github.com/MnemosyneOS/mnemosyne" target="_blank" rel="noopener">
+          <span data-i18n="comm.cta">Star on GitHub</span>
+          <span class="btn-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+        </a>
+      </div>
+      <div class="mt-6" style="height:8px;border-radius:999px;background:var(--hair);overflow:hidden">
+        <div id="comm-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="38" style="height:100%;width:38%;border-radius:999px;background:#9B8DFF;transition:width .6s ease"></div>
+      </div>
+      <ul class="mt-7 grid sm:grid-cols-3 gap-5" id="comm-ms"></ul>
+      <p class="mt-6 text-[11.5px] leading-[1.7] text-fg3" id="comm-note"></p>
+    </div>
+  </div>
+</section>
+
 <!-- ============================== CTA ============================== -->
 <section id="cta" class="pb-24 sm:pb-28">
   <div class="max-w-shell mx-auto px-5 sm:px-8">
@@ -2834,7 +2862,7 @@ body.docs #view{ display:block !important; }
      它只在被 renderDash() 调用时才取 window.MN，所以早加载不会有时序问题；
      晚加载反而会让「直达 #/dashboard/overview」白屏一次。 -->
 <script src="assets/console-graph.js?v=10.8"></script>
-<script src="assets/console.js?v=11.13"></script>
+<script src="assets/console.js?v=11.20"></script>
 <!-- 演示舞台：给商业合作伙伴看的 10 章剧本。独立文件，只在演示页被调用。 -->
 <script src="assets/console-demo.js?v=10.8"></script>
 
@@ -3096,6 +3124,21 @@ body.docs #view{ display:block !important; }
       { value: '52', label: 'MCP tools', note: '41 native + 11 client-compatible' },
       { value: '0', label: 'third-party dependencies', note: 'install_requires is an empty list' }
     ],
+
+    community: {
+      goal: 100,
+      ms: [
+        { at: 25,  t: 'Core engine MIT open-sourced' },
+        { at: 100, t: 'Full LongMemEval dataset + one-command reproduction' },
+        { at: 500, t: 'Contributor program & community spotlight' }
+      ],
+      note: 'Milestones are public commitments: when a star count is reached, the unlock ships in the next release — no waitlist, no gate. Reached milestones stay checked.'
+    },
+    'comm.eyebrow': 'Community',
+    'comm.h2': 'Building in the open, one star at a time',
+    'comm.sub': 'Stars are how a local-first project like this one gets discovered. Each milestone below is a public commitment — when we reach it, the unlock ships to everyone in the same release.',
+    'comm.label': 'stars to our next milestone',
+    'comm.cta': 'Star on GitHub',
 
     proof: [
       { name: 'Latency', icon: 'gauge', tag: '<0.88 ms reads',
@@ -3418,6 +3461,21 @@ body.docs #view{ display:block !important; }
       { value: '52', label: 'MCP 工具', note: '41 原生 + 11 客户端兼容' },
       { value: '0', label: '第三方依赖', note: 'install_requires 是空列表' }
     ],
+
+    community: {
+      goal: 100,
+      ms: [
+        { at: 25,  t: '核心引擎 MIT 开源' },
+        { at: 100, t: 'LongMemEval 完整数据集 + 一键复现脚本开源' },
+        { at: 500, t: '贡献者计划 & 社区专题展示' }
+      ],
+      note: '里程碑是公开承诺：达到星数后，对应公开物随下一次发版交付——无需排队、不设门槛。已达成的里程碑会保持勾选。'
+    },
+    'comm.eyebrow': '社区',
+    'comm.h2': '公开共建，一星一程',
+    'comm.sub': '星数是本地优先项目被看见的方式。下面每一个里程碑都是公开承诺——达到后，对应的公开物随同一次发版交付给所有人。',
+    'comm.label': '距下一个里程碑的星数',
+    'comm.cta': '在 GitHub 点亮星标',
 
     proof: [
       { name: '延迟', icon: 'gauge', tag: '读取 <0.88 ms',
@@ -8641,6 +8699,7 @@ body.docs #view{ display:block !important; }
     icons();
     bindReveal();
     renderBenchBars();
+    paintCommunity(window.__starCount || 38);
     /* 站点级内容（公告栏、品牌、页脚）由服务端下发，渲染完成后再覆盖一次。
        放在最后是有意的：先让静态默认值把版面撑起来（首屏不空），再就地替换文本，
        所以即使 /api/site 慢半拍或失败，页面也是完整可读的。 */
@@ -8912,6 +8971,37 @@ body.docs #view{ display:block !important; }
     /* keep both dictionaries in step so a language switch never reverts the number */
     if (EN.stats && EN.stats[0]) EN.stats[0].value = s;
     if (ZH.stats && ZH.stats[0]) ZH.stats[0].value = s;
+    /* P3 · feed the community milestone bar from the same live count */
+    window.__starCount = Number(n) || 0;
+    if (typeof paintCommunity === 'function') paintCommunity(window.__starCount);
+  }
+
+  /* P3 · community milestone — mirrors the live star count into the landing bar.
+     Re-run on every language switch (renderAll) so the milestone copy follows T. */
+  function paintCommunity(n) {
+    var c = T.community;
+    if (!c) return;
+    var goal = c.goal || 100;
+    var cur = Math.max(0, Number(n) || 0);
+    var pct = Math.min(100, Math.round(cur * 100 / goal));
+    var cnt = $('#comm-count'); if (cnt) cnt.textContent = cur.toLocaleString('en-US');
+    var bar = $('#comm-bar');
+    if (bar) { bar.style.width = pct + '%'; bar.setAttribute('aria-valuenow', cur); }
+    var ul = $('#comm-ms');
+    if (ul) {
+      var done = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+      var todo = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>';
+      ul.innerHTML = (c.ms || []).map(function (m) {
+        var ok = cur >= m.at;
+        return '<li class="flex items-start gap-2">' +
+                 '<span class="mt-0.5 shrink-0" aria-hidden="true">' + (ok ? done : todo) + '</span>' +
+                 '<span class="text-[12.5px] leading-[1.6] ' + (ok ? 'text-fg' : 'text-fg2') + '">' +
+                   '<b>' + esc(String(m.at)) + '&#9733;</b><br>' + esc(m.t) +
+                 '</span>' +
+               '</li>';
+      }).join('');
+    }
+    var note = $('#comm-note'); if (note) note.textContent = c.note || '';
   }
 
   function fetchStar() {
@@ -9244,7 +9334,7 @@ function renderDash(path) {
   if (!window.__mnConsoleRetry) {
     window.__mnConsoleRetry = 1;
     var s = document.createElement('script');
-    s.src = 'assets/console.js?v=11.13';
+    s.src = 'assets/console.js?v=11.20';
     s.onload = function () { renderDash(path); };
     s.onerror = function () {
       var view = $('#view');

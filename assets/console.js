@@ -106,6 +106,9 @@
     b = b || {};
     MC.me = (b.me && b.me.signedIn === true) ? b.me : null;
     MC.isAdmin = (b.isAdmin === true);
+    /* 套餐层级随 /api/console 一起下发（2026-10-24）：tierOf() 的第二优先级来源。
+       这样 /api/me/subscription 失败时，侧栏也不会退回 users.json 的旧档。 */
+    if (b.subscription && b.subscription.tier) MC.subscription = b.subscription;
     MC.roleChecked = true;
     MC.roleAt = Date.now();
     if (!signedIn()) {
@@ -415,14 +418,23 @@
      早前只读 MC.planName（旧五档字段），所以升到 Team 年付后左下角
      还写着「入门版」、条数也停在旧配额（2026-10-23 用户截图指出）。 */
   function tierOf() {
-    /* 优先用独立的订阅源：MC.subscription 来自 /api/me/subscription（boot 时拉取，
-       升级确认时也会重拉），它永远带真实 tier，不受 overview 数据源
-       （/api/dash/analytics 不含 subscription）影响 —— 这正是「升 Team 后左下角
-       还写入门版」的根因：之前只从 MC.overview.subscription 读，而 overview 是
-       analytics，没有 subscription 字段，于是永远回退到旧档 MC.planName（starter）。 */
-    var s = (MC.subscription && MC.subscription.tier) ? MC.subscription
-              : ((MC.overview && MC.overview.subscription) || {});
-    return String(s.tier || MC.planName || 'free').toLowerCase();
+    /* 三个来源按可信度排序，**任何一条挂掉都不影响显示**：
+         ① MC.subscription        —— /api/me/subscription（字段最全）
+         ② MC.me.subscription     —— /api/console 随行下发（进控制台必调）
+         ③ MC.overview.subscription —— /api/console/overview
+       三条都没有，才退回 users.json 的旧 plan 字段。
+       旧实现只认 ①，它一失败就落到 MC.planName（'starter'），
+       于是"升了 Team 还写入门版"—— 这不是渲染 bug，是**单点依赖**。 */
+    var cands = [
+      MC.subscription,
+      (MC.me && MC.me.subscription),
+      (MC.overview && MC.overview.subscription)
+    ];
+    for (var i = 0; i < cands.length; i++) {
+      var c = cands[i];
+      if (c && c.tier) return String(c.tier).toLowerCase();
+    }
+    return String(MC.planName || 'free').toLowerCase();
   }
 
   function planHTML() {
