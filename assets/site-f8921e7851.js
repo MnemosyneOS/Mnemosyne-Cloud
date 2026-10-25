@@ -27,7 +27,7 @@
   ];
 
   var CODE_PANES = {
-    py: '<span class="tk-c"># pip install mnemosyne-os   ·   core requires zero third-party deps</span>\n' +
+    py: '<span class="tk-c"># pip install ai-memo-os   ·   core requires zero third-party deps</span>\n' +
         '<span class="tk-k">from</span> mnemosyne <span class="tk-k">import</span> <span class="tk-f">MemoryBrain</span>\n\n' +
         'brain <span class="tk-p">=</span> <span class="tk-f">MemoryBrain</span>(<span class="tk-s">"./my_memories"</span>, enable_embeddings<span class="tk-p">=</span><span class="tk-k">True</span>)\n' +
         'brain.<span class="tk-f">ensure_init</span>()\n\n' +
@@ -446,7 +446,7 @@
       { title: 'Company', links: [
         ['About us', '/about/'], ['Contact us', '/contact/'], ['Careers', '/careers/'],
         ['Startup program', '/startup/'], ['Known defects', REPO + '/blob/main/docs/KNOWN_DEFECTS.md'],
-        ['PyPI package', 'https://pypi.org/project/mnemosyne-os/']] }
+        ['PyPI package', 'https://pypi.org/project/ai-memo-os/']] }
     ],
 
     'foot.blurb': 'A zero-dependency, local-first memory layer for AI agents. Recall in 0.21 ms, on a store you own.',
@@ -786,7 +786,7 @@
       { title: '公司', links: [
         ['关于我们', '/about/'], ['联系我们', '/contact/'], ['职业生涯', '/careers/'],
         ['创业计划', '/startup/'], ['已知缺陷', REPO + '/blob/main/docs/KNOWN_DEFECTS.md'],
-        ['PyPI 包', 'https://pypi.org/project/mnemosyne-os/']] }
+        ['PyPI 包', 'https://pypi.org/project/ai-memo-os/']] }
     ],
 
     'foot.blurb': '一套零依赖、本地优先的 AI 智能体记忆层。0.21 ms 召回，存储属于你自己。',
@@ -910,7 +910,7 @@
           { h: 'Remember your first memory',
             p: 'Five-minute quick start. No account, no API key, no network call — the engine runs on the Python standard library alone.',
             code: { n: 'python', b: [
-              'pip install mnemosyne-os',
+              'pip install ai-memo-os',
               '',
               'from mnemosyne import MemoryBrain',
               '',
@@ -1609,7 +1609,7 @@
               ['Customer service — +86 756 8935999', 'Monday to Friday, during PRC business hours.'],
               ['Engineering — SkillHub', 'The internal component and skill distribution platform that ships alongside Mnemosyne OS.'],
               ['Open source — github.com/MnemosyneOS/mnemosyne', 'The complete engine, documentation and regression harnesses, MIT licensed.'],
-              ['Package — PyPI mnemosyne-os', 'Installed with a single pip command; no build step and no compiler.'],
+              ['Package — PyPI ai-memo-os', 'Installed with a single pip command; no build step and no compiler.'],
               ['X — @mnemosyne_oos', 'Release announcements and short engineering notes.']
             ] },
 
@@ -1710,7 +1710,7 @@
           { h: '记住你的第一个记忆',
             p: '五分钟快速入门。不需要账号、不需要 API 密钥、不发网络请求 —— 引擎只跑 Python 标准库。',
             code: { n: 'python', b: [
-              'pip install mnemosyne-os',
+              'pip install ai-memo-os',
               '',
               'from mnemosyne import MemoryBrain',
               '',
@@ -2403,7 +2403,7 @@
               ['客服 —— +86 756 8935999', '周一至周五，中国境内工作时间。'],
               ['工程 —— SkillHub', '随 Mnemosyne OS 一同交付的内部组件与技能分发平台。'],
               ['开源 —— github.com/MnemosyneOS/mnemosyne', '完整的引擎、文档与回归套件，MIT 许可。'],
-              ['发行 —— PyPI mnemosyne-os', '一条 pip 命令即可安装，无需构建步骤，无需编译器。'],
+              ['发行 —— PyPI ai-memo-os', '一条 pip 命令即可安装，无需构建步骤，无需编译器。'],
               ['X —— @mnemosyne_oos', '版本公告与短篇工程笔记。']
             ] },
 
@@ -6732,8 +6732,8 @@ var DOCS_ZH = {
     lead: '从零到一条能取回来的记忆，通常不超过五分钟。以下命令都是这个项目实际支持的形式。',
     blocks: [
       { h: '安装', id: 'install', blocks: [
-        { p: '包名是 <code>mnemosyne-os</code>，要求 Python 3.8 及以上。没有第三方依赖需要编译。' },
-        { code: 'pip install mnemosyne-os' },
+        { p: '包名是 <code>ai-memo-os</code>，要求 Python 3.8 及以上。没有第三方依赖需要编译。' },
+        { code: 'pip install ai-memo-os' },
         { p: '安装后可以用一行命令确认版本与自检结果：' },
         { code: 'python -m mnemosyne --version\npython -m mnemosyne doctor' }
       ] },
@@ -6769,7 +6769,7 @@ var DOCS_ZH = {
           ['项目', '值'],
           ['许可证', 'MIT'],
           ['仓库', '<a href="https://github.com/MnemosyneOS/mnemosyne" target="_blank" rel="noopener">MnemosyneOS/mnemosyne</a>'],
-          ['包名', '<code>mnemosyne-os</code>'],
+          ['包名', '<code>ai-memo-os</code>'],
           ['Python', '3.8 及以上'],
           ['当前版本', '8.1.0']
         ] }
@@ -6846,7 +6846,7 @@ var DOCS_ZH = {
     blocks: [
       { h: '第一步：启动网关', id: 'start', blocks: [
         { p: '网关是一个本地进程，监听回环端口。先确认它能起来。' },
-        { code: '# install and start the gateway on the default port\npip install mnemosyne-os\npython -m mnemosyne.gateway --port 8788\n\n# health check\ncurl http://127.0.0.1:8788/healthz' }
+        { code: '# install and start the gateway on the default port\npip install ai-memo-os\npython -m mnemosyne.gateway --port 8788\n\n# health check\ncurl http://127.0.0.1:8788/healthz' }
       ] },
       { h: '第二步：登记到 Claude Code', id: 'register', blocks: [
         { p: '把服务写进 Claude Code 的 MCP 配置。项目级配置只对这个目录生效，用户级配置则到处可用。' },
@@ -7041,8 +7041,8 @@ var DOCS_EN = {
     lead: 'From nothing to a memory you can retrieve, usually in under five minutes. Every command below is one this project actually supports.',
     blocks: [
       { h: 'Install', id: 'install', blocks: [
-        { p: 'The package is <code>mnemosyne-os</code> and it needs Python 3.8 or newer. There is nothing to compile.' },
-        { code: 'pip install mnemosyne-os' },
+        { p: 'The package is <code>ai-memo-os</code> and it needs Python 3.8 or newer. There is nothing to compile.' },
+        { code: 'pip install ai-memo-os' },
         { p: 'Then confirm the version and run the self-check: ' },
         { code: 'python -m mnemosyne --version\npython -m mnemosyne doctor' }
       ] },
@@ -7078,7 +7078,7 @@ var DOCS_EN = {
           ['Item', 'Value'],
           ['Licence', 'MIT'],
           ['Repository', '<a href="https://github.com/MnemosyneOS/mnemosyne" target="_blank" rel="noopener">MnemosyneOS/mnemosyne</a>'],
-          ['Package', '<code>mnemosyne-os</code>'],
+          ['Package', '<code>ai-memo-os</code>'],
           ['Python', '3.8 or newer'],
           ['Current version', '8.1.0']
         ] }
@@ -7155,7 +7155,7 @@ var DOCS_EN = {
     blocks: [
       { h: 'Step one: start the gateway', id: 'start', blocks: [
         { p: 'The gateway is a local process on a loopback port. Confirm it comes up first.' },
-        { code: '# install and start the gateway on the default port\npip install mnemosyne-os\npython -m mnemosyne.gateway --port 8788\n\n# health check\ncurl http://127.0.0.1:8788/healthz' }
+        { code: '# install and start the gateway on the default port\npip install ai-memo-os\npython -m mnemosyne.gateway --port 8788\n\n# health check\ncurl http://127.0.0.1:8788/healthz' }
       ] },
       { h: 'Step two: register it', id: 'register', blocks: [
         { p: 'Add the server to the MCP configuration. A project-level entry applies to that directory only; a user-level entry applies everywhere.' },
