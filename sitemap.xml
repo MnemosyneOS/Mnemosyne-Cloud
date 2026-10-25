@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://ai-memory.net/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
-  <url><loc>https://ai-memory.net/legal.html</loc><changefreq>monthly</changefreq><priority>0.4</priority></url>
-  <url><loc>https://ai-memory.net/docs/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://ai-memory.net/api-reference/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://ai-memory.net/mcp/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://ai-memory.net/cli/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://ai-memory.net/trust/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://ai-memory.net/status/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://ai-memory.net/research/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://ai-memory.net/blog/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://ai-memory.net/integrations/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://ai-memory.net/changelog/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://ai-memory.net/pricing/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://ai-memory.net/about/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://ai-memory.net/contact/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://ai-memory.net/careers/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://ai-memory.net/startup/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ai-memory.net/</loc><lastmod>2026-10-24</lastmod></url>
+  <url><loc>https://ai-memory.net/legal.html</loc><lastmod>2026-09-25</lastmod></url>
+  <url><loc>https://ai-memory.net/docs/</loc><lastmod>2026-10-24</lastmod></url>
+  <url><loc>https://ai-memory.net/api-reference/</loc><lastmod>2026-10-24</lastmod></url>
+  <url><loc>https://ai-memory.net/mcp/</loc><lastmod>2026-10-24</lastmod></url>
+  <url><loc>https://ai-memory.net/cli/</loc><lastmod>2026-10-24</lastmod></url>
+  <url><loc>https://ai-memory.net/trust/</loc><lastmod>2026-10-24</lastmod></url>
+  <url><loc>https://ai-memory.net/status/</loc><lastmod>2026-10-24</lastmod></url>
+  <url><loc>https://ai-memory.net/research/</loc><lastmod>2026-10-24</lastmod></url>
+  <url><loc>https://ai-memory.net/blog/</loc><lastmod>2026-10-24</lastmod></url>
+  <url><loc>https://ai-memory.net/integrations/</loc><lastmod>2026-10-24</lastmod></url>
+  <url><loc>https://ai-memory.net/changelog/</loc><lastmod>2026-10-24</lastmod></url>
+  <url><loc>https://ai-memory.net/pricing/</loc><lastmod>2026-10-24</lastmod></url>
+  <url><loc>https://ai-memory.net/about/</loc><lastmod>2026-10-24</lastmod></url>
+  <url><loc>https://ai-memory.net/contact/</loc><lastmod>2026-10-24</lastmod></url>
+  <url><loc>https://ai-memory.net/careers/</loc><lastmod>2026-10-24</lastmod></url>
+  <url><loc>https://ai-memory.net/startup/</loc><lastmod>2026-10-24</lastmod></url>
 </urlset>
