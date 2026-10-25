@@ -26,6 +26,11 @@ Dockerfile.*
 .dockerignore
 fly.toml
 fly.mcp.toml
+# 🔴 2026-10-26：worker/ 与 fly/ 已纳入**独立私有仓库**，本仓库继续忽略它们。
+#    原因：这两个目录含 OAuth clientSecret、billing.db、线上拓扑，而本仓库是公开的。
+#      worker/  -> https://github.com/MnemosyneOS/Mnemosyne-Deploy-Worker
+#      fly/     -> https://github.com/MnemosyneOS/Mnemosyne-Deploy-Fly
+#    在这两个目录里各自 `git commit/push`，不要试图加进本仓库。
 worker/
 .github/
 
@@ -51,6 +56,8 @@ runbook-*.md
 验收报告-*.html
 
 # 本地部署工作区（Fly 构建上下文；入口是 fly/，不能出现在 Pages 上）
+# 🔴 2026-10-26：已纳入私有仓库 https://github.com/MnemosyneOS/Mnemosyne-Deploy-Fly
+#    在 fly/ 里单独 `git commit/push`；本仓库继续忽略（含 OAuth 密钥与客户数据库）。
 fly/
 auth/
 *.b64
