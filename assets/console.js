@@ -1307,7 +1307,7 @@
           esc(dz('下载导出包', 'Download')) + '</button></div>' +
         '<div class="mc-card pad"><div class="mc-h2" style="margin-top:0">' +
           esc(dz('迁移到自建实例', 'Move to self-hosted')) + '</div>' +
-          '<div class="mc-code">pip install "ai-memo-os @ git+https://github.com/MnemosyneOS/mnemosyne.git@v8.1.0"\nmnemosyne init\n# 解压导出包到 ~/.mnemosyne/data 后：\nmnemosyne doctor</div>' +
+          '<div class="mc-code">pip install mnemosyne-os==8.1.0\nmnemosyne init\n# 解压导出包到 ~/.mnemosyne/data 后：\nmnemosyne doctor</div>' +
           '<div class="mc-note" style="margin-top:8px">' + esc(dz('导出包里的 manifest.json 含内容哈希，导入时会逐条校验。',
             'The manifest carries content hashes and is verified on import.')) + '</div></div>' +
       '</div>';
@@ -1358,7 +1358,7 @@
                                                   sub.days_left + ' days left')) : '') +
           '</div>';
       }
-      var tierCard = '<div class="mc-card pad" style="margin-bottom:16px">' +
+      var tierCard = '<div class="mc-card pad mc-cur-plan">' +
         '<div class="mc-row" style="justify-content:space-between;align-items:center">' +
         '<div><div style="font-size:11px;color:var(--fg3);letter-spacing:.04em">' +
         esc(dz('当前计划', 'Current plan')) + '</div>' +
@@ -1387,8 +1387,9 @@
 
       /* ---- 区块 B：用量概览 ---- */
       var u = ov.usage || {};
-      var usageCard = '<div class="mc-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));' +
-        'margin-bottom:16px">' +
+      /* 🔴 2026-10-26：用量四宫格改成**竖向堆叠**，作为右栏与左侧「当前计划」并排。
+         原来是横排四列铺满整行，和当前计划上下叠着占掉两屏。 */
+      var usageCard = '<div class="mc-usage-stack">' +
         [ [dz('本月写入', 'Writes (mo)'), n0(u.writes_this_month)],
           [dz('本月召回', 'Recalls (mo)'), n0(u.recalls_this_month)],
           [dz('活跃命名空间', 'Namespaces'), n0(u.active_namespaces)],
@@ -1421,8 +1422,11 @@
            跳转方式降级成**兜底**：仅当 PayPal SDK 加载失败（被墙/网络不通）
            时，在按钮位置注入一个不显眼的文字链（见 mountPayPal 的失败分支）。 */
         var inner =
+          /* 站长要求：三张卡按钮大小统一、再小一点、圆润一些。
+             统一 190px 宽（PayPal 的 iframe 默认 width:100%，必须用容器限宽），
+             shape:'pill' + height:32 见 mountPayPal。 */
           '<div class="pp-slot" data-plan-id="' + esc(planId) + '" data-tier="' + esc(tier) +
-            '" data-interval="' + iv + '" style="max-width:240px;margin:0 auto;min-height:42px"></div>';
+            '" data-interval="' + iv + '" style="width:190px;max-width:190px;margin:0 auto;min-height:34px"></div>';
         if (on && promotional) {
           /* 推广期赠送的档也必须能买 —— 用户要把赠送的 Team 转成正式订阅。
              原来这里直接显示"当前计划"把按钮吞掉，看起来像"Team 不能买"。 */
@@ -1616,7 +1620,13 @@
       el.innerHTML = head(dz('套餐与用量', 'Plan & usage'),
         dz('你的记忆、你的额度。升级后额度立即生效。',
            'Your memory, your quota. Upgrades take effect immediately.')) +
-        banner + tierCard + usageCard + paySwitch +
+        banner +
+        /* 左：当前计划；右：四张用量卡竖排。两栏等宽、等高。 */
+        '<div class="mc-split">' +
+          '<div class="mc-split-l">' + tierCard + '</div>' +
+          '<div class="mc-split-r">' + usageCard + '</div>' +
+        '</div>' +
+        paySwitch +
         (curSel === 'USD' ? (usdHTML + addonHTML) : cnyHTML) +
         /* 区块 C / D 走异步填充：它们各自要打一个接口，
            不能让 key 列表或记忆列表的延迟拖住整个页面的首屏。 */
@@ -1852,8 +1862,10 @@
           window.paypal.Buttons({
             /* label:'pay' 让按钮显示最短的「支付」，而不是默认的
                「PayPal」/「订阅」等长文案 —— 用户要求所有支付入口文字统一。 */
-            style: { shape: 'rect', color: 'gold', layout: 'vertical',
-                     label: 'pay', height: 40, tagline: false },
+            /* shape:'pill' = 圆角胶囊；height:32 比默认 40 矮一档，
+               三张卡用同一组参数，视觉上大小一致。 */
+            style: { shape: 'pill', color: 'gold', layout: 'vertical',
+                     label: 'pay', height: 32, tagline: false },
             createSubscription: function (data, actions) {
               /* custom_id 必须是登录邮箱 —— 服务端 paypal-confirm 会拿它和
                  会话邮箱比对，防"确认别人的订阅"。 */

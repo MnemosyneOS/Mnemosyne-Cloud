@@ -56,7 +56,7 @@
 <p><strong>Mnemosyne OS 让 AI 智能体的记忆活得比会话更久。装一个包，在代码旁边留一个 SQLite 文件，然后让智能体自己决定什么值得记住。</strong></p>
 <h3>记住你的第一个记忆</h3>
 <p>五分钟快速入门。不需要账号、不需要 API 密钥、不发网络请求 —— 引擎只跑 Python 标准库。</p>
-<pre><code class="lang-python">pip install ai-memo-os
+<pre><code class="lang-python">pip install mnemosyne-os
 
 from mnemosyne import MemoryBrain
 
@@ -88,6 +88,10 @@ mnemosyne --dir ./mem retain --content "Founded in 1976"
 mnemosyne --dir ./mem recall "founded" --k 5
 
 # 3 · 用租户令牌通过 MCP 暴露出去
+# PowerShell：
+$env:MNEMOSYNE_MCP_TOKEN="your-secret-token"
+python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace default
+# macOS / Linux：
 export MNEMOSYNE_MCP_TOKEN="your-secret-token"
 python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace default
 

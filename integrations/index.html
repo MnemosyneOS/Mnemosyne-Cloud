@@ -71,7 +71,11 @@
 <pre><code class="lang-text">python -m mnemosyne.webui.mcp_server --http --brain-dir ./mem --port 8788</code></pre>
 <h4>任何 MCP 宿主（MCP · HTTP）</h4>
 <p>Streamable HTTP 是一次部署唯一需要对外暴露的端口，网络面因此收敛为一个。</p>
-<pre><code class="lang-text">MNEMOSYNE_MCP_TOKEN=&lt;token&gt; python -m mnemosyne.webui.mcp_server --http --port 8788</code></pre>
+<pre><code class="lang-text"># PowerShell
+$env:MNEMOSYNE_MCP_TOKEN="&lt;token&gt;"
+python -m mnemosyne.webui.mcp_server --http --port 8788
+# macOS / Linux
+MNEMOSYNE_MCP_TOKEN="&lt;token&gt;" python -m mnemosyne.webui.mcp_server --http --port 8788</code></pre>
 <h4>LangChain（Python SDK）</h4>
 <p>可运行示例：把 MemoryBrain 作为检索与记忆组件接进链里。</p>
 <pre><code class="lang-text">python examples/langchain_integration.py</code></pre>
@@ -83,7 +87,11 @@
 <pre><code class="lang-text">from mnemosyne import MemoryBrain; MemoryBrain("./mem").ensure_init()</code></pre>
 <h4>插件目录（插件 SDK）</h4>
 <p>八个带文档的插件 —— numpy、qdrant、reranker、crypto、hrr、async、context-engine 与 SDK 本身。</p>
-<pre><code class="lang-text">MNEMOSYNE_PLUGINS=numpy_vector,reranker python -m mnemosyne.webui.web_server</code></pre>
+<pre><code class="lang-text"># PowerShell
+$env:MNEMOSYNE_PLUGINS="numpy_vector,reranker"
+python -m mnemosyne.webui.web_server
+# macOS / Linux
+MNEMOSYNE_PLUGINS=numpy_vector,reranker python -m mnemosyne.webui.web_server</code></pre>
 <a class="cta" href="/#integrations">进入交互版</a>
 <a class="cta ghost" href="/docs/">阅读完整文档</a>
 </main>

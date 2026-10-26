@@ -3,7 +3,7 @@
 > Mnemosyne OS is a local-first memory engine for AI agents. Memory lives in a
 > SQLite file on your own disk, the core imports nothing outside the Python
 > standard library, and there is no hosted control plane in the path. MIT
-> licensed. Published as `ai-memo-os` on PyPI.
+> licensed. Published as `mnemosyne-os` on PyPI.
 
 Current version: **8.1.0** (released 2026-10-20).
 Canonical site: https://ai-memory.net/
@@ -79,7 +79,7 @@ Harnesses for reproducing the Mnemosyne numbers ship in the repository under
 ## Install
 
 ```
-pip install ai-memo-os
+pip install mnemosyne-os
 ```
 
 The core installs no third-party packages. Provider SDKs are opt-in extras.

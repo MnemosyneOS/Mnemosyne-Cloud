@@ -27,7 +27,7 @@
   ];
 
   var CODE_PANES = {
-    py: '<span class="tk-c"># pip install ai-memo-os   ·   core requires zero third-party deps</span>\n' +
+    py: '<span class="tk-c"># pip install mnemosyne-os   ·   core requires zero third-party deps</span>\n' +
         '<span class="tk-k">from</span> mnemosyne <span class="tk-k">import</span> <span class="tk-f">MemoryBrain</span>\n\n' +
         'brain <span class="tk-p">=</span> <span class="tk-f">MemoryBrain</span>(<span class="tk-s">"./my_memories"</span>, enable_embeddings<span class="tk-p">=</span><span class="tk-k">True</span>)\n' +
         'brain.<span class="tk-f">ensure_init</span>()\n\n' +
@@ -76,15 +76,16 @@
 
     http: '<span class="tk-c"># one public port, token-authenticated. Qdrant and the embedding</span>\n' +
           '<span class="tk-c"># upstream stay bound to loopback and are unreachable from outside.</span>\n' +
-          'cd 1-云端 &amp;&amp; cp .env.example .env &amp;&amp; bash setup-cloud.sh\n\n' +
+          '<span class="tk-c"># 部署脚本是 Linux/macOS 的（Windows 请用 WSL 或 Git Bash）</span>\n' +
+          'cd 1-云端\ncp .env.example .env\nbash setup-cloud.sh\n\n' +
           '<span class="tk-c"># free HTTPS via a Cloudflare quick tunnel — no domain, no signup</span>\n' +
           'cloudflared tunnel --url http://localhost:8788 --no-autoupdate\n' +
           '<span class="tk-c"># → https://xxxx-xxxx.trycloudflare.com/mcp</span>\n\n' +
-          '<span class="tk-c"># self-test: 31 tool names back means the gateway is live</span>\n' +
-          'curl -X POST https://your-domain/mcp \\\n' +
-          '  -H <span class="tk-s">"Authorization: Bearer &lt;token&gt;"</span> \\\n' +
-          '  -H <span class="tk-s">"Content-Type: application/json"</span> \\\n' +
-          '  -d <span class="tk-s">\'{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}\'</span>\n\n' +
+          '<span class="tk-c"># self-test: 52 tool names back means the gateway is live</span>\n' +
+          '<span class="tk-c"># PowerShell（curl.exe + 转义引号；PS 5.1 的 curl 是 Invoke-WebRequest 别名，参数不一样）</span>\n' +
+          'curl.exe -X POST https://your-domain/mcp -H "Authorization: Bearer &lt;token&gt;" -H "Content-Type: application/json" -d "{\\"jsonrpc\\":\\"2.0\\",\\"id\\":1,\\"method\\":\\"tools/list\\",\\"params\\":{}}"\n' +
+          '<span class="tk-c"># macOS / Linux</span>\n' +
+          'curl -X POST https://your-domain/mcp -H <span class="tk-s">"Authorization: Bearer &lt;token&gt;"</span> -H <span class="tk-s">"Content-Type: application/json"</span> -d <span class="tk-s">\'{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}\'</span>\n\n' +
           '<span class="tk-c"># tokens map to tenants: one token, one physically isolated room</span>\n' +
           '<span class="tk-c"># MNEMOSYNE_TENANT_MAP=tok_a1b2...=user_a,tok_d4e5...=user_b</span>'
   };
@@ -446,7 +447,7 @@
       { title: 'Company', links: [
         ['About us', '/about/'], ['Contact us', '/contact/'], ['Careers', '/careers/'],
         ['Startup program', '/startup/'], ['Known defects', REPO + '/blob/main/docs/KNOWN_DEFECTS.md'],
-        ['PyPI package', 'https://pypi.org/project/ai-memo-os/']] }
+        ['PyPI package', 'https://pypi.org/project/mnemosyne-os/']] }
     ],
 
     'foot.blurb': 'A zero-dependency, local-first memory layer for AI agents. Recall in 0.21 ms, on a store you own.',
@@ -786,7 +787,7 @@
       { title: '公司', links: [
         ['关于我们', '/about/'], ['联系我们', '/contact/'], ['职业生涯', '/careers/'],
         ['创业计划', '/startup/'], ['已知缺陷', REPO + '/blob/main/docs/KNOWN_DEFECTS.md'],
-        ['PyPI 包', 'https://pypi.org/project/ai-memo-os/']] }
+        ['PyPI 包', 'https://pypi.org/project/mnemosyne-os/']] }
     ],
 
     'foot.blurb': '一套零依赖、本地优先的 AI 智能体记忆层。0.21 ms 召回，存储属于你自己。',
@@ -910,7 +911,7 @@
           { h: 'Remember your first memory',
             p: 'Five-minute quick start. No account, no API key, no network call — the engine runs on the Python standard library alone.',
             code: { n: 'python', b: [
-              'pip install ai-memo-os',
+              'pip install mnemosyne-os',
               '',
               'from mnemosyne import MemoryBrain',
               '',
@@ -944,7 +945,9 @@
               'mnemosyne --dir ./mem recall "founded" --k 5',
               '',
               '# 3 · expose it over MCP with a tenant token',
-              'export MNEMOSYNE_MCP_TOKEN="your-secret-token"',
+              '# PowerShell:',
+              '$env:MNEMOSYNE_MCP_TOKEN="your-secret-token"',
+              '# macOS / Linux: export MNEMOSYNE_MCP_TOKEN="your-secret-token"',
               'python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace default',
               '',
               '# 4 · open the local dashboard: browser, graph view, stats',
@@ -1062,7 +1065,9 @@
             p: 'Stdio for desktop clients, Streamable HTTP for anything running behind a port.',
             code: { n: 'bash', b: [
               '# stdio — the shape every desktop client expects',
-              'export MNEMOSYNE_MCP_TOKEN="your-secret-token"   # optional but recommended',
+              '# PowerShell (optional but recommended):',
+              '$env:MNEMOSYNE_MCP_TOKEN="your-secret-token"',
+              '# macOS / Linux: export MNEMOSYNE_MCP_TOKEN="your-secret-token"',
               'python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace default',
               '',
               '# a client entry is three keys and a command',
@@ -1136,7 +1141,7 @@
               'mnemosyne --dir ./mem graph-query "Steve Jobs" --depth 2 --json',
               '',
               'mnemosyne --dir ./mem verify-integrity --json',
-              'mnemosyne --dir ./mem ledger-audit <memory_id>'
+              'mnemosyne --dir ./mem ledger-audit "<memory_id>"'
             ].join('\n') } },
 
           { h: 'Move data in and out',
@@ -1175,7 +1180,7 @@
               'mnemosyne --dir ./mem verify-integrity --json',
               '# { "chain_valid": true, "records_checked": 10287 }',
               '',
-              'mnemosyne --dir ./mem ledger-audit <memory_id>',
+              'mnemosyne --dir ./mem ledger-audit "<memory_id>"',
               '# walks the chain around one record'
             ].join('\n') } },
 
@@ -1338,7 +1343,7 @@
           { n: 'OpenWebUI', c: 'MCP · HTTP', i: 'OW', d: 'Point it at the Streamable HTTP gateway with a bearer token. The chat front end stops forgetting who it is talking to.',
             cp: 'python -m mnemosyne.webui.mcp_server --http --brain-dir ./mem --port 8788' },
           { n: 'Any MCP host', c: 'MCP · HTTP', i: 'MP', d: 'Streamable HTTP is the only public port a deployment needs to expose, which keeps the network surface at one.',
-            cp: 'MNEMOSYNE_MCP_TOKEN=<token> python -m mnemosyne.webui.mcp_server --http --port 8788' },
+            cp: '$env:MNEMOSYNE_MCP_TOKEN="<token>"; python -m mnemosyne.webui.mcp_server --http --port 8788\n# macOS/Linux: MNEMOSYNE_MCP_TOKEN="<token>" python -m mnemosyne.webui.mcp_server --http --port 8788' },
           { n: 'LangChain', c: 'Python SDK', i: 'LC', d: 'A runnable example wiring MemoryBrain in as the retrieval and memory component of a chain.',
             cp: 'python examples/langchain_integration.py' },
           { n: 'Ollama', c: 'Local', i: 'OL', d: 'A fully local loop — local model plus local memory, with no request leaving the host.',
@@ -1346,7 +1351,7 @@
           { n: 'Embedded, no server', c: 'Python SDK', i: 'EM', d: 'Import the brain straight into your own process. No daemon, no port, no IPC.',
             cp: 'from mnemosyne import MemoryBrain; MemoryBrain("./mem").ensure_init()' },
           { n: 'Plugin catalogue', c: 'Plugin SDK', i: 'PL', d: 'Eight documented plugins — numpy, qdrant, reranker, crypto, hrr, async, context-engine and the SDK itself.',
-            cp: 'MNEMOSYNE_PLUGINS=numpy_vector,reranker python -m mnemosyne.webui.web_server' }
+            cp: '$env:MNEMOSYNE_PLUGINS="numpy_vector,reranker"; python -m mnemosyne.webui.web_server\n# macOS/Linux: MNEMOSYNE_PLUGINS=numpy_vector,reranker python -m mnemosyne.webui.web_server' }
         ]
       },
 
@@ -1609,7 +1614,7 @@
               ['Customer service — +86 756 8935999', 'Monday to Friday, during PRC business hours.'],
               ['Engineering — SkillHub', 'The internal component and skill distribution platform that ships alongside Mnemosyne OS.'],
               ['Open source — github.com/MnemosyneOS/mnemosyne', 'The complete engine, documentation and regression harnesses, MIT licensed.'],
-              ['Package — PyPI ai-memo-os', 'Installed with a single pip command; no build step and no compiler.'],
+              ['Package — PyPI mnemosyne-os', 'Installed with a single pip command; no build step and no compiler.'],
               ['X — @mnemosyne_oos', 'Release announcements and short engineering notes.']
             ] },
 
@@ -1710,7 +1715,7 @@
           { h: '记住你的第一个记忆',
             p: '五分钟快速入门。不需要账号、不需要 API 密钥、不发网络请求 —— 引擎只跑 Python 标准库。',
             code: { n: 'python', b: [
-              'pip install ai-memo-os',
+              'pip install mnemosyne-os',
               '',
               'from mnemosyne import MemoryBrain',
               '',
@@ -1744,7 +1749,9 @@
               'mnemosyne --dir ./mem recall "founded" --k 5',
               '',
               '# 3 · 用租户令牌通过 MCP 暴露出去',
-              'export MNEMOSYNE_MCP_TOKEN="your-secret-token"',
+              '# PowerShell：',
+              '$env:MNEMOSYNE_MCP_TOKEN="your-secret-token"',
+              '# macOS / Linux：export MNEMOSYNE_MCP_TOKEN="your-secret-token"',
               'python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace default',
               '',
               '# 4 · 打开本地控制台：记忆浏览、图谱视图、运行统计',
@@ -1862,7 +1869,9 @@
             p: '桌面客户端走 stdio，跑在端口后面的一切走 Streamable HTTP。',
             code: { n: 'bash', b: [
               '# stdio —— 每个桌面客户端都认的形状',
-              'export MNEMOSYNE_MCP_TOKEN="your-secret-token"   # 可选，但建议开启',
+              '# PowerShell（可选，但建议开启）：',
+              '$env:MNEMOSYNE_MCP_TOKEN="your-secret-token"',
+              '# macOS / Linux：export MNEMOSYNE_MCP_TOKEN="your-secret-token"',
               'python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace default',
               '',
               '# 客户端一侧就是三个键加一条命令',
@@ -1934,7 +1943,7 @@
               'mnemosyne --dir ./mem graph-query "Steve Jobs" --depth 2 --json',
               '',
               'mnemosyne --dir ./mem verify-integrity --json',
-              'mnemosyne --dir ./mem ledger-audit <memory_id>'
+              'mnemosyne --dir ./mem ledger-audit "<memory_id>"'
             ].join('\n') } },
 
           { h: '数据进出',
@@ -1973,7 +1982,7 @@
               'mnemosyne --dir ./mem verify-integrity --json',
               '# { "chain_valid": true, "records_checked": 10287 }',
               '',
-              'mnemosyne --dir ./mem ledger-audit <memory_id>',
+              'mnemosyne --dir ./mem ledger-audit "<memory_id>"',
               '# 围绕某一条记录走一遍链'
             ].join('\n') } },
 
@@ -2135,7 +2144,7 @@
           { n: 'OpenWebUI', c: 'MCP · HTTP', i: 'OW', d: '地址指向 Streamable HTTP 网关，带上 Bearer 令牌。对话前端从此不再忘记它在跟谁说话。',
             cp: 'python -m mnemosyne.webui.mcp_server --http --brain-dir ./mem --port 8788' },
           { n: '任何 MCP 宿主', c: 'MCP · HTTP', i: 'MP', d: 'Streamable HTTP 是一次部署唯一需要对外暴露的端口，网络面因此收敛为一个。',
-            cp: 'MNEMOSYNE_MCP_TOKEN=<token> python -m mnemosyne.webui.mcp_server --http --port 8788' },
+            cp: '$env:MNEMOSYNE_MCP_TOKEN="<token>"; python -m mnemosyne.webui.mcp_server --http --port 8788\n# macOS/Linux: MNEMOSYNE_MCP_TOKEN="<token>" python -m mnemosyne.webui.mcp_server --http --port 8788' },
           { n: 'LangChain', c: 'Python SDK', i: 'LC', d: '可运行示例：把 MemoryBrain 作为检索与记忆组件接进链里。',
             cp: 'python examples/langchain_integration.py' },
           { n: 'Ollama', c: '本地模型', i: 'OL', d: '全本地闭环 —— 本地模型加本地记忆，没有任何请求离开这台机器。',
@@ -2143,7 +2152,7 @@
           { n: '进程内嵌入', c: 'Python SDK', i: 'EM', d: '直接把 brain 导进你自己的进程。没有守护进程、没有端口、没有 IPC。',
             cp: 'from mnemosyne import MemoryBrain; MemoryBrain("./mem").ensure_init()' },
           { n: '插件目录', c: '插件 SDK', i: 'PL', d: '八个带文档的插件 —— numpy、qdrant、reranker、crypto、hrr、async、context-engine 与 SDK 本身。',
-            cp: 'MNEMOSYNE_PLUGINS=numpy_vector,reranker python -m mnemosyne.webui.web_server' }
+            cp: '$env:MNEMOSYNE_PLUGINS="numpy_vector,reranker"; python -m mnemosyne.webui.web_server\n# macOS/Linux: MNEMOSYNE_PLUGINS=numpy_vector,reranker python -m mnemosyne.webui.web_server' }
         ]
       },
 
@@ -2403,7 +2412,7 @@
               ['客服 —— +86 756 8935999', '周一至周五，中国境内工作时间。'],
               ['工程 —— SkillHub', '随 Mnemosyne OS 一同交付的内部组件与技能分发平台。'],
               ['开源 —— github.com/MnemosyneOS/mnemosyne', '完整的引擎、文档与回归套件，MIT 许可。'],
-              ['发行 —— PyPI ai-memo-os', '一条 pip 命令即可安装，无需构建步骤，无需编译器。'],
+              ['发行 —— PyPI mnemosyne-os', '一条 pip 命令即可安装，无需构建步骤，无需编译器。'],
               ['X —— @mnemosyne_oos', '版本公告与短篇工程笔记。']
             ] },
 
@@ -3122,9 +3131,19 @@
        它不是一条权益，是列表的小标题 —— 混在勾选列表里会让第一行跟其它行
        基线错开（这也是「权益显示错行」的一部分）。判据：带 dim 标记且以冒号结尾。 */
     var featItems = (t.feats || []).slice();
-    var cap = '';
-    if (featItems.length && featItems[0][1] && /[:：]\s*$/.test(String(featItems[0][0]))) {
-      cap = String(featItems.shift()[0]).replace(/[:：]\s*$/, '');
+    var capHTML = '';
+    /* 只按文本判据，不看 dim 标记：/v1/pricing 下发的是纯字符串数组
+       （没有 [text, dim] 这种二元组），带上 dim 判断会让线上永远识别不到。
+
+       🔴 2026-10-26：小标题改成列表的**第一行**，不再单独占一个 .tier-cap 槽位。
+       之前 Free / 增值包 没有小标题，槽位留空 → 这两张卡的第一行可视文字
+       比 Pro / Team 高出 25px，四张卡并排一眼就看出来「第一行没对齐」。
+       现在小标题与权益行走同一套盒模型（同字号同 padding），
+       四张卡的第一行落在同一条基线上。 */
+    if (featItems.length && /[:：]\s*$/.test(String(featItems[0][0]))) {
+      capHTML = '<li class="feat cap">' +
+                  esc(String(featItems.shift()[0]).replace(/[:：]\s*$/, '')) +
+                '</li>';
     }
 
     var feats = featItems.map(function (f) {
@@ -3194,22 +3213,19 @@
                 没有说明时留空占位，四张卡的权益区才能从同一高度开始。 */
              '<p class="tier-note">' + esc(extra || '') + '</p>' +
              '<div class="tier-rule"></div>' +
-             /* 小标题位也永远占住：Pro/Team 有「包含 X 全部功能」，Free/增值包没有，
-                不占位的话这两张卡的权益列表会整体上移一行。 */
-             '<p class="tier-cap">' + esc(cap) + '</p>' +
-             '<ul class="tier-feats">' + feats + '</ul>' +
+             '<ul class="tier-feats">' + capHTML + feats + '</ul>' +
            '</div>';
   }
 
+  /* 🔴 2026-10-26：币种开关改成按 class 找**所有**实例。
+     定价页（#/pricing）和首页的定价区块各自渲染一份，只认 id 会漏掉其中一个。 */
   function syncPriceSwitch() {
-    var zh = lang === 'zh';
-    var curEl = document.getElementById('currency-switch');
-    if (curEl) {
+    $$('.cur-switch').forEach(function (curEl) {
       Array.prototype.forEach.call(curEl.querySelectorAll('button'), function (b) {
         b.setAttribute('aria-pressed',
           b.getAttribute('data-cur') === PRICE_STATE.currency ? 'true' : 'false');
       });
-    }
+    });
   }
 
   /* 一个委托监听管住两处开关（页顶的 + 每张卡里的），不重复绑定 */
@@ -3336,11 +3352,18 @@
   /* 每次重渲染卡片后重新挂载（切月/年、切币种都会重建 DOM） */
   var PP_CLIENT = '';
 
+  /* 🔴 2026-10-26：这里原来只认 `#tiers`（首页定价区块那一个）。
+     而定价页 #/pricing 的卡片是 renderPage 另外渲染的、**没有 id**，
+     于是「月付/年付」和币种切换改的永远是首页那个隐藏容器，
+     用户眼前的卡片纹丝不动 —— 表现就是「按钮点了没反应」。
+     现在两边都用 .tier-grid，一次填满所有实例。 */
   function renderTiers() {
-    var el = $('#tiers'); if (!el) return;
+    var els = $$('.tier-grid');
+    if (!els.length) return;
     /* 首次进入才拉接口；之后切月/年、切币种只是重渲染，不重复请求 */
     if (!T._live) { loadLivePricing(); return; }
-    el.innerHTML = (T.plans || []).map(planHTML).join('');
+    var html = (T.plans || []).map(planHTML).join('');
+    els.forEach(function (el) { el.innerHTML = html; });
     syncPriceSwitch();
     if (window.lucide) { try { lucide.createIcons(); } catch (e) {} }
     /* 美元档重画后要重新挂载页内按钮：旧的按钮节点随 innerHTML 一起没了 */
@@ -3361,7 +3384,10 @@
        函数作用域链拿不到它。早前这行写的是裸 `el.innerHTML`，抛 ReferenceError
        后被下面的 .catch() 静默吞掉 —— 结果是「接口一直没被真正消费」，
        价格页永远停在静态值，而日志里一句错都没有。2026-10-23 实测发现。 */
-    var el = $('#tiers'); if (!el) return;
+    /* 判据改成 .tier-grid：定价页和首页各有一个容器，用 id 会漏。
+       早前这里写死 #tiers，去掉 id 后整个实时价格接口就不再被消费 ——
+       卡片会一直停在静态的 $6.9，也没有月付/年付切换。 */
+    if (!document.querySelector('.tier-grid')) return;
     fetch('/v1/pricing', { credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
@@ -3471,7 +3497,7 @@
           /* 插到 #tiers **正前方** —— 那里一定在首屏可见区域内。
              （早前用 host.children[1]，落点可能被前面的 reveal 动画块挤到
                折叠线以下，实测在无头 Chrome 里拿不到文本。） */
-          var tiersEl = document.getElementById('tiers');
+          var tiersEl = document.querySelector('.tier-grid');
           var host = tiersEl && tiersEl.parentNode;
           if (host && !document.getElementById('promo-banner')) {
             var bar = document.createElement('p');
@@ -3875,8 +3901,18 @@
       if (pg.search) h += galleryHTML(pg);
       if (pg.posts) h += postsHTML(pg);
       if (pg.form) h += '<div class="max-w-2xl mx-auto">' + formHTML(pg.form) + '</div>';
-      if (pg.plans) h += '<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">' +
-        (T.plans || []).map(planHTML).join('') + '</div>';
+      if (pg.plans) {
+        /* 定价页自己也要有币种开关 —— 之前只有首页那个区块有，用户在
+           「定价」菜单里根本看不到「$ USD」这个选项，等于没有美元价。 */
+        h += '<div class="mt-8 flex flex-wrap items-center justify-center gap-3">' +
+               '<div class="pseg cur-switch" role="group">' +
+                 '<button type="button" data-cur="CNY">¥ CNY · 微信</button>' +
+                 '<button type="button" data-cur="USD">$ USD · PayPal</button>' +
+               '</div>' +
+             '</div>' +
+             '<div class="mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch tier-grid">' +
+               (T.plans || []).map(planHTML).join('') + '</div>';
+      }
       (pg.blocks || []).forEach(function (b) { h += blockHTML(b); });
       h += '</div></div>';
     }
@@ -3886,6 +3922,7 @@
     bindGallery();
     bindPosts();
     icons();
+    syncPriceSwitch();
     refreshLiveStats();
   }
 
@@ -6796,8 +6833,8 @@ var DOCS_ZH = {
     lead: '从零到一条能取回来的记忆，通常不超过五分钟。以下命令都是这个项目实际支持的形式。',
     blocks: [
       { h: '安装', id: 'install', blocks: [
-        { p: '包名是 <code>ai-memo-os</code>，要求 Python 3.8 及以上。没有第三方依赖需要编译。' },
-        { code: 'pip install ai-memo-os' },
+        { p: '包名是 <code>mnemosyne-os</code>，要求 Python 3.8 及以上。没有第三方依赖需要编译。' },
+        { code: 'pip install mnemosyne-os' },
         { p: '安装后可以用一行命令确认版本与自检结果：' },
         { code: 'python -m mnemosyne --version\npython -m mnemosyne doctor' }
       ] },
@@ -6833,7 +6870,7 @@ var DOCS_ZH = {
           ['项目', '值'],
           ['许可证', 'MIT'],
           ['仓库', '<a href="https://github.com/MnemosyneOS/mnemosyne" target="_blank" rel="noopener">MnemosyneOS/mnemosyne</a>'],
-          ['包名', '<code>ai-memo-os</code>'],
+          ['包名', '<code>mnemosyne-os</code>'],
           ['Python', '3.8 及以上'],
           ['当前版本', '8.1.0']
         ] }
@@ -6910,7 +6947,7 @@ var DOCS_ZH = {
     blocks: [
       { h: '第一步：启动网关', id: 'start', blocks: [
         { p: '网关是一个本地进程，监听回环端口。先确认它能起来。' },
-        { code: '# install and start the gateway on the default port\npip install ai-memo-os\npython -m mnemosyne.gateway --port 8788\n\n# health check\ncurl http://127.0.0.1:8788/healthz' }
+        { code: '# install and start the gateway on the default port\npip install mnemosyne-os\npython -m mnemosyne.gateway --port 8788\n\n# health check\ncurl http://127.0.0.1:8788/healthz' }
       ] },
       { h: '第二步：登记到 Claude Code', id: 'register', blocks: [
         { p: '把服务写进 Claude Code 的 MCP 配置。项目级配置只对这个目录生效，用户级配置则到处可用。' },
@@ -7105,8 +7142,8 @@ var DOCS_EN = {
     lead: 'From nothing to a memory you can retrieve, usually in under five minutes. Every command below is one this project actually supports.',
     blocks: [
       { h: 'Install', id: 'install', blocks: [
-        { p: 'The package is <code>ai-memo-os</code> and it needs Python 3.8 or newer. There is nothing to compile.' },
-        { code: 'pip install ai-memo-os' },
+        { p: 'The package is <code>mnemosyne-os</code> and it needs Python 3.8 or newer. There is nothing to compile.' },
+        { code: 'pip install mnemosyne-os' },
         { p: 'Then confirm the version and run the self-check: ' },
         { code: 'python -m mnemosyne --version\npython -m mnemosyne doctor' }
       ] },
@@ -7142,7 +7179,7 @@ var DOCS_EN = {
           ['Item', 'Value'],
           ['Licence', 'MIT'],
           ['Repository', '<a href="https://github.com/MnemosyneOS/mnemosyne" target="_blank" rel="noopener">MnemosyneOS/mnemosyne</a>'],
-          ['Package', '<code>ai-memo-os</code>'],
+          ['Package', '<code>mnemosyne-os</code>'],
           ['Python', '3.8 or newer'],
           ['Current version', '8.1.0']
         ] }
@@ -7219,7 +7256,7 @@ var DOCS_EN = {
     blocks: [
       { h: 'Step one: start the gateway', id: 'start', blocks: [
         { p: 'The gateway is a local process on a loopback port. Confirm it comes up first.' },
-        { code: '# install and start the gateway on the default port\npip install ai-memo-os\npython -m mnemosyne.gateway --port 8788\n\n# health check\ncurl http://127.0.0.1:8788/healthz' }
+        { code: '# install and start the gateway on the default port\npip install mnemosyne-os\npython -m mnemosyne.gateway --port 8788\n\n# health check\ncurl http://127.0.0.1:8788/healthz' }
       ] },
       { h: 'Step two: register it', id: 'register', blocks: [
         { p: 'Add the server to the MCP configuration. A project-level entry applies to that directory only; a user-level entry applies everywhere.' },
