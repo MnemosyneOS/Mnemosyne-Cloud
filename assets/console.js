@@ -2143,7 +2143,10 @@
         '<div class="mc-scroll"><table class="mc-tbl"><thead><tr><th>' + esc(dz('内容', 'Content')) +
           '</th><th>' + esc(dz('类型', 'Type')) + '</th><th>' + esc(dz('写入', 'Written')) + '</th></tr></thead><tbody>' +
           (m.items || []).slice(0, 40).map(function (x) {
-            return '<tr><td style="max-width:520px"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
+            /* data-tip 与「记忆库」页同一套悬停提示：excerpt 只够表格显示，
+               悬停给 full（后端已补，最长 2000 字）。 */
+            return '<tr><td style="max-width:520px" data-tip="' + esc(x.full || x.excerpt || '') + '">' +
+              '<div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
               esc(x.excerpt) + '</div></td><td><span class="mc-tag pri">' + esc(x.kind) + '</span></td>' +
               '<td style="white-space:nowrap;color:var(--fg3)">' + esc(ago(x.created)) + '</td></tr>';
           }).join('') + '</tbody></table></div>' +
