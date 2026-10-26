@@ -2947,8 +2947,8 @@
                           'Rather not deploy it yourself? Send this line to your AI')) +
         '</span></div>' +
       '<p>' + esc(dz(
-        '下面这一行里已经写好了你的地址和密钥。发给 Workbuddy / Workbuddy AI / DeepSeek Harness / 豆包 / Hermes Agent / Claude / ChatGPT / Cursor 等等国内外任意一个 AI 智能体，让它读取并照着里面的步骤完成配置 —— 它会自己检测客户端、写配置文件、验证连通性，最后告诉你结果。',
-        'The line below already carries your endpoint and key. Send it to any AI agent - WorkBuddy, DeepSeek Harness, Doubao, Hermes Agent, Claude, ChatGPT, Cursor and so on - and it will read the brief, detect the client, write the config, verify the connection and report back.')) + '</p>' +
+        '下面这一行已经绑定到你的账号，里面没有可直接使用的密钥。发给 Workbuddy / Workbuddy AI / DeepSeek Harness / 豆包 / Hermes Agent / Claude / ChatGPT / Cursor 等等国内外任意一个 AI 智能体 —— 它会读取说明、自己生成密钥、检测客户端、写配置文件、验证连通性，最后告诉你结果。',
+        'The line below is bound to your account and carries no usable key. Send it to any AI agent - WorkBuddy, DeepSeek Harness, Doubao, Hermes Agent, Claude, ChatGPT, Cursor and so on - and it will read the brief, generate its own key, detect the client, write the config, verify the connection and report back.')) + '</p>' +
       '<div class="boxwrap one">' +
         '<div class="box">' + esc(cmd) + '</div>' +
         '<span class="cp" data-copy="' + esc(cmd) + '">' + esc(dz('复制命令', 'Copy command')) + '</span>' +
