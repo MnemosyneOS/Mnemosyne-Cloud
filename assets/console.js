@@ -2947,8 +2947,8 @@
                           'Rather not deploy it yourself? Send this line to your AI')) +
         '</span></div>' +
       '<p>' + esc(dz(
-        '下面这一行已经绑定到你的账号，里面没有可直接使用的密钥。发给 Workbuddy / Workbuddy AI / DeepSeek Harness / 豆包 / Hermes Agent / Claude / ChatGPT / Cursor 等等国内外任意一个 AI 智能体 —— 它会读取说明、自己生成密钥、检测客户端、写配置文件、验证连通性，最后告诉你结果。',
-        'The line below is bound to your account and carries no usable key. Send it to any AI agent - WorkBuddy, DeepSeek Harness, Doubao, Hermes Agent, Claude, ChatGPT, Cursor and so on - and it will read the brief, generate its own key, detect the client, write the config, verify the connection and report back.')) + '</p>' +
+        '下面这一行里**没有任何密钥**，只是一个入口。发给 Workbuddy / Workbuddy AI / DeepSeek Harness / 豆包 / Hermes Agent / Claude / ChatGPT / Cursor 等等国内外任意一个 AI 智能体 —— 它会读取说明、自己生成密钥；轮到授权时，它会请你在浏览器里点一次「同意」（就像用 GitHub 登录那样），然后接着把配置做完。',
+        'The line below carries NO key - it is just an entry point. Send it to any AI agent - WorkBuddy, DeepSeek Harness, Doubao, Hermes Agent, Claude, ChatGPT, Cursor and so on - and it will read the brief and generate its own key. When it needs authorization it will ask you to click Approve once in your browser (the same way GitHub sign-in works), then finish the setup.')) + '</p>' +
       '<div class="boxwrap one">' +
         '<div class="box">' + esc(cmd) + '</div>' +
         '<span class="cp" data-copy="' + esc(cmd) + '">' + esc(dz('复制命令', 'Copy command')) + '</span>' +
@@ -2956,14 +2956,14 @@
       /* 措辞只讲"风险落到你身上"，不描述"别人拿它做了什么" ——
          后者等于把做法写在明面上。 */
       '<div class="warn">' + esc(dz(
-        '这个链接绑定在你自己的账号上，切记：该信息只发给 AI，不要泄露给任何第三方，否则你的记忆很可能会泄露给除你之外的第三方。',
-        'This link is bound to your account. Send it only to an AI and never expose it to any third party - if it leaks, your memories may be exposed to someone other than you.')) + '</div>' +
+        '切记：授权那一步只在你自己确认时才会通过。除了你自己，任何人都无法用这条链接绑走你的账号 —— 但也不要把它发到公开场合。',
+        'Remember: authorization only goes through when YOU approve it. Nobody else can bind to your account through this line - still, do not post it in public.')) + '</div>' +
       /* 这个网址对浏览器直接返回 404（防止真人打开看到密钥）。万一 AI 的抓取器
          带了浏览器头被挡，这里给出唯一的补救方式 —— 只在登录后的控制台可见，
          不会跟着链接泄露出去。 */
       '<div class="hint">' + esc(dz(
-        'macOS / Linux 上把 curl.exe 换成 curl。链接自首次被读取起 30 分钟内有效，过期后回到这里重新复制即可（已配置好的客户端不受影响）。',
-        'On macOS / Linux use curl instead of curl.exe. The link stays readable for 30 minutes from its first read; after that come back here and copy a fresh one (already-configured clients keep working).')) + '</div>' +
+        'macOS / Linux 上把 curl.exe 换成 curl。授权码 10 分钟内有效；过期了就回到这里重新复制一次。',
+        'On macOS / Linux use curl instead of curl.exe. The approval code is valid for 10 minutes; if it expires, come back here and copy the line again.')) + '</div>' +
       '</div>';
   }
 
