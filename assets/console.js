@@ -2955,8 +2955,8 @@
          带了浏览器头被挡，这里给出唯一的补救方式 —— 只在登录后的控制台可见，
          不会跟着链接泄露出去。 */
       '<div class="hint">' + esc(dz(
-        '如果 AI 说打不开（404），让它带上请求头 X-Mnemosyne-Agent: 1 再取一次。',
-        'If the AI reports 404, ask it to retry with the header X-Mnemosyne-Agent: 1.')) + '</div>' +
+        '链接自首次被读取起 30 分钟内有效，过期后回到这里重新复制即可（已配置好的客户端不受影响）。如果 AI 说打不开（404），让它带上请求头 X-Mnemosyne-Agent: 1 再取一次。',
+        'The link stays readable for 30 minutes from its first read; after that, come back here and copy a fresh one (already-configured clients keep working). If the AI reports 404, ask it to retry with the header X-Mnemosyne-Agent: 1.')) + '</div>' +
       '</div>';
   }
 
