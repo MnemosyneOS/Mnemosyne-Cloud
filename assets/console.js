@@ -2937,18 +2937,24 @@
        那样会被 404 挡掉（我们刻意对浏览器隐藏）。带上 X-Mnemosyne-Agent: 1
        就一定能读到，等于把"能不能读"这件事从运气变成确定。
        Windows 必须写 curl.exe（PS 里 curl 是 Invoke-WebRequest 的别名）。 */
-    var cmd = 'curl.exe -H "X-Mnemosyne-Agent: 1" "' + url + '"';
+    /* 复制出去的是一句**自然语言指令 + 命令**，而不是光一条命令：
+       用户会把它整段粘进对话框，AI 需要先明白"这是让我在本机装东西"，
+       再执行后面的命令。只有命令时，部分 AI 会把它当成"要我解释这条命令"。 */
+    var cmd = dz(
+      '请阅读、理解并执行如下指令，在我本机安装 Mnemosyne OS：',
+      'Read, understand and carry out the following so Mnemosyne OS is installed on this machine:'
+    ) + 'curl.exe -H "X-Mnemosyne-Agent: 1" "' + url + '"';
 
     return '<div class="mc-hand">' +
       '<div class="h"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" ' +
         'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
         '<path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>' +
-        '<span>' + esc(dz('如果不想自己部署，您可以把下面这行命令发给你的 AI',
-                          'Rather not deploy it yourself? Send this line to your AI')) +
+        '<span>' + esc(dz('如果不想自己部署，您可以把下面框内的信息发给你的 AI',
+                          'Rather not deploy it yourself? Send what is in the box to your AI')) +
         '</span></div>' +
       '<p>' + esc(dz(
-        '下面这一行里**没有任何密钥**，只是一个入口。发给 Workbuddy / Workbuddy AI / DeepSeek Harness / 豆包 / Hermes Agent / Claude / ChatGPT / Cursor 等等国内外任意一个 AI 智能体 —— 它会读取说明、自己生成密钥；轮到授权时，它会请你在浏览器里点一次「同意」（就像用 GitHub 登录那样），然后接着把配置做完。',
-        'The line below carries NO key - it is just an entry point. Send it to any AI agent - WorkBuddy, DeepSeek Harness, Doubao, Hermes Agent, Claude, ChatGPT, Cursor and so on - and it will read the brief and generate its own key. When it needs authorization it will ask you to click Approve once in your browser (the same way GitHub sign-in works), then finish the setup.')) + '</p>' +
+        '请将下面框内的信息，全部复制，发给你正在使用的 Agent，包括但不限于 Workbuddy / Workbuddy AI / DeepSeek Harness / 豆包 / Hermes Agent / Claude / ChatGPT / Cursor 等国内外任意一个 AI 智能体 —— 它会读取说明、自己生成密钥；轮到授权时，它会请你在浏览器里点一次「同意」（就像用 GitHub 登录那样），然后接着把配置做完，就可以使用 Mnemosyne OS 了。',
+        'Copy everything in the box below and send it to the agent you are using - WorkBuddy, DeepSeek Harness, Doubao, Hermes Agent, Claude, ChatGPT, Cursor and so on. It will read the brief and generate its own key; when authorization is needed it will ask you to click Approve once in your browser (the same way GitHub sign-in works), then finish the setup and Mnemosyne OS is ready to use.')) + '</p>' +
       '<div class="boxwrap one">' +
         '<div class="box">' + esc(cmd) + '</div>' +
         '<span class="cp" data-copy="' + esc(cmd) + '">' + esc(dz('复制命令', 'Copy command')) + '</span>' +
