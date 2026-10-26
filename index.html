@@ -185,12 +185,20 @@
   </div>
 </header>
 
-<!-- ========================= ANNOUNCEMENT BAR ========================= -->
-<div class="announce" id="announce">
+<!-- ========================= ANNOUNCEMENT BAR =========================
+     🔴 2026-10-26：默认带 off —— 公告文案必须等 /api/site 回来才显示。
+     以前这里是默认可见 + 写死的「2026-09-25 上线…18万+」，而 i18n 里是
+     「8.1.0 已上线…31→52」、/api/site 里才是「10月20日重磅升级…52个」，
+     三份不同的文案依次上屏，于是每次刷新都先闪一帧旧内容。
+     现在：隐藏 → 拿到真值 → 显示，宁可晚 200ms，也不显示错的内容。
+     静态文本只是「JS 完全没跑」时的兜底，必须与后台当前公告保持一致。
+     这三处刻意不带 data-i18n：运行期 applyAnnounce() 本来就会摘掉该属性，
+     留着只会在首屏多写一次旧值。 -->
+<div class="announce off" id="announce">
   <div class="in">
-    <b class="hide-sm" data-i18n="ann.tag">8.1.0</b>
-    <span data-i18n="ann.txt">已于2026年9月25日正式上线。截止同日，全网下载量 18万+，官网访问量 109万次+。</span>
-    <a class="cta" href="#/changelog" data-i18n="ann.cta">Read the changelog</a>
+    <b class="hide-sm" style="display:none"></b>
+    <span>Mnemosyne OS 8.1.0 已于2026年10月20日重磅升级：新增记忆形成层——会话摘要、冲突消解、任务与经验记忆、代码演进记忆、敏感度治理。MCP 工具 新增至 52个，旧工具与旧数据完全兼容。</span>
+    <a class="cta" href="#/about">关于Mnemosyne OS</a>
   </div>
   <button class="x" id="ann-x" aria-label="Dismiss">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -781,7 +789,7 @@
 <script src="/assets/site-ff1573ef80.js" defer></script>
 
 <!-- __MN_SITE_MODULE__ -->
-<script src="/assets/site-42db456771.js" defer></script>
+<script src="/assets/site-bb3f382ddd.js" defer></script>
 
 </body>
 </html>
