@@ -3123,7 +3123,9 @@
        基线错开（这也是「权益显示错行」的一部分）。判据：带 dim 标记且以冒号结尾。 */
     var featItems = (t.feats || []).slice();
     var cap = '';
-    if (featItems.length && featItems[0][1] && /[:：]\s*$/.test(String(featItems[0][0]))) {
+    /* 只按文本判据，不看 dim 标记：/v1/pricing 下发的是纯字符串数组
+       （没有 [text, dim] 这种二元组），带上 dim 判断会让线上永远识别不到。 */
+    if (featItems.length && /[:：]\s*$/.test(String(featItems[0][0]))) {
       cap = String(featItems.shift()[0]).replace(/[:：]\s*$/, '');
     }
 
