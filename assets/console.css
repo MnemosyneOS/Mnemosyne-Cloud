@@ -281,6 +281,46 @@ html[data-theme="dark"] .mc { --mc-ok: #4ADE80; --mc-warn: #FBBF24; --mc-bad: #F
   border-radius: 5px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16);
   cursor: pointer; color: #E4E2F2; }
 
+/* ------------------------------------------------------------ 交给 AI 代劳
+   首次接入弹窗最上方那块。视觉上要比下面「选 Agent」的网格更轻 ——
+   它是备选路径，不是主路径；但复制按钮要显眼，因为整块的价值就在那一下。
+   max-height + 内部滚动：这段话有 40 多行，撑开弹窗会把下面的 Agent 网格
+   挤到折叠线以下，用户就以为"没有可选的了"。 */
+.mc-hand {
+  border: 1px solid var(--accent-line);
+  background: color-mix(in srgb, var(--accent-bg) 55%, transparent);
+  border-radius: 11px; padding: 12px 13px 13px; margin-bottom: 14px;
+}
+.mc-hand .h {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 13px; font-weight: 600; color: var(--fg);
+}
+.mc-hand .h svg { color: var(--accent-ink); flex: none; }
+.mc-hand p {
+  margin: 6px 0 9px; font-size: 11.5px; line-height: 1.65; color: var(--fg2);
+}
+.mc-hand .boxwrap { position: relative; }
+.mc-hand .box {
+  max-height: 168px; overflow: auto;
+  font-family: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px; line-height: 1.62; white-space: pre-wrap; word-break: break-word;
+  background: var(--code-bg); color: var(--code-fg);
+  border: 1px solid var(--code-line); border-radius: 8px;
+  padding: 10px 12px 10px 12px;
+}
+/* 按钮放在滚动容器**外面**：放进 .box 里会跟着内容一起滚走，
+   用户滚到中间就找不到「复制」了。 */
+.mc-hand .boxwrap .cp {
+  position: absolute; right: 8px; top: 8px;
+  font-size: 10.5px; padding: 3px 9px; border-radius: 5px;
+  background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.22);
+  cursor: pointer; color: #E4E2F2; white-space: nowrap;
+  backdrop-filter: blur(4px);
+}
+.mc-hand .boxwrap .cp:hover { background: rgba(255,255,255,.26); }
+/* 矮屏（笔记本 768p）上把这段话压短一点，别把下面的 Agent 网格挤没了 */
+@media (max-height: 800px) { .mc-hand .box { max-height: 112px; } .mc-hand p { display: none; } }
+
 /* ---------------------------------------------------------------- graph --- */
 .mc-graphwrap { position: relative; border: 1px solid var(--hair); border-radius: 12px;
   overflow: hidden; background: var(--surface); height: calc(100vh - 210px); min-height: 460px; }

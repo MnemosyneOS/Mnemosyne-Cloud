@@ -2910,6 +2910,182 @@
     if (skip) sessionStorage.setItem('mc-wizard-skip', '1');
   }
 
+
+  /* ---------------------------------------------------------------- AI 代劳
+   *
+   * 「不想自己配」的那条路：把一整段话复制走，丢给任意 AI，让它替用户
+   * 检测客户端、写配置、验证连通性，最后回一句结论。
+   *
+   * 三个硬要求（决定了这段话为什么这么长）：
+   *   ① **自洽** —— 地址和密钥已经写死在里面，对方 AI 不需要回来问用户任何事；
+   *   ② **可验证** —— 明确给出 tools/list 与 retain 两条 JSON-RPC，
+   *      以及"52 个工具"这个可对账的期望值，避免它写完了却不知道通没通；
+   *   ③ **可收尾** —— 规定它最后必须原话告诉用户"配置全部完成…可以在
+   *      Mnemosyne OS SaaS 查看管理"，否则用户拿不到一个明确的结束信号。
+   *
+   * 文本里的反斜杠一律写成 \\，否则 JS 会把 \C 当成转义符吃掉，
+   * 用户复制到的是 %APPDATA%Claude 这种残废路径。
+   */
+  function aiHandoff(s) {
+    var url = (s && s.mcp_url) || '';
+    var key = (s && s.key) || '';
+    var L = [];
+
+    if (zhNow()) {
+      L = [
+        '请帮我完成一次配置，做完后明确告诉我结果。',
+        '',
+        '## 任务',
+        '把 Mnemosyne OS 的远程 MCP 记忆服务接入我正在用的 AI 客户端，并验证真的连通。',
+        'Mnemosyne OS 是一个 MCP 服务器：接上之后，你在每次对话里都能读写我的长期记忆。',
+        '',
+        '## 我这边已有的信息（不需要再问我）',
+        'MCP 地址：' + url,
+        '请求头：Authorization: Bearer ' + key,
+        '传输方式：Streamable HTTP（HTTP 传输，不是 stdio；不要写 command / args）',
+        '',
+        '## 请按这个顺序做',
+        '1. 先判断我这台机器上装了哪些支持 MCP 的客户端（Claude Code / Claude Desktop / Cursor /',
+        '   Windsurf / VS Code Copilot / Cline / Roo Code / Kilo Code / Continue / Zed / Codex CLI /',
+        '   Gemini CLI / OpenCode / Qoder / Trae / Kimi CLI / GLM Coding 等），',
+        '   告诉我你找到了哪些、准备改哪一个。',
+        '2. 把下面这一项**合并**进那个客户端的 MCP 配置文件：文件里已有的其它 server 必须保留，',
+        '   只新增或更新 mnemosyne 这一项；改之前先备份成 .bak，改完保证 JSON / TOML 仍然合法。',
+        '   {',
+        '     "mcpServers": {',
+        '       "mnemosyne": {',
+        '         "type": "http",',
+        '         "url": "' + url + '",',
+        '         "headers": { "Authorization": "Bearer ' + key + '" }',
+        '       }',
+        '     }',
+        '   }',
+        '   常见位置：',
+        '   - Claude Desktop：Windows %APPDATA%\\Claude\\claude_desktop_config.json；',
+        '     macOS ~/Library/Application Support/Claude/claude_desktop_config.json',
+        '   - Cursor：~/.cursor/mcp.json',
+        '   - Windsurf：~/.codeium/windsurf/mcp_config.json',
+        '   - Cline / Roo Code / Kilo Code：VS Code 的 globalStorage/<扩展 id>/settings/mcp_settings.json',
+        '   - Continue：~/.continue/config.json 的 experimental.mcpServers',
+        '   - VS Code Copilot：用户级 mcp.json，注意它用 "servers" 而不是 "mcpServers"',
+        '   - Codex CLI：~/.codex/config.toml 里的 [mcp_servers.mnemosyne]',
+        '   - Gemini CLI：~/.gemini/settings.json 的 mcpServers',
+        '   - Claude Code：直接执行下面这条',
+        '     claude mcp add --scope user mnemosyne --transport http ' + url +
+          ' --header "Authorization: Bearer ' + key + '"',
+        '3. 如果这个客户端根本没有可写的配置文件（JetBrains / ChatGPT 桌面版 / Goose / 豆包 等），',
+        '   请把该点哪里一步步告诉我，并把地址和请求头原样贴出来，我自己点。',
+        '4. 验证连通性：向 ' + url + ' 发一条 JSON-RPC 请求',
+        '   {"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}',
+        '   请求头带 Content-Type: application/json 和上面的 Authorization。',
+        '   期望：HTTP 200，且 tools 数组里有 52 个工具（retain / recall / forget / stats / doctor …）。',
+        '5. 再写一条测试记忆，确认写权限也是通的：',
+        '   {"jsonrpc":"2.0","id":2,"method":"tools/call",',
+        '    "params":{"name":"retain","arguments":{"content":"setup smoke test",',
+        '    "mtype":"episodic","tags":["setup"]}}}',
+        '6. 把每一步的结果告诉我；任何一步报错，把状态码和返回体贴出来，并说明你打算怎么修。',
+        '',
+        '## 最后请明确回答我三件事',
+        '1. 配置是否**全部完成**（是 / 否），接的是哪个客户端，改的是哪个文件；',
+        '2. 验证结果：tools/list 返回多少个工具、测试记忆是否写入成功；',
+        '3. 如果都通了，请原话告诉我：',
+        '   「配置全部完成，现在可以正常使用 Mnemosyne OS 了。以后的记忆数据和订阅，',
+        '    可以在 Mnemosyne OS SaaS（https://ai-memory.net/#/dashboard）里查看和管理。」',
+        '',
+        '## 排错提示',
+        '- 401 unauthorized → 密钥不对或已吊销，回 https://ai-memory.net/#/login 重新复制一条命令；',
+        '- 404 → 地址写错，必须一字不差用上面那个 MCP 地址（不要换成 /mcp）；',
+        '- 连不上 → 先访问 https://ai-memory.net/healthz，确认返回 {"ok": true} 再重试；',
+        '- Windows 上 curl 是 Invoke-WebRequest 的别名，命令行请用 curl.exe。'
+      ];
+    } else {
+      L = [
+        'Please set this up for me and tell me the outcome when you are done.',
+        '',
+        '## Goal',
+        'Connect the remote MCP memory server "Mnemosyne OS" to the AI client I use,',
+        'and prove the connection actually works.',
+        '',
+        '## Everything you need (do not ask me again)',
+        'MCP endpoint : ' + url,
+        'Header       : Authorization: Bearer ' + key,
+        'Transport    : Streamable HTTP (not stdio - do not use command / args)',
+        '',
+        '## Steps, in order',
+        '1. Detect which MCP-capable clients are installed on this machine (Claude Code,',
+        '   Claude Desktop, Cursor, Windsurf, VS Code Copilot, Cline, Roo Code, Kilo Code,',
+        '   Continue, Zed, Codex CLI, Gemini CLI, OpenCode, Qoder, Trae, Kimi CLI, GLM Coding).',
+        '   List what you found and say which one you are going to configure.',
+        '2. MERGE the entry below into that client\'s MCP config file. Keep every other server',
+        '   already in the file; only add or replace "mnemosyne". Back the file up to .bak first,',
+        '   and leave the JSON / TOML valid.',
+        '   {',
+        '     "mcpServers": {',
+        '       "mnemosyne": {',
+        '         "type": "http",',
+        '         "url": "' + url + '",',
+        '         "headers": { "Authorization": "Bearer ' + key + '" }',
+        '       }',
+        '     }',
+        '   }',
+        '   Common locations:',
+        '   - Claude Desktop: %APPDATA%\\Claude\\claude_desktop_config.json (Windows) or',
+        '     ~/Library/Application Support/Claude/claude_desktop_config.json (macOS)',
+        '   - Cursor: ~/.cursor/mcp.json',
+        '   - Windsurf: ~/.codeium/windsurf/mcp_config.json',
+        '   - Cline / Roo Code / Kilo Code: VS Code globalStorage/<extension id>/settings/mcp_settings.json',
+        '   - Continue: ~/.continue/config.json -> experimental.mcpServers',
+        '   - VS Code Copilot: user-level mcp.json - note it uses "servers", not "mcpServers"',
+        '   - Codex CLI: ~/.codex/config.toml -> [mcp_servers.mnemosyne]',
+        '   - Gemini CLI: ~/.gemini/settings.json -> mcpServers',
+        '   - Claude Code: run',
+        '     claude mcp add --scope user mnemosyne --transport http ' + url +
+          ' --header "Authorization: Bearer ' + key + '"',
+        '3. If that client has no writable config file (JetBrains, ChatGPT Desktop, Goose,',
+        '   Doubao ...), give me the exact click path and paste the URL + header for me.',
+        '4. Verify: POST to ' + url + ' with',
+        '   {"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}',
+        '   and headers Content-Type: application/json plus the Authorization above.',
+        '   Expect HTTP 200 and 52 tools in the "tools" array (retain, recall, forget, stats, doctor ...).',
+        '5. Write one test memory to prove write access:',
+        '   {"jsonrpc":"2.0","id":2,"method":"tools/call",',
+        '    "params":{"name":"retain","arguments":{"content":"setup smoke test",',
+        '    "mtype":"episodic","tags":["setup"]}}}',
+        '6. Report each step. On any error, show the status code and body, and say how you will fix it.',
+        '',
+        '## Finally, answer these three things',
+        '1. Is the setup fully complete (yes / no), which client, which file?',
+        '2. Verification: how many tools came back, did the test memory get written?',
+        '3. If everything passed, say exactly this:',
+        '   "Setup is complete - Mnemosyne OS is ready to use. Your memories and your',
+        '    subscription can be viewed and managed in Mnemosyne OS SaaS',
+        '    (https://ai-memory.net/#/dashboard)."',
+        '',
+        '## Troubleshooting',
+        '- 401 unauthorized -> wrong or revoked key; go back to https://ai-memory.net/#/login for a fresh command',
+        '- 404 -> wrong URL; use the MCP endpoint above verbatim (not /mcp)',
+        '- Cannot connect -> check https://ai-memory.net/healthz returns {"ok": true} first',
+        '- On Windows, curl is an alias for Invoke-WebRequest; use curl.exe on the command line'
+      ];
+    }
+
+    var txt = L.join('\n');
+    return '<div class="mc-hand">' +
+      '<div class="h"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" ' +
+        'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>' +
+        '<span>' + esc(dz('不想自己配？把下面这段整段发给你的 AI', 'Rather not do it by hand? Hand this to your AI')) +
+        '</span></div>' +
+      '<p>' + esc(dz(
+        '这段话里已经写好了你的地址和密钥。发给 Claude / ChatGPT / Cursor 里任意一个 AI，让它替你检测客户端、写配置文件、验证连通性，最后告诉你结果 —— 你不用再抄任何东西。',
+        'Your endpoint and key are already inside. Paste it into Claude / ChatGPT / Cursor and the model will detect the client, write the config, verify the link and report back.')) + '</p>' +
+      '<div class="boxwrap">' +
+        '<div class="box">' + esc(txt) + '</div>' +
+        '<span class="cp" data-copy="' + esc(txt) + '">' + esc(dz('复制这段', 'Copy')) + '</span>' +
+      '</div>' +
+      '</div>';
+  }
+
   function paintWizard() {
     var box = document.getElementById('mc-wizard-box');
     if (!box) return;
@@ -2934,6 +3110,8 @@
     if (step === 1) {
       var ag = MC.agents || {};
       body2 = '<div class="mb">' +
+        /* 放在最上方：这是「嫌麻烦」的人第一眼要看到的东西。 */
+        aiHandoff(s) +
         '<input class="mc-inp" id="mc-agent-q" style="width:100%;margin-bottom:12px" placeholder="' +
           esc(dz('搜索：Claude / Cursor / 豆包 / 通义 / Cherry…', 'Search agents…')) + '">' +
         '<div id="mc-agent-list">' + agentGrid(ag, MC.wizard.agent) + '</div></div>';
