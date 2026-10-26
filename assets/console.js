@@ -1363,9 +1363,14 @@
         '<div><div style="font-size:11px;color:var(--fg3);letter-spacing:.04em">' +
         esc(dz('当前计划', 'Current plan')) + '</div>' +
         '<b style="font-size:20px;letter-spacing:-.02em">' + esc(tierLabel) + '</b></div>' +
+        /* 🔴 2026-10-26：Free 档这里原来有个「支付 Pro — $6.9/月」按钮。
+           三个问题：① 只走美元通道，人民币用户点了也没用；
+           ② 与下方「人民币订阅 / 美元订阅」两块完全重复；
+           ③ 价格写死在文案里，改价就变成假广告。
+           站长要求：这个位置不放支付按钮，统一在下面的订阅区支付。
+           已订阅的用户仍保留「管理订阅」入口。 */
         (sub.tier === 'free'
-          ? '<button class="mc-btn pri" data-act="stripe" data-tier="pro" data-interval="month">' +
-            esc(dz('支付 Pro — $6.9/月', 'Pay Pro — $6.9/mo')) + '</button>'
+          ? ''
           : '<button class="mc-btn" data-act="portal">' +
             esc(dz('管理订阅', 'Manage subscription')) + '</button>') +
         '</div>' +
@@ -1806,9 +1811,15 @@
     /* locale 必须显式传：不传时 PayPal 按**浏览器/IP 推断**，实测在中国 IP 下
        弹窗直接变成韩文（用户截图）。跟着站内语言走：中文→zh_CN，英文→en_US。 */
     var loc = zhNow() ? 'zh_CN' : 'en_US';
+    /* 🔴 2026-10-26：这里原来还带了 `&buyer-country=CN`，而 PayPal 生产环境
+       对它是**硬拒**的 —— SDK 直接返回 400 并 throw
+       "Query parameter buyer-country disallowed in production env"，
+       脚本 onerror → window.paypal 永远不存在 → 美元档的按钮一个都渲染不出来。
+       （该参数只在 sandbox 生效，当初加它是为了压掉"中国 IP 弹窗变韩文"，
+       实际起作用的是 locale，buyer-country 纯属多余。） */
     s.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(clientId) +
             '&vault=true&intent=subscription&components=buttons&currency=USD' +
-            '&locale=' + loc + '&buyer-country=CN';
+            '&locale=' + loc;
     s.async = true;
     s.onload = function () {
       PP_STATE.loading = false;

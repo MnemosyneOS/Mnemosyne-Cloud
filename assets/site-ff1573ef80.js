@@ -3122,11 +3122,19 @@
        它不是一条权益，是列表的小标题 —— 混在勾选列表里会让第一行跟其它行
        基线错开（这也是「权益显示错行」的一部分）。判据：带 dim 标记且以冒号结尾。 */
     var featItems = (t.feats || []).slice();
-    var cap = '';
+    var capHTML = '';
     /* 只按文本判据，不看 dim 标记：/v1/pricing 下发的是纯字符串数组
-       （没有 [text, dim] 这种二元组），带上 dim 判断会让线上永远识别不到。 */
+       （没有 [text, dim] 这种二元组），带上 dim 判断会让线上永远识别不到。
+
+       🔴 2026-10-26：小标题改成列表的**第一行**，不再单独占一个 .tier-cap 槽位。
+       之前 Free / 增值包 没有小标题，槽位留空 → 这两张卡的第一行可视文字
+       比 Pro / Team 高出 25px，四张卡并排一眼就看出来「第一行没对齐」。
+       现在小标题与权益行走同一套盒模型（同字号同 padding），
+       四张卡的第一行落在同一条基线上。 */
     if (featItems.length && /[:：]\s*$/.test(String(featItems[0][0]))) {
-      cap = String(featItems.shift()[0]).replace(/[:：]\s*$/, '');
+      capHTML = '<li class="feat cap">' +
+                  esc(String(featItems.shift()[0]).replace(/[:：]\s*$/, '')) +
+                '</li>';
     }
 
     var feats = featItems.map(function (f) {
@@ -3196,10 +3204,7 @@
                 没有说明时留空占位，四张卡的权益区才能从同一高度开始。 */
              '<p class="tier-note">' + esc(extra || '') + '</p>' +
              '<div class="tier-rule"></div>' +
-             /* 小标题位也永远占住：Pro/Team 有「包含 X 全部功能」，Free/增值包没有，
-                不占位的话这两张卡的权益列表会整体上移一行。 */
-             '<p class="tier-cap">' + esc(cap) + '</p>' +
-             '<ul class="tier-feats">' + feats + '</ul>' +
+             '<ul class="tier-feats">' + capHTML + feats + '</ul>' +
            '</div>';
   }
 
