@@ -329,9 +329,10 @@ html[data-theme="dark"] .mc { --mc-ok: #4ADE80; --mc-warn: #FBBF24; --mc-bad: #F
   font-size: 9px; font-weight: 700; color: #fff; background: var(--mc-warn, #D97706);
 }
 .mc-hand .hint { margin-top: 5px; font-size: 10.5px; line-height: 1.5; color: var(--fg3); opacity: .85; }
-/* 单行网址版：不换行、横向滚动，复制按钮的宽度预留出来 */
+/* 单行命令版：现在是 curl 一行（约 110 字符），允许折行比横向滚动好读 ——
+   横滚会让人以为内容被截断了。复制按钮的宽度照旧预留。 */
 .mc-hand .boxwrap.one .box {
-  white-space: nowrap; overflow-x: auto; overflow-y: hidden;
+  white-space: pre-wrap; word-break: break-all;
   max-height: none; padding: 9px 104px 9px 12px; font-size: 11.5px;
 }
 /* 原来是给「60 行正文」用的矮屏压缩规则；改成一行网址后整块只有 ~110px，

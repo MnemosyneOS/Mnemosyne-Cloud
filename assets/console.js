@@ -2932,19 +2932,26 @@
     }
     if (!url) return '';
 
+    /* 直接给一行 curl，而不是光给网址：
+       网址要靠对方 AI 自己去 fetch，而它的抓取器可能带浏览器头 ——
+       那样会被 404 挡掉（我们刻意对浏览器隐藏）。带上 X-Mnemosyne-Agent: 1
+       就一定能读到，等于把"能不能读"这件事从运气变成确定。
+       Windows 必须写 curl.exe（PS 里 curl 是 Invoke-WebRequest 的别名）。 */
+    var cmd = 'curl.exe -H "X-Mnemosyne-Agent: 1" "' + url + '"';
+
     return '<div class="mc-hand">' +
       '<div class="h"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" ' +
         'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
         '<path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>' +
-        '<span>' + esc(dz('如果不想自己部署，您可以把下面这个网址发给你的 AI',
-                          'Rather not deploy it yourself? Send this link to your AI')) +
+        '<span>' + esc(dz('如果不想自己部署，您可以把下面这行命令发给你的 AI',
+                          'Rather not deploy it yourself? Send this line to your AI')) +
         '</span></div>' +
       '<p>' + esc(dz(
-        '这个网址里已经写好了你的地址和密钥。发给 Workbuddy / Workbuddy AI / DeepSeek Harness / 豆包 / Hermes Agent / Claude / ChatGPT / Cursor 等等国内外任意一个 AI 智能体，让它替你检测客户端、写配置文件、验证连通性，最后告诉你结果。',
-        'Your endpoint and key are already inside this link. Send it to any AI agent - WorkBuddy, DeepSeek Harness, Doubao, Hermes Agent, Claude, ChatGPT, Cursor and so on - and it will detect the client, write the config, verify the connection and report back.')) + '</p>' +
+        '下面这一行里已经写好了你的地址和密钥。发给 Workbuddy / Workbuddy AI / DeepSeek Harness / 豆包 / Hermes Agent / Claude / ChatGPT / Cursor 等等国内外任意一个 AI 智能体，让它读取并照着里面的步骤完成配置 —— 它会自己检测客户端、写配置文件、验证连通性，最后告诉你结果。',
+        'The line below already carries your endpoint and key. Send it to any AI agent - WorkBuddy, DeepSeek Harness, Doubao, Hermes Agent, Claude, ChatGPT, Cursor and so on - and it will read the brief, detect the client, write the config, verify the connection and report back.')) + '</p>' +
       '<div class="boxwrap one">' +
-        '<div class="box">' + esc(url) + '</div>' +
-        '<span class="cp" data-copy="' + esc(url) + '">' + esc(dz('复制链接', 'Copy link')) + '</span>' +
+        '<div class="box">' + esc(cmd) + '</div>' +
+        '<span class="cp" data-copy="' + esc(cmd) + '">' + esc(dz('复制命令', 'Copy command')) + '</span>' +
       '</div>' +
       /* 措辞只讲"风险落到你身上"，不描述"别人拿它做了什么" ——
          后者等于把做法写在明面上。 */
@@ -2955,8 +2962,8 @@
          带了浏览器头被挡，这里给出唯一的补救方式 —— 只在登录后的控制台可见，
          不会跟着链接泄露出去。 */
       '<div class="hint">' + esc(dz(
-        '链接自首次被读取起 30 分钟内有效，过期后回到这里重新复制即可（已配置好的客户端不受影响）。如果 AI 说打不开（404），让它带上请求头 X-Mnemosyne-Agent: 1 再取一次。',
-        'The link stays readable for 30 minutes from its first read; after that, come back here and copy a fresh one (already-configured clients keep working). If the AI reports 404, ask it to retry with the header X-Mnemosyne-Agent: 1.')) + '</div>' +
+        'macOS / Linux 上把 curl.exe 换成 curl。链接自首次被读取起 30 分钟内有效，过期后回到这里重新复制即可（已配置好的客户端不受影响）。',
+        'On macOS / Linux use curl instead of curl.exe. The link stays readable for 30 minutes from its first read; after that come back here and copy a fresh one (already-configured clients keep working).')) + '</div>' +
       '</div>';
   }
 
