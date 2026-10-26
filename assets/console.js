@@ -2946,6 +2946,9 @@
         '<div class="box">' + esc(url) + '</div>' +
         '<span class="cp" data-copy="' + esc(url) + '">' + esc(dz('复制链接', 'Copy link')) + '</span>' +
       '</div>' +
+      '<div class="warn">' + esc(dz(
+        '这个链接绑定在你自己的账号上：只发给 AI，别转发给别人 —— 别人用它配置，写进去的记忆会落在你的账号里。',
+        'This link is bound to your account: send it to an AI, do not forward it - anyone using it would write into your memory.')) + '</div>' +
       '</div>';
   }
 

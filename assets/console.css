@@ -318,6 +318,16 @@ html[data-theme="dark"] .mc { --mc-ok: #4ADE80; --mc-warn: #FBBF24; --mc-bad: #F
   backdrop-filter: blur(4px);
 }
 .mc-hand .boxwrap .cp:hover { background: rgba(255,255,255,.26); }
+/* 一句防转发提醒：链接里带的是这个人的密钥，转发出去等于把账号借人 */
+.mc-hand .warn {
+  margin-top: 8px; font-size: 11px; line-height: 1.55; color: var(--fg3);
+  padding-left: 15px; position: relative;
+}
+.mc-hand .warn::before {
+  content: '!'; position: absolute; left: 0; top: 0;
+  width: 11px; height: 11px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 9px; font-weight: 700; color: #fff; background: var(--mc-warn, #D97706);
+}
 /* 单行网址版：不换行、横向滚动，复制按钮的宽度预留出来 */
 .mc-hand .boxwrap.one .box {
   white-space: nowrap; overflow-x: auto; overflow-y: hidden;
