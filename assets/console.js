@@ -2936,11 +2936,12 @@
       '<div class="h"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" ' +
         'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
         '<path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>' +
-        '<span>' + esc(dz('不想自己配？把这个网址发给你的 AI', 'Rather not do it by hand? Send this link to your AI')) +
+        '<span>' + esc(dz('如果不想自己部署，您可以把下面这个网址发给你的 AI',
+                          'Rather not deploy it yourself? Send this link to your AI')) +
         '</span></div>' +
       '<p>' + esc(dz(
-        '这个链接打开是一份写给 AI 的部署说明，里面已经带上你的地址和密钥。发给 Claude / ChatGPT / Cursor 里任意一个，它会自己读完、把配置做完、验证连通，最后告诉你结果。',
-        'The link opens a setup brief written for an AI, with your endpoint and key already inside. Send it to Claude / ChatGPT / Cursor and it will do the whole setup and report back.')) + '</p>' +
+        '这个网址里已经写好了你的地址和密钥。发给 Workbuddy / Workbuddy AI / DeepSeek Harness / 豆包 / Hermes Agent / Claude / ChatGPT / Cursor 等等国内外任意一个 AI 智能体，让它替你检测客户端、写配置文件、验证连通性，最后告诉你结果。',
+        'Your endpoint and key are already inside this link. Send it to any AI agent - WorkBuddy, DeepSeek Harness, Doubao, Hermes Agent, Claude, ChatGPT, Cursor and so on - and it will detect the client, write the config, verify the connection and report back.')) + '</p>' +
       '<div class="boxwrap one">' +
         '<div class="box">' + esc(url) + '</div>' +
         '<span class="cp" data-copy="' + esc(url) + '">' + esc(dz('复制链接', 'Copy link')) + '</span>' +
