@@ -2946,9 +2946,11 @@
         '<div class="box">' + esc(url) + '</div>' +
         '<span class="cp" data-copy="' + esc(url) + '">' + esc(dz('复制链接', 'Copy link')) + '</span>' +
       '</div>' +
+      /* 措辞只讲"风险落到你身上"，不描述"别人拿它做了什么" ——
+         后者等于把做法写在明面上。 */
       '<div class="warn">' + esc(dz(
-        '这个链接绑定在你自己的账号上：只发给 AI，别转发给别人 —— 别人用它配置，写进去的记忆会落在你的账号里。',
-        'This link is bound to your account: send it to an AI, do not forward it - anyone using it would write into your memory.')) + '</div>' +
+        '这个链接绑定在你自己的账号上，切记：该信息只发给 AI，不要泄露给任何第三方，否则你的记忆很可能会泄露给除你之外的第三方。',
+        'This link is bound to your account. Send it only to an AI and never expose it to any third party - if it leaks, your memories may be exposed to someone other than you.')) + '</div>' +
       /* 这个网址对浏览器直接返回 404（防止真人打开看到密钥）。万一 AI 的抓取器
          带了浏览器头被挡，这里给出唯一的补救方式 —— 只在登录后的控制台可见，
          不会跟着链接泄露出去。 */
