@@ -1375,7 +1375,7 @@
           var feats = (zhNow() ? (sub.features_zh || sub.features) : sub.features) || [];
           if (!feats.length) return '';
           return '<div style="margin-top:10px">' + feats.map(function (f) {
-            return '<div style="font-size:11.5px;color:var(--fg2);padding:2px 0">✓ ' + esc(f) + '</div>';
+            return '<div class="mc-feat">' + esc(f) + '</div>';
           }).join('') + '</div>';
         })() +
         '</div>';
@@ -1457,7 +1457,7 @@
           '<b style="font-size:14px">' + esc(t.name) + '</b>' +
           (t.per_seat ? ' <span class="mc-tag">' + esc(dz('按席位', 'per seat')) + '</span>' : '') +
           '<div style="margin-top:10px">' + seg + '</div>' +
-          '<div style="font-size:22px;font-weight:700;margin:4px 0 2px;min-height:32px;' +
+          '<div style="font-size:28px;font-weight:600;margin:4px 0 2px;min-height:36px;letter-spacing:-.03em;' +
           'display:flex;align-items:baseline;gap:2px">$' + amt +
           '<span style="font-size:11.5px;font-weight:400;color:var(--fg3)">' +
           esc(period) + '</span></div>' +
@@ -1467,7 +1467,7 @@
                            : dz('适合每天都在用 AI 干活的人。', 'For daily AI work.')) + '</div>' +
           '<div style="margin-bottom:10px;flex:1 1 auto">' +
             ((zhNow() ? (t.features_zh || t.features) : t.features) || []).map(function (f) {
-              return '<div style="font-size:11.5px;color:var(--fg2);padding:2px 0">✓ ' + esc(f) + '</div>';
+              return '<div class="mc-feat">' + esc(f) + '</div>';
             }).join('') + '</div>' +
           /* CTA 用 margin-top:auto 收到卡片底部，四张卡按钮同一水平线 */
           '<div style="margin-top:auto">' + payCta(t.id, iv, planId, on, promotional) + '</div>' +
@@ -1487,7 +1487,7 @@
             '<b style="font-size:14px">' + esc(dz('增值包', 'Add-on')) + '</b>' +
             (addonOn ? '<span class="mc-pill ok"><i></i>' + esc(dz('已开通', 'Active')) + '</span>' : '') +
           '</div>' +
-          '<div style="font-size:22px;font-weight:700;margin:8px 0 2px">$' + ad.price_monthly +
+          '<div style="font-size:28px;font-weight:600;margin:8px 0 2px;letter-spacing:-.03em">$' + ad.price_monthly +
           '<span style="font-size:11.5px;font-weight:400;color:var(--fg3)">' +
           esc(dz('/ 月（加购）', '/ mo (add-on)')) + '</span></div>' +
           '<div style="font-size:11px;color:var(--fg3);margin:4px 0 8px;line-height:1.6;min-height:34px">' +
@@ -1495,7 +1495,7 @@
                    'Sits on top of Pro / Team; not sold standalone.')) + '</div>' +
           '<div style="margin-bottom:10px;flex:1 1 auto">' +
             ((zhNow() ? (ad.features_zh || ad.features) : ad.features) || []).map(function (f) {
-              return '<div style="font-size:11.5px;color:var(--fg2);padding:2px 0">✓ ' + esc(f) + '</div>';
+              return '<div class="mc-feat">' + esc(f) + '</div>';
             }).join('') + '</div>' +
           (addonOn
             ? '<div class="mc-note" style="text-align:center;border:0;background:none;font-size:11.5px">' +
@@ -1592,13 +1592,13 @@
             (on ? '<span class="mc-pill ok"><i></i>' + esc(dz('当前', 'Current')) + '</span>'
                 : '<span class="mc-tag">' + esc(base.badge || '') + '</span>') + '</div>' +
           '<div style="margin-top:10px">' + seg + '</div>' +
-          '<div style="font-size:24px;font-weight:700;margin:4px 0 2px;letter-spacing:-.02em;' +
+          '<div style="font-size:28px;font-weight:600;margin:4px 0 2px;letter-spacing:-.03em;' +
             'min-height:34px;display:flex;align-items:baseline;gap:2px">¥' + esc(pk.price) +
             '<span style="font-size:11.5px;font-weight:400;color:var(--fg3)">' + esc(period) + '</span></div>' +
           '<div style="font-size:11.5px;color:var(--fg3);min-height:44px;line-height:1.6">' +
             esc(zh ? base.zh_desc : base.en_desc) + '</div>' +
           '<div style="margin:10px 0 12px;flex:1">' + feats.map(function (f) {
-            return '<div style="font-size:11.5px;color:var(--fg2);padding:2px 0">✓ ' + esc(f) + '</div>';
+            return '<div class="mc-feat">' + esc(f) + '</div>';
           }).join('') + '</div>' + btn + '</div>';
       }).join('');
 

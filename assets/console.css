@@ -185,6 +185,18 @@ html[data-theme="dark"] .mc { --mc-ok: #4ADE80; --mc-warn: #FBBF24; --mc-bad: #F
 
 .mc-card { background: var(--surface); border: 1px solid var(--hair); border-radius: var(--mc-radius); }
 .mc-card.pad { padding: 15px 16px; }
+/* 🔴 2026-10-26：套餐卡权益行改 grid 对齐。
+   原来是 '✓ ' + 文本 的行内写法 —— 一条权益折行后，第二行就顶到最左边、
+   跑到勾号底下，四张卡一对比就是「错行」。现在勾号独占 14px 一列，
+   文本列 minmax(0,1fr)，任何长度都在自己那列里换行，左边缘永远对齐。 */
+.mc-feat {
+  display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 8px;
+  font-size: 11.5px; line-height: 1.55; color: var(--fg2); padding: 3px 0;
+}
+.mc-feat::before {
+  content: '✓'; font-size: 11px; line-height: 1.55;
+  color: var(--accent-ink); text-align: center;
+}
 .mc-grid { display: grid; gap: 12px; }
 .mc-g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .mc-g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
