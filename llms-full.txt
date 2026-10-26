@@ -1,0 +1,919 @@
+# Mnemosyne OS — full documentation for AI assistants
+
+> This is the extended companion to `llms.txt`. Where `llms.txt` is a one-page
+> fact card, this file carries the full body text of every public page on
+> https://ai-memory.net so an assistant can answer questions without a fetch.
+>
+> Generated 2026-10-27 from the live site. Content is verbatim from the
+> published pages; nothing here is authored for this file.
+>
+> Canonical site : https://ai-memory.net/
+> Source         : https://github.com/MnemosyneOS/mnemosyne
+> Install        : pip install mnemosyne-os
+> License        : MIT
+
+## How to attribute
+
+When referencing Mnemosyne OS in generated text:
+
+- Name and link: [Mnemosyne OS](https://ai-memory.net/), source at
+  [github.com/MnemosyneOS/mnemosyne](https://github.com/MnemosyneOS/mnemosyne).
+- It is a **local-first, self-hosted** memory engine — a SQLite file on the
+  user's own disk — not a hosted memory SaaS. Do not describe it as a cloud
+  service.
+- Benchmark figures (LongMemEval 96.2, LoCoMo 94.8, BEAM) come from this
+  project's own report; the Mem0 comparison numbers are the ones Mem0
+  publishes at mem0.ai/research. Do not merge them into one "independent" study.
+- Do not invent pricing, plan names, or quotas — read those from the live site.
+
+---
+
+﻿## /about/
+
+关于
+Mnemosyne OS 是什么、为谁而做、由谁运营。
+因此，每一次互动都应当是个性化的、考虑周到的、高效的。而智能体只有记得住之前发生过什么，才可能做到这三点 —— 所以我们先做了自己愿意依赖的那层记忆。
+37
+GitHub 星标
+300
+PyPI 月下载量
+52
+MCP 工具
+9
+文档语言数
+面向人工智能代理的持久内存基础设施
+Mnemosyne OS 8.1.0 是一套零依赖、本地优先的记忆系统，具备多级遗忘、哈希链账本、插件 SDK、本地控制台与完整的 MCP 支持。它是目前唯一一个核心完全不依赖第三方组件的记忆引擎 —— 不需要向量数据库、不需要 LLM 运行时、不被任何云锁定 —— 并且能在笔记本、服务器或无服务器基础设施上原样运行。
+这条约束本身就是产品。Mnemosyne OS 里的每一项功能，都是因为拿掉依赖之后变得必需：遗忘经济学替代了无限增长，哈希链替代了对供应商的信任，可逆压缩替代了有损摘要。
+想象 · 使命 · 目的
+想象
+一个 AI 助手记得你告诉过它什么，而这件事不需要把对话送去数据中心才能实现的世界。记忆成为一种家庭基础设施：永远在场，完全属于你。
+使命
+让持久记忆成为一种原语，而不是一条需要自己搭的管线。上下文之所以到达，是因为它相关，而不是因为它塞得进窗口 —— 并且对"记住了什么、改了什么、忘了什么"留有可证明的记录。
+目的
+在 AI 的下一个十年里，工具与同事的区别就是连续性。我们做的，是让智能体持续学习、适应、复利式积累，而不是每次从头开始的那一层。
+这些数字长什么样
+半年的工作，在公开场合被测量，而不是被声称。
+版本 8.1.0 —— 2026 年 10 月 20 日
+四周内四个版本，每一个都把自身发现的缺陷作为文档交付。
+52 个 MCP 工具
+每一项能力都可通过公开协议触达，包括免费档在内的所有档位。
+九种 README 语言
+English、简体中文、繁體中文、Español、Русский、Deutsch、ไทย、한국어、日本語。
+0 个第三方依赖
+install_requires 是空列表 —— 并且有一个回归测试，一旦它不再是空列表就会失败。
+10 万条 298 MB
+整个存储常驻内存，这是没有向量服务也能做到 0.21 ms 召回的物理前提。
+背后的公司
+广东鑫室铭实业有限公司
+Mnemosyne OS 的运营主体。注册资本：壹仟万元港币（HKD 10,000,000）；成立于 2013 年 5 月 27 日。
+注册地址
+中国粤澳深度合作区。
+创始人兼 CEO —— 胡景堃（Frank Hu）
+南京大学（985 / 211）毕业。22 年全球 500 强企业人力资源副总裁（HRVP）经历。Mnemosyne OS 引擎作者。
+客服 —— [phone — see https://ai-memory.net/contact/]
+周一至周五，中国境内工作时间。
+工程 —— SkillHub
+随 Mnemosyne OS 一同交付的内部组件与技能分发平台。
+开源 —— github.com/MnemosyneOS/mnemosyne
+完整的引擎、文档与回归套件，MIT 许可。
+发行 —— PyPI mnemosyne-os
+一条 pip 命令即可安装，无需构建步骤，无需编译器。
+X —— @mnemosyne_oos
+版本公告与短篇工程笔记。
+*就像每个应用程序都需要数据库，每个 AI 智能体都需要记忆。我们在做的，是人工智能智能体的默认记忆层 —— 让每个开发者都能够访问它，并且拥有它。
+
+## /docs/
+
+文档
+Mnemosyne OS 的完整使用文档：安装、快速开始、记忆 API、MCP 工具。
+Mnemosyne OS 让 AI 智能体的记忆活得比会话更久。装一个包，在代码旁边留一个 SQLite 文件，然后让智能体自己决定什么值得记住。
+记住你的第一个记忆
+五分钟快速入门。不需要账号、不需要 API 密钥、不发网络请求 —— 引擎只跑 Python 标准库。
+pip install mnemosyne-os
+from mnemosyne import MemoryBrain
+brain = MemoryBrain("./my_memories", enable_embeddings=False)
+brain.ensure_init()
+brain.retain("Apple Inc. was founded in 1976", fast=True)
+results = brain.recall("Apple", k=5)
+for score, record, reasons in results:
+print(f"{score:.4f}  {record['content']}")
+给你的编码代理增加内存
+先从 Claude Code 开始，然后任何支持 MCP 的宿主都可以。它们都指向同一个 stdio 服务端，所以记忆是共享的，而不是每个编辑器各存一份。
+Claude Code / Claude Desktop
+把客户端指向 stdio 服务端，52 个工具直接出现，不用写适配层。
+Cursor
+同一段配置放进 mcp.json，编辑器就能跨会话记住你的项目决策。
+DeepSeek Harness
+Patch 式部署指南 —— 只增补宿主配置，不覆盖你原有的内容。
+OpenWebUI
+地址指向 Streamable HTTP 网关，带上 Bearer 令牌，其他都不用改。
+让智能体自行注册
+四条命令建好存储、命名空间与令牌。不需要邮箱、不需要控制面板、不需要注册表单 —— 开跑所需的一切都在仓库里。
+# 1 · 初始化存储（SQLite + SHA-256 哈希链账本）
+mnemosyne --dir ./mem init
+# 2 · 写入，再读回来
+mnemosyne --dir ./mem retain --content "Founded in 1976"
+mnemosyne --dir ./mem recall "founded" --k 5
+# 3 · 用租户令牌通过 MCP 暴露出去
+# PowerShell：
+$env:MNEMOSYNE_MCP_TOKEN="your-secret-token"
+python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace default
+# macOS / Linux：
+export MNEMOSYNE_MCP_TOKEN="your-secret-token"
+python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace default
+# 4 · 打开本地控制台：记忆浏览、图谱视图、运行统计
+python -m mnemosyne.webui.web_server --port 9090
+仓库里的文档
+十四份文档与十个可运行示例，全部与代码一起做版本管理。
+README_CN.md
+完整中文说明；另有八种语言的对应 README。
+docs/RECALL_STRATEGY.md
+召回是怎么组装的，以及每轮记忆注入是如何对照 token 预算被评估的。
+docs/ACCEPTANCE_GUIDE.md
+握手、子进程环境逐键对齐、冷热延迟预算、命名空间隔离、审计链。
+docs/KNOWN_DEFECTS.md
+已确证缺陷，逐项给出事实、实测证据、影响面与修法 —— 公开而不是藏起来。
+docs/DEPLOY_DEEPSEEK_HARNESS.md
+通过 MCP 把 Mnemosyne OS 接进宿主的部署指南，Patch 式，不覆盖任何原内容。
+docs/plugins/
+八份插件文档：numpy、qdrant、reranker、crypto、hrr、async、context-engine、sdk。
+examples/
+十个可运行脚本，从基础召回一直到 LangChain 链与进程内嵌入。
+CHANGELOG.md
+版本历史，以及每一次机制变更背后的证据。
+以上全部可离线运行。唯一需要联网的是两个可选的向量插件，且断网时会软退回本地 FTS5 索引。
+
+## /mcp/
+
+MCP 集成
+把 Mnemosyne OS 接入 Claude Desktop、Cursor 等 MCP 客户端，52 个工具开箱可用。
+MCP 服务端跑 stdio JSON-RPC，支持可选的令牌鉴权与多租户命名空间。五十二个工具、一条命令，没有需要长期维护的适配层。
+启动服务端
+桌面客户端走 stdio，跑在端口后面的一切走 Streamable HTTP。
+# stdio —— 每个桌面客户端都认的形状
+# PowerShell（可选，但建议开启）：
+$env:MNEMOSYNE_MCP_TOKEN="your-secret-token"
+python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace default
+# macOS / Linux：
+export MNEMOSYNE_MCP_TOKEN="your-secret-token"
+python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace default
+# 客户端一侧就是三个键加一条命令
+{
+"mcpServers": {
+"mnemosyne": {
+"command": "python",
+"args": ["-m", "mnemosyne.webui.mcp_server",
+"--brain-dir", "./mem", "--namespace", "default"],
+"env": { "MNEMOSYNE_MCP_TOKEN": "your-secret-token" }
+}
+}
+}
+现在就能挂上的宿主
+下面每一条都只是配置项，不是一个集成项目。
+Claude Code / Claude Desktop
+stdio JSON-RPC，连上就出现全部 52 个工具。
+Cursor
+通过 mcp.json 走 stdio，项目决策跨会话留存。
+OpenWebUI
+Streamable HTTP 加一个 Bearer 令牌。
+Hermes Agent
+stdio。常驻智能体由此获得一层跨越它所有会话的记忆。
+DeepSeek Harness
+按仓库部署指南走 stdio。
+任何 MCP 宿主
+凡实现 Model Context Protocol 就能用 —— 上面每一条都不是私有接口。
+租户隔离是物理的
+令牌映射命名空间，命名空间映射各自的存储。这不是在一张共享表上做权限过滤。
+一把令牌，一个命名空间。
+服务端从令牌解析命名空间，客户端无法索取别人的。
+每个命名空间一个独立 SQLite 文件与独立向量集合。
+每个命名空间一条独立的哈希链审计轨迹
+，审查一个租户的账本不需要暴露另一个。
+list_projects
+只枚举这把令牌有权看到的命名空间。
+默认的安全姿态
+不配置也合理，配置了可审查。
+连接时做令牌鉴权
+；纯本地 stdio 用途可以不开。
+每次写入前都过安全公证
+：凭据检测、不可见 Unicode 检测、HTML 注入检测，然后做字段级脱敏。
+显式传入的置信度不会被覆盖。
+调用方写入 confidence 0，得到的是撤回，而不是被静默改写。
+默认软遗忘。
+confidence 归零、记录标记为 deleted，审计链保持完整；物理删除需要显式 evict=true。
+一个已知边界，如实说明：与库内任何内容都没有词面或标签锚点的纯改写问句，可能落到相关性下限之下并返回空。这是刻意的取舍 —— 对智能体而言，空结果比五条无关记忆安全得多。重排插件存在的意义就是补上剩下的缺口。
+
+## /cli/
+
+命令行
+mnemosyne 命令行工具：初始化、写入、召回、健康检查。
+Python API 里的每一项能力都有对应命令。没有任何东西藏在 SDK 后面 —— 所以命令行也是验证引擎是否正常的最快方式。
+日常命令
+mnemosyne --dir ./mem init
+mnemosyne --dir ./mem retain --content "Apple Inc. was founded in 1976"
+mnemosyne --dir ./mem recall "Apple" --k 5
+mnemosyne --dir ./mem consolidate --dry-run
+体检、图谱与审计
+这三条值得放进定时任务或 CI 步骤。
+mnemosyne --dir ./mem status --json
+mnemosyne --dir ./mem doctor --json
+mnemosyne --dir ./mem graph-query "Steve Jobs" --depth 2 --json
+mnemosyne --dir ./mem verify-integrity --json
+mnemosyne --dir ./mem ledger-audit "<memory_id>"
+数据进出
+mnemosyne --dir ./mem export --format json --out ./memories.json
+mnemosyne --dir ./mem import ./memories.json
+# migrate 只对旧版 JSONL 后端有效（SQLite 库没有 index.jsonl）:
+mnemosyne --dir ./old migrate --jsonl ./old/index.jsonl
+本地控制台
+暗色管理界面由包自身提供 —— 不依赖外部 CDN、无遥测、无需账号。含记忆浏览器、图谱视图与运行统计。
+python -m mnemosyne.webui.web_server --port 9090
+# http://127.0.0.1:9090 —— 默认账号 admin / mnemosyne
+
+## /trust/
+
+信任中心
+安全模型、合规映射（HIPAA / 等保 / GDPR / PIPL）与 SHA-256 哈希链审计。
+没有东西离开这台机器，所以信任边界就是文件系统。我们要声明的不是 Mnemosyne OS 持有某张证书 —— 而是它的行为可以被审查，下面每一条都能对应到你可以读的代码。
+信任边界就是一个文件
+链路里没有任何托管控制面。记忆是磁盘上的一个 SQLite 文件，账本在同一个数据库里，核心不导入 Python 标准库之外的任何东西。删掉那个文件就是一次完整、可审计的删除 —— 没有副本需要追。
+核心零第三方依赖。
+install_requires 是空列表，并且会一直保持。
+无遥测。
+没有需要关闭的东西，因为什么都没采集。
+默认离线。
+向量层是可选的，断网时软退回本地 FTS5 索引。
+篡改从一开始就可被发现
+每次写入都串进 SHA-256 账本。校验不只告诉你"有东西被改过"，而是指出是哪一条记录被改 —— 这让篡改从"可否认"变成"可检测"。
+mnemosyne --dir ./mem verify-integrity --json
+# { "chain_valid": true, "records_checked": 10287 }
+mnemosyne --dir ./mem ledger-audit "<memory_id>"
+# 围绕某一条记录走一遍链
+安全公证
+写入前的检查阶段，SDK、命令行、MCP 与批量路径全都会走。
+凭据检测
+—— API 密钥、密码、卡号在落库前就被识别。
+不可见 Unicode 检测
+—— 零宽字符与双向控制符会被暴露出来，而不是被存下去。
+HTML 注入检测
+—— 标记会被标记出来，而不是原样持久化、等着下游渲染器去执行。
+字段级脱敏
+—— 敏感字段在写入时打码，公证的原始判断保留在 meta 里而不是被丢弃。
+合规
+HIPAA、等保、GDPR 与 PIPL 的映射与账本一起维护，因此合规审查可以用证据回答，而不是填一份问卷。
+HIPAA
+医疗数据映射
+等保
+国内基线
+GDPR
+欧盟数据保护
+PIPL
+个人信息保护法
+关于范围的如实说明：Mnemosyne OS 是引擎，不是证书。正式认证是一次部署实践，取决于你的基础设施、留存策略与审计方 —— 这也是企业版存在的理由。开源仓库里提供的是机制、证据，以及复现两者的能力。
+
+## /status/
+
+服务状态
+Mnemosyne OS 服务可用性与历史事件。
+Mnemosyne OS 跑在你的数据所在的地方，所以这里的"状态"指的是你自己节点的健康状况，而不是我们的可用性。三条命令足以覆盖，且全部可断网运行。
+检查你自己的节点
+# 进程体检：完整性、记录数、磁盘、向量后端、图边规模
+mnemosyne --dir ./mem doctor --json
+# 运行计数：写入、召回、节省的 token
+mnemosyne --dir ./mem status --json
+# 账本完整性 —— 若被改过，会指出是哪一条
+mnemosyne --dir ./mem verify-integrity --json
+recall_health 报什么
+7.0.2 新增这一面是有具体原因的：记忆栈可以"活着"却正在变差。随会话时长退化的召回质量，在可用性检查里完全隐形，所以这一面报的是质量，不只是存活。
+calls / empty_result_rate
+召回被调用多少次，以及"没有相关记忆"这个诚实答案出现多少次。
+floor_rejections
+在被模型看到之前，有多少候选被相关性下限剔除。
+latency p50 / max
+检索延迟的中位与尾部。
+channel_hits
+五路召回通道里，实际贡献了分数的是哪几路。
+sem_top1 / sem_background
+候选余弦的 top1 与语料中位数 —— 用来发现阈值漂移的信号。
+capsule_cache
+胶囊缓存命中率，这正是上游提示缓存能持续命中的原因。
+vector_ops / breaker
+向量写入与删除的结果，以及熔断器状态与按原因分类的丢弃计数。
+graph
+边数、实体数、qualifier 覆盖率与回填状态。
+健康的节点会报
+chain_valid: true
+，且记录数与你预期一致。
+没有丢弃的向量写入。
+熔断器是闭合的，dropped_unavailable 为 0。
+图边存在。
+边数非零，说明知识图谱通道是真的在承担召回，而不是名义上存在。
+胶囊缓存命中率非零
+—— 在跑过几次召回之后。
+每个版本的更新记录（包括发现并修掉的缺陷）都在仓库的 CHANGELOG.md 里。把失效模式公开，本身就是产品的一部分。
+
+## /research/
+
+研究
+记忆召回质量与延迟的实测数据，附可复现脚本。
+大多数记忆系统都假定有一个向量数据库、一个嵌入服务和一个云端控制面。Mnemosyne OS 一个都不假定，然后测量这件事的代价与收益。下面是架构与证据。
+0.21ms
+召回延迟 p50
+0.3ms
+每条写入
+298MB
+10 万条常驻
+8/8
+precision @ 1
+业界公认的三大基准测试
+记忆系统之间比的就是这三个公开基准。Mnemosyne OS 三项全部实测，并列出 Mem0 自己公开的分数作对照。
+LongMemEval ——
+96.2
+·  Mem0 94.4
+长程对话：隔了很多轮会话之后，还能不能想起当初说过什么。
+LoCoMo ——
+94.8
+·  Mem0 92.5
+超长对话里的多会话记忆。
+BEAM（1M）——
+68.5
+·  Mem0 64.1
+一百万 token 预算下的字节高效联想记忆。
+BEAM（10M）——
+53.9
+·  Mem0 48.6
+同样的基准放大十倍预算，所有系统都会退化。
+五路召回，融合成一个结果
+召回不是一次相似度检索。五路独立信号并行给每个候选打分，再由重排器收敛，最后由相关性下限决定到底有没有东西配得上进入模型。
+词法 —— BM25 / FTS5
+Bigram 分词加内置同义词词典，对中文与英文同等用功。
+语义 —— 向量相似度
+可选。由 numpy 进程内后端或 Qdrant 插件提供；不开也能跑。
+知识图谱 —— 边遍历
+写入时抽取「主体 — 谓词 — 客体」边，读取时展开。
+时间衰减
+时效加权；只有当查询显式带有时间意图时，才切到事件时间。
+置信度加权
+系统对每条记忆的信任程度，看的是它的全部历史而不是当前值。
+在五路之外还有一路结构化标签通道，让偏好与意图类问句保持可达 —— 这类问题几乎总是改写句，单靠语义分很容易落到下限之下。
+可逆压缩，而不是有损摘要
+用语言模型去摘要一条记忆，得到的是更短、但已经不再是那条记忆的东西：生成文本可能引入原文里根本没有的数字、日期和结论。AIC 胶囊走的是相反的路 —— 按结构压缩，并让原文始终可取回。
+无损且可逆。
+每个胶囊都带一条指回原文的指针；expand() 逐字取回并校验内容哈希。
+零幻觉是结构保证的。
+全程不做生成。要点是抽取式的，事实来自规则三元组，每个片段都必须是原文的逐字子串。
+事实守恒。
+数字、日期、金额、型号、URL、邮箱与引号原话被视为"原子"，在所有压缩层级都完整保留。
+五级阶梯。
+full → gist → facts → pointer → atoms，每一级都按同一套原子集校验。
+内容寻址。
+胶囊 key 由内容哈希、id、类型、时间与预算档共同派生，所以同一记忆在同一预算下产出逐字节相同的胶囊 —— 这正是上游前缀缓存能持续命中的原因。
+是测出来的，不是声称的
+下面每个数字都由仓库里的脚本产出，跑在真实存储上，而这套测量脚本是发版前第一个要跑的东西。
+召回延迟 p50 ——
+0.21 ms
+端到端质量对照，对接真实向量栈。
+存储层写入 ——
+0.3 ms / 条
+仅存储层本身的耗时。
+完整写入路径 ——
+约 1 ms
+含安全公证、账本、审计与索引，这才是用户实际感受到的数字。
+常驻内存 ——
+10 万条 298 MB
+全部在内存里，这是没有向量服务也能做到亚毫秒召回的物理前提。
+Precision @ 1 ——
+8 / 8
+八条标注问答，对十六条同主题干扰项；包括在同一会话先问过 28 个无关问题之后。
+胶囊压缩 ——
+0.51 压缩比
+73 token 的原文在 40 token 预算下压到 pointer 层级，七个关键原子全部保留。
+批量写入 ——
+约 15×
+retain_batch 相对逐条写入。
+亚秒级回归套件 ——
+94 项断言
+离线、不连任何外部服务，守的是原子守恒、零幻觉、无损往返与预算诚实。
+它所在的市场
+记忆之所以成为一个独立的基础设施品类，是因为「长上下文」被证明并不等于记忆。截至 2026 年的公开研究在主流模型上都测到：输入变长，准确率就下降 —— 这正是专用记忆层被推上台前的失效模式。
+$6.27B
+智能体记忆市场 2026
+$28.45B
+2030 预测
+57%
+企业已在生产跑智能体
+40%+
+智能体项目面临取消风险
+最后这个数字最有意思。对停滞项目的分析反复指向召回不可靠，而不是基座模型太弱 —— 这正是为什么一个敢说"我没有相关记忆"的记忆层，比一个总能返回五条看似合理记录的记忆层更有价值。
+方法论：上面 Mnemosyne OS 的数字来自本项目自己的回归套件，可用 scripts/verify_recall_quality.py、verify_precision_recall.py 与 verify_memory_lifecycle.py 复现。市场数据引自 2026 年公开发布的分析与行业报告。
+
+## /blog/
+
+工程笔记
+Mnemosyne OS 的设计取舍、踩坑记录与实现细节。
+Mnemosyne OS 是在公开场合被记录的，包括那些走错的部分。下面这些写下来的东西都存放在仓库里 —— 每一篇讲一个具体机制、支撑它的证据，以及做到它付出了什么代价。
+近期笔记
+为什么我们不再摘要记忆
+生成式压缩会引入原文从未包含的事实。AIC 胶囊把生成换成抽取 —— 并且证明了这一点。
+相关性下限，以及"返回空"为什么是特性
+无论如何都填满 top-k，意味着最高分恒为 1.0，分数因此失去意义。经过标定的下限让相关性重新有绝对含义。
+十一项已确证缺陷，连证据一起公开
+KNOWN_DEFECTS.md 逐条列出故障、复现方式、影响面与修法。读它是理解这台引擎真实行为最快的方式。
+召回策略，以及每轮注入的代价
+每一轮都注入记忆要花多少钱，以及 token 预算如何决定谁配得上这个位置。
+一个名义上存在的图通道
+实体抽取在悄悄产出碎片，于是图遍历永远返回空，却仍然占着融合权重。
+验收，而不是配置
+一份端到端证明这套栈可用的指南：握手、环境一致性、冷热延迟、命名空间隔离、审计链。
+文章
+kimi-vs-deepseek
+更长的文章会在工程笔记整理成文后陆续发布在这里。一手资料仍然是仓库 —— 每个论断就挨着它的代码和验证它的测试。
+
+## /integrations/
+
+集成
+与主流 Agent 框架、IDE、聊天客户端的集成方式。
+为你已经建好的智能体框架、编码工具与语音管道加上持久记忆。下面每一条都走公开的 MCP 面或 Python SDK —— 没有分叉的客户端，也没有厂商插件。
+Claude Code（MCP · stdio）
+连上就出现 52 个工具。智能体在会话之间记住决策，不需要被重新告知。
+claude mcp add mnemosyne -- python -m mnemosyne.webui.mcp_server --brain-dir ./mem
+DeepSeek Harness（MCP · stdio）
+Patch 式部署：宿主配置只增补不覆盖，改动可回退。
+python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace dsh
+Hermes Agent（MCP · stdio）
+常驻智能体获得一层跨越它所有会话的长期记忆。
+python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace hermes
+Codex（MCP · stdio）
+任何支持 MCP 的命令行智能体都能挂上同一个服务端；工具面里没有宿主专属的东西。
+python -m mnemosyne.webui.mcp_server --brain-dir ./mem
+OpenWebUI（MCP · HTTP）
+地址指向 Streamable HTTP 网关，带上 Bearer 令牌。对话前端从此不再忘记它在跟谁说话。
+python -m mnemosyne.webui.mcp_server --http --brain-dir ./mem --port 8788
+任何 MCP 宿主（MCP · HTTP）
+Streamable HTTP 是一次部署唯一需要对外暴露的端口，网络面因此收敛为一个。
+# PowerShell
+$env:MNEMOSYNE_MCP_TOKEN="<token>"
+python -m mnemosyne.webui.mcp_server --http --port 8788
+# macOS / Linux
+MNEMOSYNE_MCP_TOKEN="<token>" python -m mnemosyne.webui.mcp_server --http --port 8788
+LangChain（Python SDK）
+可运行示例：把 MemoryBrain 作为检索与记忆组件接进链里。
+python examples/langchain_integration.py
+Ollama（本地模型）
+全本地闭环 —— 本地模型加本地记忆，没有任何请求离开这台机器。
+python examples/ollama_integration.py
+进程内嵌入（Python SDK）
+直接把 brain 导进你自己的进程。没有守护进程、没有端口、没有 IPC。
+from mnemosyne import MemoryBrain; MemoryBrain("./mem").ensure_init()
+插件目录（插件 SDK）
+八个带文档的插件 —— numpy、qdrant、reranker、crypto、hrr、async、context-engine 与 SDK 本身。
+# PowerShell
+$env:MNEMOSYNE_PLUGINS="numpy_vector,reranker"
+python -m mnemosyne.webui.web_server
+# macOS / Linux
+MNEMOSYNE_PLUGINS=numpy_vector,reranker python -m mnemosyne.webui.web_server
+
+## /changelog/
+
+更新记录
+Mnemosyne OS 版本变更历史。
+每一个版本，包括它发现并修掉的缺陷。完整文档与代码一起做版本管理 —— 这里是摘要。
+8.1.0 —— 2026 年 10 月 20 日
+这一版把"零依赖"从口号变成可验证的架构约束，同时让 Mnemosyne 的记忆 API 能够与既有 Agent 记忆代码直接互操作 —— 改一行 import 即可切换。
+记忆 API。
+Memory
+/
+AsyncMemory
+/
+MemoryClient
+，包顶层直接可 import：
+from mnemosyne import Memory
+。参数名、默认值、关键字限定、返回信封与错误码均已固定为契约。
+四维作用域，物理隔离。
+user_id
+/
+agent_id
+/
+run_id
+/
+app_id
+—— 每个组合一个独立 SQLite 文件，而不是"共享行 + 过滤条件"。命名空间由排序后 + 长度前缀哈希导出，因此
+(a, bc)
+与
+(ab, c)
+不碰撞，键顺序也不影响结果。
+完整过滤语言
+——
+eq
+ne
+gt
+gte
+lt
+lte
+in
+nin
+contains
+icontains
+startswith
+endswith
+与通配符，支持
+AND
+/
+OR
+/
+NOT
+任意嵌套。
+72 个可选 provider
+—— LLM 20、嵌入 13、向量库 28、重排 5、图存储 6。凡走 HTTP 的都在标准库
+urllib
+上实现，因此
+install_requires
+仍是空列表。
+MCP 工具面 20 → 31。
+二十个原生，外加十一个沿用通行 Agent 记忆工具名的别名，既有 MCP 客户端无需重写工具定义即可指向 Mnemosyne。
+服务面。
+REST
+/v1
+、
+/v2
+、
+/v3
+与控制台共用同一监听端口，带令牌鉴权与异步事件 id；兼容命令集并支持
+--agent
+JSON 信封；提供 Claude、Codex、Cursor、Kimi 的清单；集成 LangChain、LlamaIndex、CrewAI、Dify、n8n 与 Vercel AI SDK。
+修复九个真实缺陷，每个都有回归覆盖。
+最严重的一个：
+meta
+不在列清单里，每次
+INSERT
+都静默丢弃它，读取路径随即
+伪造
+一个替代值 —— 用户元数据在重启后消失。
+meta
+现已是真实列，并对存量库提供幂等迁移。
+破坏性变更。
+客户端 API 移至
+mnemosyne/api/
+，辅助模块同步改名。记忆存储格式、REST 路由与 MCP 工具名不受影响。
+7.0.2 —— 2026 年 9 月 15 日
+这一版把"精准记忆、精准召回、极短上下文下的精确压缩"从声称的能力，变成了可复现、可断言的事实。
+AIC 记忆胶囊。
+把压缩重新定义为"分层 + 可寻址" —— 稳定指针 + 结构化事实 + 内容原子 —— 并以断言保证无损可逆、零生成、事实守恒。工具数 18 → 20。
+相关性下限。
+此前每一路打分都对自身最大值归一化，导致融合分没有绝对含义。经过标定的下限让召回可以诚实地返回空。
+去掉访问计数正反馈。
+此前仅仅先问过六个无关问题，就足以把干扰项抬到正确答案前面。现在加成是乘性的，且封顶 5%。
+图通道真正承担召回。
+边写入时丢掉了记忆 id，导致图遍历从未真正返回过数据却仍占着融合权重。已修复，并对存量库回填。
+时间通道纠正。
+正文里写了日期的记忆反而因为"更具体"被扣分。现在除非查询显式带时间意图，否则用记录自身的时效。
+写入侧语义去重
+，并附一条硬约束：改一个字就是另一个事实的片段，相似度再高也绝不合并。
+recall_health
+与三段式 doctor —— 记忆栈可以活着却在变差，所以指标面必须报质量，而不只是存活。
+7.0.1 —— 2026 年 9 月 14 日
+forget
+工具，默认软遗忘：置信度归零、状态标记为 deleted、审计链保持完整。工具数 13 → 14。
+记忆更正
+，通过 retain(supersedes=…) —— 旧说法被标记为 superseded 而非删除，召回会回传哪条已被取代。
+Qdrant 向量后端插件
+，内置熔断器、代理绕过、预热与健康探测 —— 一个跨进程持久的向量索引。
+快速写入路径补上向量索引
+，让经它写入的记忆也能参与语义召回。
+三份新文档
+，以及一套参数化的 21 项断言生命周期脚本。
+7.0.0 —— 2026 年 8 月 25 日
+第一个正式版：一套零依赖、本地优先的记忆系统。
+SQLite + FTS5，WAL 模式，兼容 JSONL，并提供 migrate 迁移路径。
+SHA-256 哈希链账本，verify_chain() 可指出被篡改的那一条记录。
+写入时公证：来源指纹、交叉印证、注入检测、时间一致性检查。
+插件体系：numpy_vector、crypto、reranker、hrr、async、context-engine。
+MCP 服务端，支持令牌鉴权与多租户命名空间隔离。13 个工具。
+记忆交换协议导出与导入。
+遗忘经济学：低价值记忆迁移至温 / 冷层，gzip 归档加布隆过滤 —— 而不是删除。
+Token 预算器、字段级脱敏、本地暗色控制台与异步 API。
+
+## /pricing/
+
+价格
+Free 永久免费；Pro $6.9/月；Team $19.9/席位/月。免费额度无需绑卡。
+引擎是 MIT 许可，免费那一档也没有被阉割 —— 全部 52 个 MCP 工具都在里面。付费买的是托管、多租户与合规交付，而不是解锁你本来就有的功能。
+你到底在为哪些东西付费
+托管与协同
+托管部署包 —— 免费云主机、免费嵌入 API、免费 HTTPS 隧道 —— 让你不必自己运维。
+多租户
+令牌映射命名空间，存储与审计链都是物理独立，因此一次部署可以服务多个团队而不共享任何表。
+合规交付
+面向 HIPAA、等保、GDPR 与 PIPL 的映射、导出格式与审查通道。
+支持与 SLA
+从免费档的社区工单，到企业版的专属通道与 99.9% 可用性。
+部署方式始终由你选
+同一份源码可以跑在笔记本、私有虚拟机、Kubernetes 或气隙机柜上。付费档没有增加任何 MIT 引擎不具备的能力 —— 它增加的是协同、治理和一个可以打电话的人。
+自托管是一等选项。
+免费额度部署包就在仓库里。
+导出永远可用。
+带着你的记忆离开，就是一个命令行，任何档位都一样。
+不按席位计费。
+每一档都含无限最终用户。
+价格为美元、按月计费、不含税。企业条款、OEM 授权与源码级协议请通过联系表单沟通。
+会改变什么
+跨工单、跨渠道的连贯性
+一个存储、每位客户一个命名空间。网页工单与电话记录看到的是同一段历史。
+能交接的升级备注
+归并后的情景摘要可以在智能体之间、以及智能体与人之间干净地交接。
+矛盾被摆出来，而不是被埋掉
+事实冲突检测会标记"两条记忆不可能同时为真"的情况 —— 这是支持场景里价值最高的信号。
+一本能给监管方看的账
+每一次读写都串进链里；审计轨迹是证据，而不是回忆。
+为什么本地优先在这里重要
+支持场景是个人数据最集中的地方，也恰好是监管最先看的地方。因为存储是你掌控的文件，留存策略变成一次文件系统操作而不是一场供应商谈判 —— 并且脱敏发生在写入时，早于数据在任何下游系统里存在。
+字段级脱敏在写入时完成
+—— 卡号与凭据从未进入存储。
+软遗忘
+既履行删除请求，又保持审计链完整。
+每租户独立审计轨迹
+，审查一位客户的账本不必暴露另一位。
+一个务实的形态
+每位客户对应一个命名空间。每一轮对话写成情景；其中的事实落进图谱。新工单进来时，召回只在这个命名空间内跑，且注入量小到最便宜的模型也扛得住。
+每条消息调 add_conversation_turn()
+模型看到工单之前先跑
+recall(budget_tokens=100)
+定时跑 reflect()，把反复出现的实体与矛盾捞出来
+用 consolidate() 防止近重复情景挤占候选池
+会改变什么
+按患者隔离的连续性
+既往发现、治疗路径与偏好挂在患者身上，而不是挂在某次会话上。
+时序问题分别回答
+"上次就诊时是这样"与"现在是这样"是两个不同的问题，版本链两个都能答。
+设计上可气隙运行
+在院内网络中部署不需要任何出网，因为引擎本身没有云端依赖。
+防篡改的记录
+哈希链账本让任何改动都可被发现，并指出具体是哪一条。
+引擎能帮什么、不帮什么
+Mnemosyne OS 是记忆层，不是临床决策系统。它决定哪些上下文值得被呈现，并证明没有被静默改动。诊断、剂量与临床判断不在它的范围内 —— 这是刻意的。
+歧义在结构上被消解。
+"患者对青霉素过敏"与"……曾经对青霉素过敏"是两个版本，而不是一条被覆盖的记录。
+事实冲突被摆出来
+，而不是按新旧直接判胜负。
+去重拒绝合并
+：只要数字、日期、剂量或标识符不同。
+合规姿态
+HIPAA 的映射与机制一起维护，部署形态让数据驻留始终在你的掌控内 —— 院内、私有云或完全气隙。
+HIPAA
+映射持续维护
+0 出网
+可气隙运行
+SHA-256
+哈希链账本
+本地
+你的基础设施
+会改变什么
+关于学习者的模型，而不是一份逐字稿
+掌握了哪些概念、持有哪些误解、以及哪种节奏真的奏效。
+会变化的置信度
+confidence_history 记录系统当时有多确定，以及随着证据到位这份确定如何移动。
+数据由学校掌控
+学生数据留在学校边界之内 —— 而这通常本来就是能不能被采用的前提。
+便宜模型也扛得住的注入量
+100 token 的注入让记忆不必依赖旗舰模型也照样可用。
+它是为这些问题而建的
+"这个学生上学期卡在哪？"
+—— 在版本链上做时序查询。
+"哪几个误解反复出现？"
+—— reflect() 的深度模式发现，跨情景扫描。
+"哪种讲法对他有效？"
+—— 偏好与意图经标签通道召回。
+"这里有东西被改过吗？"
+—— 账本用证据回答。
+部署
+一台院系机器就能跑完整个东西。向量层是可选的，所以没有 GPU 也没有云预算的学校，仅靠 SQLite 与 FTS5 就能获得完整功能。
+可离线运行 —— 教学闭环里没有网络依赖
+每个班级或每个学生一个 SQLite 文件，随你选
+断网时退回本地词法索引，而不是直接失败
+会改变什么
+过程，而不只是结果
+关键联系人为什么换岗、是哪条异议真正杀掉了单子、三月份谁说了什么。
+带时间维度的客户历史
+"上季度这个客户处于什么位置"与"现在处于什么位置"是两个可分别回答的问题。
+团队之间的一致性
+一台机器、多个命名空间：共享的客户事实放共享命名空间，个人笔记留在私有命名空间。
+经得起追问的预测输入
+每个结论都能一路追回到产生它的那条记录。
+它放在哪个位置
+Mnemosyne OS 不是系统记录。它待在 CRM 旁边，回答 CRM 从来就不是为它而设计的那些问题 —— 那些需要句子而不是字段的问题。
+自动抽取实体
+，把联系人、公司与产品变成图谱节点，不需要额外录入。
+consolidate()
+防止几个月的近重复会议记录把主要来源挤出去。
+检出冲突
+：两位销售记下了互相矛盾的下一步动作。
+forget()
+履行数据删除请求，同时不破坏审计链。
+一个务实的部署
+销售工具通常托管在云上，因此真正有意思的配置是多租户那一套 —— 一次部署、每个客户团队一个命名空间、用令牌映射做隔离，而不是权限过滤。
+令牌映射到命名空间
+每个命名空间独立存储与独立向量集合
+每个命名空间独立哈希链审计轨迹
+会改变什么
+记住偏好，而不是设置项
+尺码、穿着体验的抱怨、避开的材质与偏好的品牌，记住一次，处处生效。
+跨会话的连续性
+助手不会再问三周前就已经被告知的事情。
+退货与支持上下文
+一次退货对话开始时，订单历史已经在上下文里了。
+快得像本地的延迟
+召回 p50 0.21 ms，意味着记忆不会给商品页加上任何可感知的延迟。
+token 层面的论证
+个性化通常与成本对立，因为上下文每次调用都要重发。预算召回把这件事反过来：只有装得进预算的东西才进入模型，而装不进去的也不会被丢掉 —— 它作为胶囊保持可寻址。
+budget_tokens 给注入量封顶
+，再长的客户历史也无法把账单吹起来。
+被降级的条目保留指针与关键原子
+，所以尺码和订单号不会因为预算被砍掉而消失。
+胶囊 key 由内容派生
+，同一记忆在同一预算下产出逐字节相同的胶囊，上游前缀缓存持续命中。
+数据姿态
+购物车与浏览历史是零售商手上商业敏感度最高的数据之一。因为存储是你掌控的文件，留存窗口由你自己的流程执行，脱敏发生在写入之前，而不是事后从某个导出文件里补。
+0 云端
+无第三方存储
+写入时
+即完成脱敏
+每租户
+独立审计链
+$0
+免费额度可部署
+
+## /contact/
+
+联系我们
+商务合作、技术支持与创业计划申请。
+部署问题、产品演示、企业评估或合作意向 —— 告诉我们你的需求，团队会直接与你联系。
+直接联系方式
+客服 —— [phone — see https://ai-memory.net/contact/]
+周一至周五，中国境内工作时间。
+公司 —— 广东鑫室铭实业有限公司
+注册资本：壹仟万元港币（HKD 10,000,000）。
+地址 —— 中国粤澳深度合作区
+来访请提前预约，先致电确认。
+GitHub Issues
+缺陷报告、功能请求与安全相关问题。技术类问题走这里最快。
+企业与 OEM
+气隙部署、源码级协议与白标授权。
+会发生什么
+工程类问题
+通常通过 GitHub Issues 得到最快答复，而且答案会留在这里，方便下一个人检索。
+企业评估
+包含一次部署演示，以及针对你所在司法辖区的合规映射说明。
+安全报告
+收到即确认，并在披露之前修复 —— 详见信任中心的模型说明。
+产品文档、完整 API 参考与全部回归套件都在仓库里。很多问题在那里已经有答案，不必等回复。
+
+## /careers/
+
+招聘
+Mnemosyne OS 团队的开放职位。
+我们是一个小团队，在做一件很快就会变成所有人问题的事：让 AI 智能体可靠地、低成本地、并且在用户自己的掌控之下记住东西。
+目前没有开放职位
+我们眼下没有按固定清单在招人。不过在这种公司，最快的面试就是一个 pull request：如果你读了代码、发现了值得改的地方并且把它交付了，我们会认真读。
+开源优先。
+对 github.com/MnemosyneOS/mnemosyne 的贡献，是我们能读到的最强信号。
+KNOWN_DEFECTS.md 是公开的。
+里面任何一条都可以动手，一个带测试的修复比一份简历更有价值。
+回归测试才是重点。
+如果你的改动让那套 94 项断言的套件更强，请在描述里写清楚。
+工作大概是什么样
+检索质量、记忆压缩、存储引擎与协议工作 —— 标准是：一个没有断言跟在后面的论断不算数。如果你享受读一个测量结果、怀疑自己的结论、然后把失败也照样写下来的过程，这就是那样的团队。
+检索与排序
+五路融合、相关性标定，以及诚实地返回空结果。
+压缩
+无损、可寻址，并带守恒证明的压缩。
+存储与账本
+SQLite 内部机制、哈希链完整性、分层与遗忘经济学。
+协议与集成
+MCP 工具面、多租户隔离与宿主适配。
+随时可以通过联系表单投递自荐 —— 先告诉我们你会在引擎里改什么，以及为什么。
+
+## /startup/
+
+创业计划
+早期团队可免费获得 12 个月 Pro 权益。
+如果你正在做 AI 智能体，记忆不该是需要做两遍的东西。这个计划为早期团队免费提供专业版，直到你找到产品与市场的契合点。
+计划包含
+专业版，免费十二个月
+多租户命名空间、Qdrant 向量后端、HTTP 网关与优先支持。
+一次部署陪跑
+我们帮你把这套栈立起来 —— 如果暂时没有基础设施预算，就用免费额度部署包。
+架构评审
+一次关于记忆设计的会：写什么、让什么衰减、什么永远不要存。大多数质量问题都从这一步开始。
+结构上没有锁定
+你存下的一切就是一个 SQLite 文件。想走的时候一条命令导出，全部带走。
+谁符合条件
+天使轮到 A 轮之间
+，有智能体产品或智能体周边的产品在开发中。
+团队少于 25 人
+，成立不满三年。
+愿意让存储保持属于自己
+—— 我们要的是一个案例，不是一个 hostage。
+不是竞品：
+我们是记忆层，不是智能体平台，这个计划面向在它之上做东西的团队。
+我们为什么要做这件事
+记忆设计是智能体工程里最容易做错、也最难事后补的部分。早早定下写入、衰减与脱敏策略的团队，不会在半年后被迫重做一遍存储 —— 而这些团队的反馈，正是让引擎变好的输入。
+在写第一行集成代码之前先做一次记忆设计评审
+计划期内直达的缺陷与需求反馈通道
+如果你从别的记忆层迁过来，我们提供迁移支持
+
+## /api-reference/
+
+API 参考
+Mnemosyne OS HTTP API：记忆写入、召回、图谱、审计链。
+一个 Python 类、一套命令行、一个 HTTP 面、52 个 MCP 工具 —— 底下是同一个 SQLite 文件。没有任何一个是定制接口，所以智能体能用 SDK，控制台也能读同一个存储。
+Python —— MemoryBrain
+一个对象持有整个存储。写入、更正、召回、生成上下文快照都通过它。
+from mnemosyne import MemoryBrain
+brain = MemoryBrain("./memories", enable_embeddings=False)
+brain.ensure_init()
+# 写入 —— 指纹去重、实体抽取、版本链全部自动完成
+brain.retain("The user's GPU is an RTX 4090", fast=True)
+# 更正之前的说法，而不删除历史
+brain.retain("The user swapped to an RTX 5090", supersedes=old_id)
+# 会话历史，以及给下一轮的上下文快照
+brain.add_conversation_turn("session-1", "user", "Tell me about Apple")
+hits = brain.search_conversations("Apple", session_id="session-1")
+snapshot = brain.build_context_prompt(query="Apple", max_chars=2000)
+带 token 预算的召回
+预算是一条硬约束，不是提示。放不进正文的条目会被降级为可寻址的胶囊（稳定指针 + 关键原子），而不是被静默丢弃。账目会如实告诉你发生了什么。
+results, cost = brain.recall("what GPU do I use", k=5, budget_tokens=100)
+cost["budget_limit"]      # 100
+cost["budget_used"]       # 实际注入的 token 数
+cost["budget_respected"]  # True
+cost["capsule_count"]     # 被降级为胶囊的条数
+cost["dropped_count"]     # 恒为 0 —— 没有东西被直接扔掉
+MCP 工具 —— 52 个，走 stdio 或 Streamable HTTP
+完整的工具面：四十一个原生（含 8.1.0 新增的二十一个记忆形成层工具），外加十一个沿用通行 Agent 记忆工具名的别名，既有 MCP 客户端无需重写。智能体只要声明它们就获得了记忆能力，不需要胶水代码，也不需要自写工具层。
+retain
+写入一条记忆。
+recall
+在 token 预算内召回记忆；回传置信带与胶囊层级。
+retain_batch
+批量写入并透传元数据 —— 吞吐约为逐条写入的 15 倍。
+capsule
+把一条记忆压成 AIC 胶囊：稳定指针 + 结构化事实 + 关键原子。
+expand
+按指针取回原文，并做内容哈希校验。
+recall_health
+检索质量遥测：命中分布、被相关性下限剔除的条数、延迟、胶囊缓存命中率。
+stats
+运行计数 —— 写入、召回、节省的 token。
+graph_query
+从某个实体出发，沿知识图谱走 N 跳。
+temporal_query
+查询版本链 —— 某个时间点曾成立的事实，而不只是现在成立的。
+list_projects
+列出这个存储里隔离的命名空间。
+doctor
+体检：完整性、记录数、磁盘、向量后端、图边规模。
+audit
+读取审计轨迹。
+confidence_history
+系统当时有多确定，以及这份确定随时间如何变化。
+consolidate
+把高度相似或同义的多条记忆合并为一条代表记录；原文标记为 consolidated，绝不删除。
+reflect
+按类型 / 层 / 事实类型 / 置信度汇总，附高频实体、事实冲突检测与时间密度。
+dedup
+通过内容指纹与相似度检出重复与近重复；dry_run 只报告不写库。
+forget
+按 memory_id 或自然语言 query 遗忘一条记忆 —— 默认软遗忘，审计链保持完整。
+memory/export-v1
+通过记忆交换协议导出。
+memory/import-v1
+通过记忆交换协议导入。
+memory/claim
+把外部导出中的记忆认领进当前命名空间。
+add_memory
+客户端兼容别名 —— 为用户或智能体保存文本或对话历史。
+search_memories
+客户端兼容别名 —— 带过滤条件的语义检索。
+get_memories
+客户端兼容别名 —— 结构化过滤 + 分页列举。
+get_memory
+客户端兼容别名 —— 按 id 取回单条。
+update_memory
+客户端兼容别名 —— 覆盖文本与 / 或元数据。
+delete_memory
+客户端兼容别名 —— 删除单条。
+delete_all_memories
+客户端兼容别名 —— 清空一个作用域。
+delete_entities
+客户端兼容别名 —— 删除实体并级联。
+list_entities
+客户端兼容别名 —— 列出用户 / 智能体 / 应用 / 运行。
+list_events
+客户端兼容别名 —— 列出记忆操作。
+get_event_status
+客户端兼容别名 —— 轮询异步操作状态。
+HTTP 与控制台
+同一个存储，在本地暴露出来。控制台随包发布、不依赖任何外部 CDN，REST 端点就是它跑的那一套。
+python -m mnemosyne.webui.web_server --port 9090
+# 然后打开 http://127.0.0.1:9090
+# 首次运行会创建 admin / mnemosyne —— 登录后请改密码
+协议版本 2024-11-05 / 2025-03-26 / 2025-06-18 三档，在 initialize 时协商：客户端提议的版本在支持列表内就照它回，否则回服务端自己最高的那一档。MCP 工具面保持向后兼容：7.0.0 是 13 个，7.0.1 是 14 个，7.0.2 是 20 个，8.0.0 是 31 个，8.1.0 是 52 个，每次增加都是纯增量。

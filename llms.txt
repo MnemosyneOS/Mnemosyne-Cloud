@@ -25,7 +25,7 @@ because stars and releases move; re-check the live repo before quoting them.
 | Context compression | AIC layer, 32x lossless on stored context |
 | Hybrid recall latency | 0.21 ms (p50) |
 | LongMemEval | 96.2 / 100 (Mem0 reports 94.4) |
-| Community | 38 stars · 6 forks on GitHub (as of 2026-10-24) |
+| Community | 39 stars · 6 forks on GitHub (as of 2026-10-27) |
 
 ## What it is
 
