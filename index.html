@@ -72,7 +72,7 @@
 <link rel="stylesheet" href="assets/tailwind.css" />
 
 
-<link rel="stylesheet" href="/assets/site-fb0020b264.css" />
+<link rel="stylesheet" href="/assets/site-6f3bdde1c8.css" />
 <link rel="stylesheet" href="/assets/site-0abcf3324e.css" />
 <!-- 控制台 v9 样式：独立命名空间 .mc，颜色全部取自上面的设计令牌，
      所以自动跟随 白天 / 夜晚 / 跟随系统；必须排在页面样式之后才能覆盖 body.dash -->
@@ -398,8 +398,8 @@
         <p style="font-size:13px;line-height:1.7;color:var(--fg2);margin:0">normal / private / secret 三级；密钥证件默认拒写，外部来源禁止写入长期偏好——防记忆投毒的第一道闸门。</p>
       </div>
 
-      <div class="card card-pad" style="background:var(--accent-bg);border-color:var(--accent-line)">
-        <div style="font-size:11px;letter-spacing:.14em;color:var(--accent);text-transform:uppercase">Verify</div>
+      <div class="card card-pad">
+        <div style="font-size:11px;letter-spacing:.14em;color:var(--fg3);text-transform:uppercase">Verify</div>
         <h3 style="font-size:15px;font-weight:600;color:var(--fg);margin:10px 0 8px">可复现的验收</h3>
         <p style="font-size:13px;line-height:1.7;color:var(--fg2);margin:0"><code style="font-size:12px">verify_v810.py</code> 29 项全通过，<code style="font-size:12px">verify_api.py</code> 29 组全通过。全部离线，零第三方依赖。</p>
       </div>
@@ -546,10 +546,11 @@
     <div class="mt-14 max-w-[880px] mx-auto reveal">
       <div class="flex flex-wrap items-center justify-center gap-x-7 gap-y-2 mb-7">
         <span class="flex items-center gap-2 text-[12.5px] text-fg2">
-          <i class="legend-dot" style="background:#9B8DFF"></i><span data-i18n="bench.ours">Mnemosyne OS 8.1.0</span>
+          <!-- 每组基准一个色相，图例只区分「实色 / 淡色」，所以这里用四色渐变点 -->
+          <i class="legend-dot" style="background:linear-gradient(90deg,#7C6BF0,#2E9E8F,#C98A2B,#C2557B)"></i><span data-i18n="bench.ours">Mnemosyne OS 8.1.0</span>
         </span>
         <span class="flex items-center gap-2 text-[12.5px] text-fg3">
-          <i class="legend-dot" style="background:#D4D4D8"></i><span data-i18n="bench.theirs">Mem0</span>
+          <i class="legend-dot" style="background:rgba(120,120,140,.22)"></i><span data-i18n="bench.theirs">Mem0</span>
         </span>
       </div>
       <div id="bench-rows"></div>
@@ -786,7 +787,7 @@
 <!-- 演示舞台：给商业合作伙伴看的 10 章剧本。独立文件，只在演示页被调用。 -->
 <script src="assets/console-demo.js?v=10.8"></script>
 
-<script src="/assets/site-ff1573ef80.js" defer></script>
+<script src="/assets/site-62481282d7.js" defer></script>
 
 <!-- __MN_SITE_MODULE__ -->
 <script src="/assets/site-bb3f382ddd.js" defer></script>

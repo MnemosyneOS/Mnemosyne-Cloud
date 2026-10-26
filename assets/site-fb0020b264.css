@@ -873,13 +873,16 @@
   /* 原来写 background:var(--fg)——深色主题下恰好是白，浅色主题下直接变黑块，
      与全站配色无关。改成品牌紫罗兰（取自 logo 节点色 #4C3A8F），
      字色用极浅紫保对比（≥7:1）。 */
-  .tile{
-    background:linear-gradient(158deg,#5B41B8 0%,#3E2E8C 100%);
-    color:#F3EFFF; border-radius:8px; padding:20px 17px;
-    border:1px solid rgba(255,255,255,.10);
+.tile{
+    /* 🔴 2026-10-26：原来是 #5B41B8 → #3E2E8C 的深紫渐变，四块并排压得整页发黑，
+       与页面其余浅色卡片不在一个重量级上。改成主题色系的极淡底 + 淡描边，
+       数字用 accent-ink 提亮，深浅两套主题都靠变量走。 */
+    background:var(--accent-bg);
+    color:var(--fg); border-radius:12px; padding:18px 17px;
+    border:1px solid var(--accent-line);
   }
-  .tile .n{ display:block; font-size:25px; font-weight:700; letter-spacing:-.035em; line-height:1.05; }
-  .tile .l{ display:block; margin-top:9px; font-size:11.4px; line-height:1.4; opacity:.7; }
+.tile .n{ display:block; font-size:24px; font-weight:600; letter-spacing:-.03em; line-height:1.05; color:var(--accent-ink); }
+.tile .l{ display:block; margin-top:7px; font-size:11.4px; line-height:1.4; color:var(--fg3); }
 
   .form{ margin-top:26px; border:1px solid var(--hair); border-radius:8px; background:var(--surface); padding:24px; }
   .form .f{ margin-bottom:16px; }
@@ -1043,25 +1046,29 @@
      the thing the reader sees first. */
   .legend-dot{ width:10px; height:10px; border-radius:3px; display:inline-block; flex:none; }
 
-  .brow-group + .brow-group{ margin-top:26px; }
+  .brow-group + .brow-group{ margin-top:22px; }
   .brow-group-label{
-    font-family:'DM Mono',monospace; font-size:11.5px; letter-spacing:.13em;
-    text-transform:uppercase; color:var(--fg2); margin-bottom:9px;
+    font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.13em;
+    text-transform:uppercase; color:var(--fg3); margin-bottom:8px;
   }
-  .brow{ position:relative; height:44px; background:var(--surface-3); overflow:hidden; }
-  .brow + .brow{ margin-top:5px; }
+  /* 🔴 2026-10-26：44px 高的直角条太重，压过了整页的正文。改成 26px 胶囊：
+     圆角 999px、两行之间 7px、数值缩到 12.5px 并右对齐在条内。
+     颜色由 JS 按基准组下发（--bc 实色 / --bcw 同色淡色），
+     深色 = Mnemosyne OS，淡色 = Mem0。 */
+  .brow{ position:relative; height:26px; border-radius:999px; background:var(--surface-3); overflow:hidden; }
+  .brow + .brow{ margin-top:7px; }
   .brow-fill{
-    position:absolute; top:0; bottom:0; left:0; background:#9B8DFF;
+    position:absolute; top:0; bottom:0; left:0; border-radius:999px;
+    background:var(--bc,#8B78F2);
     display:flex; align-items:center; justify-content:flex-end;
-    padding:0 14px; transition:width .55s cubic-bezier(.2,.8,.2,1);
+    padding:0 11px; transition:width .55s cubic-bezier(.2,.8,.2,1);
   }
   .brow-val{
     font-family:'Mona Sans Variable','Mona Sans','Inter Variable',Inter,sans-serif;
-    font-size:16px; font-weight:700; letter-spacing:-.012em; color:#1B1727; white-space:nowrap;
+    font-size:12.5px; font-weight:600; letter-spacing:-.008em; color:#fff; white-space:nowrap;
   }
-  .brow-them .brow-fill{ background:#D4D4D8; }
-  html[data-theme="dark"] .brow-them .brow-fill{ background:#3A3752; }
-  html[data-theme="dark"] .brow-them .brow-val{ color:#C9C6DA; }
+  .brow-them .brow-fill{ background:var(--bcw,rgba(120,120,140,.22)); }
+  .brow-them .brow-val{ color:var(--fg2); }
   .step{
     border-top:1px solid var(--hair); padding-top:26px; position:relative;
   }
@@ -1127,8 +1134,8 @@
          而不是靠加粗边框把卡片撑变形。 */
   .tier{
     display:flex; flex-direction:column; background:var(--surface);
-    border:1px solid var(--hair); border-radius:12px;
-    padding:26px 22px 22px; height:100%; box-sizing:border-box;
+    border:1px solid var(--hair); border-radius:16px;
+    padding:24px 24px 26px; height:100%; box-sizing:border-box;
     transition:border-color .26s ease, box-shadow .26s ease, transform .26s ease;
   }
   .tier:hover{
@@ -1138,27 +1145,53 @@
   }
   .tier-rec{
     border-color:var(--accent-line);
-    background:linear-gradient(180deg, var(--accent-wash, rgba(120,90,255,.05)) 0%, var(--surface) 42%);
+    /* 2026-10-26：去掉顶部紫色渐变。四张卡底色统一成 --surface，
+       「最受欢迎」只靠描边 + 角标区分 —— 一深一浅看着不像同一组。 */
+    background:var(--surface);
   }
   .tier-rec:hover{ border-color:var(--accent); }
 
   /* 报价区：数字与单位对齐，四张卡高度一致 */
-  .tier .tier-price{ display:flex; align-items:baseline; gap:6px; min-height:44px; }
-  .tier .tier-note{ min-height:34px; }
-
-  /* CTA 固定在报价下方，四张卡按钮同一水平线 */
-  .tier .tier-cta{
-    display:flex; align-items:center; justify-content:center; gap:7px;
-    width:100%; min-height:42px; margin-top:auto;
-    border-radius:9px; font-size:13.5px; font-weight:600; letter-spacing:-.005em;
+  /* 🔴 2026-10-26 定价卡重构（去付款按钮 + 版式对齐参考稿）：
+     标题行 → 描述 → 周期切换 → 价格 → 说明 → 分隔线 → 权益。
+     desc / price / note 三段各给固定 min-height，四张卡不论文案长短，
+     权益列表都从同一条基线开始。 */
+  .tier-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .tier-badge{
+    flex:none; height:22px; padding:0 9px; border-radius:999px;
+    display:inline-flex; align-items:center;
+    font-size:11px; font-weight:500; letter-spacing:.01em;
+    color:var(--fg3); background:var(--surface-3); border:1px solid var(--hair);
   }
+  .tier-rec .tier-badge{ color:var(--accent-ink); background:var(--accent-bg); border-color:var(--accent-line); }
+
+  .tier-desc{ margin:8px 0 0; font-size:12.5px; line-height:1.6; color:var(--fg3); min-height:40px; }
+  /* 卡内周期切换：把 pseg-sm 自带的 14px 下边距收掉，改由 .tier-seg 统一控高。
+     否则有切换按钮的卡（Pro/Team）比没有的卡（Free/增值包）高 14px，
+     价格和权益列表就跟着错开。 */
+  .tier-seg{ margin-top:14px; min-height:30px; }
+  .tier .pseg-sm{ margin:0; }
+
+  .tier .tier-price{ display:flex; align-items:baseline; gap:5px; margin-top:12px; min-height:42px; }
+  .tier-amt{
+    font-family:'Mona Sans Variable','Mona Sans','Inter Variable',Inter,system-ui,sans-serif;
+    font-size:36px; font-weight:600; letter-spacing:-.035em; line-height:1; color:var(--fg);
+  }
+  .tier-per{ font-size:12.5px; color:var(--fg3); }
+
+  .tier .tier-note{ margin:8px 0 0; min-height:18px; font-size:11.5px; line-height:1.5; color:var(--fg3); }
+  .tier-rule{ height:1px; background:var(--hair); margin:16px 0 14px; }
+  .tier-cap{ margin:0 0 8px; min-height:17px; font-size:11.5px; line-height:1.5; color:var(--fg3); }
 
   /* 特性列表：弹性扩展区，长短差异只在这里体现，不影响上方对齐 */
-  .tier .tier-feats{ flex:1 1 auto; }
+  .tier .tier-feats{
+    flex:1 1 auto; margin:0; padding:0; list-style:none;
+    display:flex; flex-direction:column; gap:1px;
+  }
 
   /* 四张卡同排时留出等宽间距，窄屏自动落到两列/一列 */
   #tiers{ align-items:stretch; }
-  .tier-name{ font-size:16.5px; font-weight:600; letter-spacing:-.01em; color:var(--fg); }
+  .tier-name{ font-size:16px; font-weight:600; letter-spacing:-.01em; color:var(--fg); }
   .tagbox2{ font-family:'DM Mono',monospace; font-size:10.5px; color:var(--fg3); border:1px solid var(--hair); border-radius:5px; padding:3px 8px; white-space:nowrap; }
 
   /* 2026-10-23 计费切换控件。
@@ -1194,9 +1227,20 @@
      declaration survived, so every plan tick was stacked ABOVE its label
      instead of beside it — measured 27px apart (16px icon + 11px gap),
      which is the misalignment that showed up in the screenshot. */
-  .tier .feat{ display:flex; flex-direction:row; align-items:flex-start; gap:11px; font-size:13.5px; line-height:1.55; color:var(--fg2); padding:9px 0; }
-  .tier .feat + .feat{ border-top:1px solid var(--hair); }
-  .tier .feat svg{ width:16px; height:16px; flex:none; stroke-width:2.1; color:var(--accent-ink); margin-top:calc(.775em - 8px); }
+  /* 🔴 2026-10-26：改用 grid 两列（图标 / 文本），这是「权益错行」的根治。
+     原来的 flex 布局里，通用 .feat 规则还带着 border + 圆角 + 灰底，
+     于是定价卡里每条权益都被套了一个小灰盒子，行高一不齐就看着错位。
+     现在：显式清掉盒子的 border/background/radius，图标列固定 15px，
+     文本列 minmax(0,1fr) —— 每条的文字左边缘都落在同一根竖线上，
+     长文本在自己那一列里换行，永远推不动图标。 */
+  .tier .feat{
+    display:grid; grid-template-columns:15px minmax(0,1fr); align-items:start;
+    gap:10px; padding:5px 0;
+    border:0; background:none; border-radius:0; overflow:visible;
+    font-size:12.8px; line-height:1.6; color:var(--fg2);
+  }
+  .tier .feat + .feat{ border-top:0; }
+  .tier .feat svg{ width:15px; height:15px; flex:none; stroke-width:2.4; color:var(--accent-ink); margin-top:3px; }
   .tier .feat.dim{ color:var(--fg3); }
   .tier .feat.dim svg{ color:var(--faint); }
 
