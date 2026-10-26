@@ -328,6 +328,7 @@ html[data-theme="dark"] .mc { --mc-ok: #4ADE80; --mc-warn: #FBBF24; --mc-bad: #F
   width: 11px; height: 11px; border-radius: 50%; display: grid; place-items: center;
   font-size: 9px; font-weight: 700; color: #fff; background: var(--mc-warn, #D97706);
 }
+.mc-hand .hint { margin-top: 5px; font-size: 10.5px; line-height: 1.5; color: var(--fg3); opacity: .85; }
 /* 单行网址版：不换行、横向滚动，复制按钮的宽度预留出来 */
 .mc-hand .boxwrap.one .box {
   white-space: nowrap; overflow-x: auto; overflow-y: hidden;

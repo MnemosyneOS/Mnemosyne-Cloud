@@ -2949,6 +2949,12 @@
       '<div class="warn">' + esc(dz(
         '这个链接绑定在你自己的账号上：只发给 AI，别转发给别人 —— 别人用它配置，写进去的记忆会落在你的账号里。',
         'This link is bound to your account: send it to an AI, do not forward it - anyone using it would write into your memory.')) + '</div>' +
+      /* 这个网址对浏览器直接返回 404（防止真人打开看到密钥）。万一 AI 的抓取器
+         带了浏览器头被挡，这里给出唯一的补救方式 —— 只在登录后的控制台可见，
+         不会跟着链接泄露出去。 */
+      '<div class="hint">' + esc(dz(
+        '如果 AI 说打不开（404），让它带上请求头 X-Mnemosyne-Agent: 1 再取一次。',
+        'If the AI reports 404, ask it to retry with the header X-Mnemosyne-Agent: 1.')) + '</div>' +
       '</div>';
   }
 
