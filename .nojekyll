@@ -1,0 +1,13 @@
+﻿# GitHub Pages 默认用 Jekyll 构建，而 Jekyll 会**忽略**以 `.` 或 `_` 开头的文件
+# 与目录 —— 这正是 `.well-known/security.txt` 一直线上 404 的原因：
+# 文件确实在仓库里、也确实被 git 跟踪（`git ls-files` 查得到），
+# 但 Jekyll 从未把它拷进发布产物。
+#
+# 实测证据（2026-10-27）：
+#   /2b5ad81794f767ed9cc0e07631867fca.txt  -> 200（普通文件名，Jekyll 正常发布）
+#   /.well-known/security.txt              -> 404（点开头目录，被 Jekyll 丢弃）
+#   /.gitignore                            -> 403（Cloudflare WAF 凭据规则拦下，另一回事）
+#
+# 加上这个空文件后，Pages 直接把仓库文件原样发布，不做 Jekyll 处理。
+# 副作用：未来若真要用 Jekyll 特性（_layouts / Liquid 模板），需要移除本文件。
+# 本仓库是纯静态站（预渲染 HTML + 资源文件），不需要 Jekyll。
