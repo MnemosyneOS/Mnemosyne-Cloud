@@ -1307,7 +1307,7 @@
           esc(dz('下载导出包', 'Download')) + '</button></div>' +
         '<div class="mc-card pad"><div class="mc-h2" style="margin-top:0">' +
           esc(dz('迁移到自建实例', 'Move to self-hosted')) + '</div>' +
-          '<div class="mc-code">pip install mnemosyne-os==8.1.0\nmnemosyne init\n# 解压导出包到 ~/.mnemosyne/data 后：\nmnemosyne doctor</div>' +
+          '<div class="mc-code">pip install mnemosyne-os\nmnemosyne init\n# 解压导出包到 ~/.mnemosyne/data 后：\nmnemosyne doctor</div>' +
           '<div class="mc-note" style="margin-top:8px">' + esc(dz('导出包里的 manifest.json 含内容哈希，导入时会逐条校验。',
             'The manifest carries content hashes and is verified on import.')) + '</div></div>' +
       '</div>';
