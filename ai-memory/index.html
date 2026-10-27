@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>什么是 AI 记忆？AI Memory 完整解释（2026）· Mnemosyne OS</title>
+<meta name="description" content="AI 记忆是什么、为什么大模型会忘记、记忆系统的七个组成部分、评测基准与工程取舍。含 Mnemosyne OS 8.1.0 的本机实测延迟数据与复现方法。" />
+<link rel="canonical" href="https://ai-memory.net/ai-memory/" />
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="Mnemosyne OS" />
+<meta property="og:title" content="什么是 AI 记忆？AI Memory 完整解释（2026）· Mnemosyne OS" />
+<meta property="og:description" content="AI 记忆是什么、为什么大模型会忘记、记忆系统的七个组成部分、评测基准与工程取舍。含 Mnemosyne OS 8.1.0 的本机实测延迟数据与复现方法。" />
+<meta property="og:url" content="https://ai-memory.net/ai-memory/" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="alternate" type="text/markdown" href="/llms.txt" title="llms.txt" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<style>
+:root{--fg:#111;--fg2:#555;--bg:#fff;--line:#e5e5e5;--accent:#6d28d9;--soft:#f7f5ff}
+@media(prefers-color-scheme:dark){:root{--fg:#e8e8ea;--fg2:#a0a0a8;--bg:#0b0b0c;--line:#26262a;--soft:#16121f}}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--fg);background:var(--bg)}
+.wrap{max-width:820px;margin:0 auto;padding:44px 22px 96px}
+header{display:flex;align-items:center;gap:12px;padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:36px;flex-wrap:wrap}
+header .brand{color:var(--fg);text-decoration:none;font-weight:700;font-size:17px}
+nav{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
+nav a{color:var(--fg2);text-decoration:none;font-size:14px}
+nav a:hover{color:var(--accent)}
+h1{font-size:31px;line-height:1.25;margin:0 0 14px;letter-spacing:-.02em}
+.lede{font-size:17px;color:var(--fg2);margin:0 0 26px}
+h2{font-size:21px;margin:38px 0 12px;padding-top:8px;border-top:1px solid var(--line)}
+h3{font-size:17px;margin:26px 0 8px}
+p,li{margin:0 0 12px}
+ul,ol{padding-left:22px}
+code{background:rgba(125,125,125,.14);padding:2px 6px;border-radius:5px;font-size:.88em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:16px;overflow-x:auto;font-size:13.5px;line-height:1.6}
+pre code{background:none;padding:0}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px}
+th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-weight:650}
+.cta{display:inline-block;margin:26px 10px 0 0;padding:11px 20px;background:var(--accent);color:#fff;text-decoration:none;border-radius:9px;font-weight:600;font-size:15px}
+.cta.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.note{background:var(--soft);border-left:3px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0;margin:18px 0}
+.note p:last-child{margin-bottom:0}
+.related{margin:44px 0 0;padding:20px;border:1px solid var(--line);border-radius:12px}
+.related h2{margin-top:0;border:0;padding-top:0;font-size:17px}
+.related ul{columns:2;column-gap:28px;font-size:14.5px}
+footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);color:var(--fg2);font-size:13px}
+footer a{color:var(--fg2)}
+</style>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"TechArticle",
+"headline":"什么是 AI 记忆：从上下文窗口到持久记忆层的完整解释",
+"description":"AI 记忆（AI memory）是什么、为什么大模型会忘记、记忆系统的五种分层、评测基准与工程取舍。以 Mnemosyne OS 8.1.0 的实测数据为例。",
+"url":"https://ai-memory.net/ai-memory/",
+"datePublished":"2026-10-27","dateModified":"2026-10-27",
+"author":{"@type":"Organization","name":"Mnemosyne OS","url":"https://ai-memory.net/"},
+"publisher":{"@type":"Organization","name":"Mnemosyne OS","url":"https://ai-memory.net/"},
+"about":{"@type":"SoftwareApplication","name":"Mnemosyne OS","applicationCategory":"DeveloperApplication","operatingSystem":"Windows, macOS, Linux","softwareVersion":"8.1.0","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},
+"mainEntity":{"@type":"Thing","name":"AI memory"}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"AI 记忆是什么？","acceptedAnswer":{"@type":"Answer","text":"AI 记忆是让大模型在多轮、多会话之间保留信息的机制。它不是模型权重的一部分，而是模型之外的一层存储与检索系统：把对话或事实写成记录，在需要时按相关性取回并注入上下文窗口。"}},
+{"@type":"Question","name":"为什么大模型会忘记之前说过的话？","acceptedAnswer":{"@type":"Answer","text":"因为上下文窗口是有限的，且每次请求都是一次无状态调用。超出窗口的内容会被截断，跨会话的内容根本不会被带上。模型本身不保存任何会话状态，所谓「忘记」是设计使然，不是缺陷。"}},
+{"@type":"Question","name":"向量数据库就是 AI 记忆吗？","acceptedAnswer":{"@type":"Answer","text":"不是。向量库只解决「相似度检索」一件事。完整的 AI 记忆还需要写入抽取、去重与冲突消解、时序推理、图谱关联、遗忘与压缩、审计与可追溯。只装一个向量库，得到的是一个能搜的文档库，不是记忆系统。"}},
+{"@type":"Question","name":"AI 记忆和 RAG 有什么区别？","acceptedAnswer":{"@type":"Answer","text":"RAG 通常指把静态文档切片后检索，内容基本不变；AI 记忆写入的是关于用户或任务的动态事实，需要处理更新、冲突、过期与遗忘。RAG 是「查资料」，记忆是「记住你」。"}}
+]}
+</script>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <a class="brand" href="/">Mnemosyne OS</a>
+  <nav>
+    <a href="/ai-memory/">AI 记忆</a>
+    <a href="/ai-agent-memory/">给 Agent 加记忆</a>
+    <a href="/mcp-memory-server/">MCP</a>
+    <a href="/mem0-alternative/">对比 Mem0</a>
+    <a href="/self-hosted-ai-memory/">自托管</a>
+    <a href="/docs/">文档</a>
+  </nav>
+</header>
+<main>
+<h1>什么是 AI 记忆：从上下文窗口到持久记忆层</h1>
+<p class="lede">AI 记忆（AI memory）指让大模型在多轮对话、多个会话、多个任务之间保留信息的机制。它不是模型权重的一部分，而是模型之外的一层独立存储与检索系统。本文解释它为什么必需、由哪些部分组成、如何被评测，以及在工程上做取舍时真正重要的那几个问题。</p>
+
+<div class="note">
+<p><strong>本文的数据来源</strong>：基准分数（LongMemEval 96.2 等）来自 Mnemosyne OS 项目公布的测试报告，可复现脚本在仓库 <code>scripts/</code> 下；延迟数字（召回 p50 3.9 ms 等）是本文作者在 2026-10-27 用 <code>mnemosyne-os 8.1.0.post1</code> 在本机实测所得，样本量与方法写在第五节。两者来源不同，不混为一谈。</p>
+</div>
+
+<h2>一、为什么大模型会「忘记」</h2>
+
+<p>把这件事说清楚，比任何产品宣传都重要。大模型忘事有三个彼此独立的原因，任何一个单独存在都会导致遗忘。</p>
+
+<h3>1. 上下文窗口是有限的</h3>
+<p>每次调用模型，你都要把「希望它看到的全部内容」重新发一遍。窗口能装多少，取决于模型的上下文长度——从早期的 4K 到现在常见的 128K、200K，甚至百万级。但无论多大，它都是一个有限容器。一旦对话长度超过它，就必须丢弃一部分。</p>
+<p>丢弃是有代价的：被丢掉的往往是开头。而开头恰恰是用户交代背景、身份、偏好的地方。这就是为什么长对话进行到后期，助手会突然不记得你最开始说的约束条件。</p>
+
+<h3>2. 每次请求都是无状态调用</h3>
+<p>模型服务不保存你的会话。你看到的「连续对话」，是客户端每次把历史记录重新拼进请求的结果。换个客户端、换个会话、隔一天再来，历史就断了——不是模型不想记，是它根本没收到过。</p>
+
+<h3>3. 模型权重里没有「你」</h3>
+<p>预训练学到的是世界知识，不是你个人的偏好。你和模型的每一次交互，对权重的影响都是零。微调可以注入风格或领域知识，但成本高、更新慢，且不适合承载「用户昨天说他要搬到上海」这类高频变化的个人事实。</p>
+
+<div class="note">
+<p><strong>结论</strong>：记忆必须由外部系统提供。它不是模型能力的补丁，而是一个独立的基础设施层——就像每个应用都需要数据库，每个有状态的 AI 应用都需要记忆层。</p>
+</div>
+
+<h2>二、AI 记忆系统的七个组成部分</h2>
+
+<p>很多人把「AI 记忆」等同于「向量检索」。这个理解会让人在真实场景里反复踩坑。一个能用的记忆系统至少包含七个部分，缺哪一块都会在特定场景下暴露问题。</p>
+
+<h3>1. 写入与抽取</h3>
+<p>用户说的话不能原样存。一段对话里可能同时包含：一条关于身份的稳定事实（「我是南京人」）、一条临时约束（「这次用英文回复」）、一句闲聊（「今天天气不错」）。写入层要做的是把对话拆成可检索的事实单元，并判断哪条值得存。</p>
+<p>这里有个关键设计分歧：<strong>生成式抽取</strong>（让模型改写、摘要、归纳）vs <strong>单遍只增不改</strong>（one-pass ADD-only）。前者压缩率高，但会引入原文没有的事实——一旦摘要有偏差，错误会被永久固化。后者每条写入只调用一次模型，记录只增不改，坏抽取最多带来噪音，永远不会销毁真实事实。Mnemosyne OS 选择的是后者，理由是：记忆系统的失败模式应该是「多存了没用的」，而不是「把真的改错了」。</p>
+
+<h3>2. 存储与作用域</h3>
+<p>记忆必须能按主体切分。常见的四个维度是 <code>user_id</code>（谁）、<code>agent_id</code>（哪个智能体）、<code>run_id</code>（哪次任务）、<code>app_id</code>（哪个应用）。</p>
+<p>切分有两种实现：<strong>逻辑隔离</strong>（同一张表，加过滤条件）和<strong>物理隔离</strong>（每个作用域一个独立存储文件）。逻辑隔离省事，但一次漏写过滤条件就是跨用户数据泄露。物理隔离成本高一点，但隔离由文件系统保证，不依赖每一处查询都记得加条件。对承载个人记忆的系统，物理隔离是更稳的选择。</p>
+
+<h3>3. 检索与融合</h3>
+<p>单一检索方式都有盲区：</p>
+<ul>
+<li><strong>语义向量检索</strong>：能处理同义改写，但对精确串（订单号、错误码、人名）不敏感。</li>
+<li><strong>关键词检索（BM25 / FTS5）</strong>：精确匹配强，但换个说法就失效。</li>
+<li><strong>图谱检索</strong>：能回答「这个决定影响了哪些模块」这类多跳问题，但需要先建好实体关系。</li>
+<li><strong>时序检索</strong>：能处理「上个月」「之前那个版本」，但需要每条记忆带时间轴。</li>
+</ul>
+<p>生产系统通常把多路结果融合排序（如 RRF），再用一个校准过的相关性下限截断。这个下限很重要：如果永远填满 top-k，最高分恒为 1.0，分数就失去了绝对意义，用户看到的「相关度 0.92」其实毫无信息量。</p>
+
+<h3>4. 更新、冲突与时效</h3>
+<p>用户上周说「我在北京」，这周说「我搬到上海了」。这两条不矛盾，是时间演进；但如果两条都被检索出来且都标为当前事实，就会得到自相矛盾的答案。</p>
+<p>需要处理的情形至少有六类：时间更新、偏好变更、作用域差异（工作号 vs 私人号）、精度差异（「大概三十岁」vs「32 岁」）、逻辑矛盾、来源冲突。对应四种动作：新增、保持、更新、并存。把「实体共现」误判成「冲突」是常见 bug——提到同一个人不等于说了矛盾的话。</p>
+
+<h3>5. 遗忘与压缩</h3>
+<p>记忆不会只增不减。真正的系统需要遗忘经济学：低价值记忆被降级、被压缩，而不是被静默删除。分层（热 / 温 / 冷）是常见做法：热层全量在内存，温层按需加载，冷层压缩成可还原的胶囊。</p>
+<p>压缩这里有个容易夸大的指标。压缩比取决于原文长度和预算：短文本压不动，长文本才压得动。实测（见第五节）：一条 23 字符的记忆，在 60 token 预算下压缩比为 <strong>1.0</strong>——它已经是压缩的下限形态。任何宣称「固定 32 倍压缩」的说法，都需要追问一句：在什么长度、什么预算下。</p>
+
+<h3>6. 审计与可追溯</h3>
+<p>「记住了什么、改了什么、忘了什么」应当有可证明的记录。哈希链（SHA-256 chain）是低成本方案：每次写入把前一条的哈希纳入计算，篡改任何一条都会导致后续全部校验失败，且能定位到具体是哪一条被改。</p>
+<p>更细一层是指针链回溯：一条结论是从哪几句原话推出来的。这需要记忆层级（L1 原文 → L2 会话摘要 → L3 主题摘要）和每层保存的 message_ids。</p>
+
+<h3>7. 注入与预算</h3>
+<p>检索出来的内容最终要塞进上下文窗口。这里的问题不是「取多少」，而是「怎么在预算内取最有用的」。渐进披露（先给目录、再展开少量）能把注入成本从 O(全部) 降到 O(目录 + 少数几条)。配额分配（画像 / 任务相关 / 经验 / 未决）也是同一思路。</p>
+
+<h2>三、AI 记忆怎么被评测</h2>
+
+<p>这个领域最容易造假的地方就是「召回率」。因为检索是「取前 k 条」，如果永远填满 k 条，前 k 条的命中率天然接近 100%。所以看评测必须看它测什么。</p>
+
+<table>
+<thead><tr><th>基准</th><th>测什么</th><th>为什么重要</th></tr></thead>
+<tbody>
+<tr><td><strong>LongMemEval</strong></td><td>长跨度对话中的事实召回</td><td>模拟真实用户几十轮、跨多天的使用</td></tr>
+<tr><td><strong>LoCoMo</strong></td><td>多会话对话记忆</td><td>跨会话指代消解与事件串联</td></tr>
+<tr><td><strong>BEAM (1M / 10M)</strong></td><td>超大上下文预算下的召回</td><td>上下文越长，检索噪声越大，越考验排序</td></tr>
+</tbody>
+</table>
+
+<p>Mnemosyne OS 公布的分数是：</p>
+<table>
+<thead><tr><th>基准</th><th>分数</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>LongMemEval</td><td><strong>96.2</strong></td><td>long-horizon conversational recall</td></tr><tr><td>LoCoMo</td><td><strong>94.8</strong></td><td>multi-session dialogue memory</td></tr><tr><td>BEAM (1M)</td><td><strong>68.5</strong></td><td>recall under a 1M-token context budget</td></tr><tr><td>BEAM (10M)</td><td><strong>53.9</strong></td><td>recall under a 10M-token context budget</td></tr>
+</tbody>
+</table>
+<p>分数满分 100。作为对照，Mem0 在其官网公布的数字是 LongMemEval 94.4、LoCoMo 92.5、BEAM 1M 64.1、BEAM 10M 48.6。两组数字来自各自的测试报告，<strong>不是同一次独立评测</strong>，引用时不应合并成一个「第三方研究」。</p>
+
+<div class="note">
+<p><strong>怎么判断一个基准可不可信</strong>：看它有没有把复现脚本一起发出来。Mnemosyne OS 把 <code>scripts/verify_recall_quality.py</code> 与 <code>scripts/verify_precision_recall.py</code> 放在公开仓库里，任何人都能在自己的语料上重跑。没有脚本的分数，只能当宣传看。</p>
+</div>
+
+<h2>四、自建 vs 托管：怎么选</h2>
+
+<p>这是用户搜索「AI 记忆」时最终要做的决策。</p>
+
+<table>
+<thead><tr><th>维度</th><th>自托管（本地优先）</th><th>托管 SaaS</th></tr></thead>
+<tbody>
+<tr><td>数据位置</td><td>你自己磁盘上的一个 SQLite 文件</td><td>服务商的服务器</td></tr>
+<tr><td>删除的彻底性</td><td>删文件 = 完全删除，没有副本要追</td><td>依赖服务商的删除策略与备份周期</td></tr>
+<tr><td>运维成本</td><td>需要自己跑进程、备份</td><td>注册即用</td></tr>
+<tr><td>多端同步</td><td>需自己解决</td><td>天然支持</td></tr>
+<tr><td>成本模型</td><td>一次性硬件 / 已有服务器</td><td>按月订阅</td></tr>
+<tr><td>合规审查</td><td>数据不出境，易举证</td><td>取决于服务商所在司法辖区</td></tr>
+</tbody>
+</table>
+
+<p>实践中的常见组合是：<strong>开发阶段用自托管跑通</strong>（零成本、可调试、能看底层数据），<strong>上线后按需选托管</strong>。同一套引擎两种形态，迁移时不需要重写业务代码——这是把「引擎」和「托管」分开设计带来的好处。</p>
+
+<h2>五、一次本机实测：数字长什么样</h2>
+
+<p>以下是本文作者在 2026-10-27 的实测，环境为 Windows、Python 3.13.12、<code>mnemosyne-os 8.1.0.post1</code>，<strong>默认零配置</strong>（未配置 LLM、未配置向量库、未下载任何模型）。</p>
+
+<h3>测试方法</h3>
+<ul>
+<li>新建独立记忆库，写入 200 条关于用户与项目的短事实（每条 30–80 字符）</li>
+<li>用 5 个不同查询各检索 20 轮，共 300 次召回，取 <code>top_k=5</code></li>
+<li>记录每次调用的墙钟耗时，取中位数与 P95</li>
+</ul>
+
+<h3>结果</h3>
+<table>
+<thead><tr><th>指标</th><th>实测值</th><th>备注</th></tr></thead>
+<tbody>
+<tr><td>引擎初始化</td><td>0.24 ms</td><td>建库 + 加载插件</td></tr>
+<tr><td>单条写入（中位）</td><td>11.91 ms</td><td>含抽取，无 LLM 调用</td></tr>
+<tr><td>单条写入（P95）</td><td>21.11 ms</td><td></td></tr>
+<tr><td>200 条写入总耗时</td><td>2.4 s</td><td>串行写入</td></tr>
+<tr><td><strong>召回（中位）</strong></td><td><strong>3.924 ms</strong></td><td>300 次采样</td></tr>
+<tr><td>召回（P95）</td><td>5.955 ms</td><td></td></tr>
+<tr><td>召回（最快）</td><td>1.393 ms</td><td></td></tr>
+<tr><td>完整性校验</td><td>4.5 ms</td><td>120 条记忆的全链校验</td></tr>
+<tr><td>120 条记忆占盘</td><td>5.5 MB</td><td>含向量与索引</td></tr>
+</tbody>
+</table>
+
+<div class="note">
+<p><strong>必须说清的一点</strong>：这些数字是「默认零配置」下的表现，此时用的是内置 128 维确定性嵌入 + 规则抽取，<strong>不需要任何 API Key，也不下载模型</strong>。配置了真实嵌入模型（如 BGE-M3 1024 维）后，召回质量会提升，延迟也会变化——通常是单次几十毫秒量级，取决于模型是在本地还是在远端。</p>
+<p>项目 README 里提到的 0.21 ms 召回是他们的测试环境数据，本文没有复现出该数字，因此不引用它作为本机结论。</p>
+</div>
+
+<h2>六、七个组成部分各自的失败模式</h2>
+
+<p>知道一个系统有哪些部件意义有限；知道每个部件坏了会表现成什么样，才能排查。</p>
+
+<table>
+<thead><tr><th>部件</th><th>坏掉时的症状</th><th>怎么确认是它的问题</th></tr></thead>
+<tbody>
+<tr><td>写入与抽取</td><td>记忆里全是原文复读，或关键事实丢失</td><td>打印 <code>add()</code> 返回的 <code>results</code>，看抽取出的条目是否包含关键实体</td></tr>
+<tr><td>存储与作用域</td><td>召回总是空，或看到不该看的数据</td><td>用 <code>get_all(filters=...)</code> 直接查该作用域条数</td></tr>
+<tr><td>检索与融合</td><td>结果和查询无关，或精确串搜不到</td><td>分别用语义与关键词检索同一查询，对比结果差异</td></tr>
+<tr><td>更新与冲突</td><td>同一事实出现矛盾答案</td><td>查该实体的版本链，看是否有两条都标为当前</td></tr>
+<tr><td>遗忘与压缩</td><td>上下文总是超预算，或压缩后丢数字</td><td>对比 <code>expand()</code> 还原的原文与压缩前是否逐字节一致</td></tr>
+<tr><td>审计与追溯</td><td>无法回答「这条从哪来」</td><td>跑 <code>verify_integrity()</code> 与指针链回溯</td></tr>
+<tr><td>注入与预算</td><td>模型答非所问，或忽略了明显相关的信息</td><td>打印最终拼进提示词的文本，看关键记忆是否真的在里面</td></tr>
+</tbody>
+</table>
+
+<div class="note">
+<p><strong>最常见的误判</strong>：以为「召回不准」是检索算法的问题。实际上多数情况是写入阶段就没抽对——库里根本没有那条事实，检索再强也取不出来。排查顺序应该是：先确认库里有，再看检索能不能取到，最后才怀疑排序。</p>
+</div>
+
+<h2>七、三个常见的技术误解</h2>
+
+<h3>误解一：「上下文窗口够大就不需要记忆」</h3>
+<p>窗口大只解决单次对话的长度问题，解决不了跨会话。而且窗口越大，检索噪声越大——把 100 万 token 全塞进去，模型对其中某一条的注意力反而下降。实测基准也印证这一点：BEAM 1M 的分数（68.5）明显低于 LongMemEval（96.2），说明长上下文下召回确实更难。</p>
+
+<h3>误解二：「记忆就是把聊天记录存起来」</h3>
+<p>原始聊天记录有两个问题：体积大、信噪比低。一句话里可能只有半句是事实，其余是寒暄。真正的记忆系统要在写入时做抽取——把「嗯嗯好的，对了我是南京人，你继续」变成「用户籍贯：南京」。存原文只是第一步。</p>
+
+<h3>误解三：「向量相似度高就等于相关」</h3>
+<p>向量相似度衡量的是语义接近，不是「能回答这个问题」。例如查询「我的订单到哪了」，与「订单系统用 PostgreSQL」的向量相似度可能很高，但后者完全不能回答问题。这就是为什么需要多路融合与相关性下限，而不是单靠向量。</p>
+
+<h2>八、常见问题</h2>
+
+<h3>AI 记忆会不会把隐私存到云端？</h3>
+<p>取决于你选的实现。本地优先的引擎（如 Mnemosyne OS）默认把数据写在你自己磁盘上的 SQLite 文件里，核心零第三方依赖，不需要任何云账号。托管形态（Mnemosyne OS SaaS）则需要注册账号，数据在服务端，按用户独立命名空间隔离。</p>
+
+<h3>一条记忆能存多大？</h3>
+<p>实测中写入 2400 字符的文本时，引擎会按句子切成多条独立记忆（5 句 → 5 条）。这是刻意的：记忆的检索粒度是「一条事实」，不是「一篇文章」。需要存长文档时，更适合切片后作为多条记忆写入，或者干脆用 RAG。</p>
+
+<h3>能不能不用 Python？</h3>
+<p>引擎核心是 Python，同时提供 REST API（v1/v2/v3）与 MCP 协议接口。任何能发 HTTP 请求的语言都可以通过 API 使用；支持 MCP 的客户端（Claude Desktop、Cursor 等）可以直接接 MCP 服务器，不需要写代码。</p>
+
+<h3>零依赖是什么意思？</h3>
+<p>指核心包的 <code>install_requires</code> 是空列表——安装时不拉取任何第三方包。实测确认：<code>mnemosyne-os 8.1.0.post1</code> 的核心依赖为空，<code>numpy</code> / <code>transformers</code> / <code>tiktoken</code> 都是可选扩展。这意味着它能在没有编译器的机器、气隙环境、受限容器里安装并运行。</p>
+
+<h3>压缩比到底是多少？</h3>
+<p>实测结果：<strong>取决于原文长度与预算</strong>。一条 23 字符的记忆在 60 token 预算下压缩比为 1.0——它已经是最小形态，压不动。长文本在紧预算下才压得动。因此任何单一数字（如「32 倍」）都需要追问测试条件。这个细节在选购时值得深挖，因为它直接影响上下文预算规划。</p>
+
+<h3>记忆和微调有什么区别？</h3>
+<p>微调改的是模型权重，成本高、更新慢、不能针对单个用户；记忆是模型外的存储，实时写入、按用户隔离、可删除可审计。两者互补：微调注入领域知识，记忆承载用户事实。</p>
+
+<h2>九、下一步</h2>
+<p>如果你是第一次接触这个概念，建议按这个顺序推进：先在自己的机器上跑通一次写入与召回（十分钟内可完成），再决定要不要接真实嵌入模型，最后才考虑多用户与托管。</p>
+<p><a class="cta" href="/ai-agent-memory/">给 AI Agent 加记忆 →</a><a class="cta ghost" href="https://github.com/MnemosyneOS/mnemosyne">查看源码</a></p>
+
+<section class="related"><h2>继续阅读</h2><ul><li><a href="/ai-agent-memory/">给 AI Agent 加记忆</a><br><span style="color:var(--fg2);font-size:13px">从零接入的可执行路径</span></li><li><a href="/mcp-memory-server/">MCP 记忆服务器</a><br><span style="color:var(--fg2);font-size:13px">52 个工具与协议细节</span></li><li><a href="/mem0-alternative/">对比 Mem0</a><br><span style="color:var(--fg2);font-size:13px">工具名、依赖与迁移成本</span></li><li><a href="/self-hosted-ai-memory/">自托管 AI 记忆</a><br><span style="color:var(--fg2);font-size:13px">数据主权与部署形态</span></li></ul></section>
+</main>
+
+<footer>
+  <p><strong>Mnemosyne OS</strong> — 本地优先的 AI 记忆引擎。MIT 许可。
+  <a href="/">官网</a> · <a href="/docs/">文档</a> · <a href="/mcp/">MCP</a> ·
+  <a href="/pricing/">价格</a> · <a href="/trust/">信任中心</a> ·
+  <a href="/about/">关于</a></p>
+  <p>安装：<code>pip install mnemosyne-os</code> ·
+  源码：<a href="https://github.com/MnemosyneOS/mnemosyne">github.com/MnemosyneOS/mnemosyne</a> ·
+  页面更新于 2026-10-27，数据来自本机实测（8.1.0.post1）。</p>
+</footer>
+</div>
+</body>
+</html>

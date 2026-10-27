@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>自托管 AI 记忆：数据主权与部署实践（2026）· Mnemosyne OS</title>
+<meta name="description" content="自托管 AI 记忆完整指南：三种部署形态、备份与恢复演练、多用户物理隔离、日志脱敏、合规审查问答。含实测容量与延迟数据。" />
+<link rel="canonical" href="https://ai-memory.net/self-hosted-ai-memory/" />
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="Mnemosyne OS" />
+<meta property="og:title" content="自托管 AI 记忆：数据主权与部署实践（2026）· Mnemosyne OS" />
+<meta property="og:description" content="自托管 AI 记忆完整指南：三种部署形态、备份与恢复演练、多用户物理隔离、日志脱敏、合规审查问答。含实测容量与延迟数据。" />
+<meta property="og:url" content="https://ai-memory.net/self-hosted-ai-memory/" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="alternate" type="text/markdown" href="/llms.txt" title="llms.txt" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<style>
+:root{--fg:#111;--fg2:#555;--bg:#fff;--line:#e5e5e5;--accent:#6d28d9;--soft:#f7f5ff}
+@media(prefers-color-scheme:dark){:root{--fg:#e8e8ea;--fg2:#a0a0a8;--bg:#0b0b0c;--line:#26262a;--soft:#16121f}}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--fg);background:var(--bg)}
+.wrap{max-width:820px;margin:0 auto;padding:44px 22px 96px}
+header{display:flex;align-items:center;gap:12px;padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:36px;flex-wrap:wrap}
+header .brand{color:var(--fg);text-decoration:none;font-weight:700;font-size:17px}
+nav{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
+nav a{color:var(--fg2);text-decoration:none;font-size:14px}
+nav a:hover{color:var(--accent)}
+h1{font-size:31px;line-height:1.25;margin:0 0 14px;letter-spacing:-.02em}
+.lede{font-size:17px;color:var(--fg2);margin:0 0 26px}
+h2{font-size:21px;margin:38px 0 12px;padding-top:8px;border-top:1px solid var(--line)}
+h3{font-size:17px;margin:26px 0 8px}
+p,li{margin:0 0 12px}
+ul,ol{padding-left:22px}
+code{background:rgba(125,125,125,.14);padding:2px 6px;border-radius:5px;font-size:.88em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:16px;overflow-x:auto;font-size:13.5px;line-height:1.6}
+pre code{background:none;padding:0}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px}
+th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-weight:650}
+.cta{display:inline-block;margin:26px 10px 0 0;padding:11px 20px;background:var(--accent);color:#fff;text-decoration:none;border-radius:9px;font-weight:600;font-size:15px}
+.cta.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.note{background:var(--soft);border-left:3px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0;margin:18px 0}
+.note p:last-child{margin-bottom:0}
+.related{margin:44px 0 0;padding:20px;border:1px solid var(--line);border-radius:12px}
+.related h2{margin-top:0;border:0;padding-top:0;font-size:17px}
+.related ul{columns:2;column-gap:28px;font-size:14.5px}
+footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);color:var(--fg2);font-size:13px}
+footer a{color:var(--fg2)}
+</style>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"TechArticle",
+"headline":"自托管 AI 记忆：数据主权、部署形态与合规实践",
+"description":"自托管 AI 记忆系统的完整指南：为什么需要自托管、三种部署形态、备份与恢复、多用户隔离、日志脱敏、以及合规审查要点。含实测存储占用与性能。",
+"url":"https://ai-memory.net/self-hosted-ai-memory/",
+"datePublished":"2026-10-27","dateModified":"2026-10-27",
+"author":{"@type":"Organization","name":"Mnemosyne OS","url":"https://ai-memory.net/"},
+"publisher":{"@type":"Organization","name":"Mnemosyne OS","url":"https://ai-memory.net/"}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"自托管 AI 记忆安全吗？","acceptedAnswer":{"@type":"Answer","text":"安全性取决于你如何部署。自托管的优势是数据不出你的边界、删除可验证彻底；但你需要自己负责磁盘加密、访问控制、备份与日志脱敏。托管服务把这些接过去了，代价是数据在别人服务器上。"}},
+{"@type":"Question","name":"一个 SQLite 文件能撑多大数据量？","acceptedAnswer":{"@type":"Answer","text":"SQLite 单库理论上限为 TB 级，实际瓶颈在检索延迟而非容量。实测 120 条记忆占盘约 5.5 MB（含向量与索引）。记忆系统的数据量通常远小于通用数据库，万级到十万级记忆在单文件下完全可行。"}},
+{"@type":"Question","name":"怎么证明数据真的删除了？","acceptedAnswer":{"@type":"Answer","text":"自托管下删文件即删除，没有副本要追。这是相对于托管服务最实质的优势——托管服务的删除依赖对方的备份周期与保留策略，你只能相信而不能验证。"}},
+{"@type":"Question","name":"自托管需要什么硬件？","acceptedAnswer":{"@type":"Answer","text":"最低配置很低：一个 1 核 512MB 的实例即可运行，因为核心零第三方依赖、不需要 GPU。若要配置本地嵌入模型，才需要更多内存与可选 GPU。"}}
+]}
+</script>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <a class="brand" href="/">Mnemosyne OS</a>
+  <nav>
+    <a href="/ai-memory/">AI 记忆</a>
+    <a href="/ai-agent-memory/">给 Agent 加记忆</a>
+    <a href="/mcp-memory-server/">MCP</a>
+    <a href="/mem0-alternative/">对比 Mem0</a>
+    <a href="/self-hosted-ai-memory/">自托管</a>
+    <a href="/docs/">文档</a>
+  </nav>
+</header>
+<main>
+<h1>自托管 AI 记忆：数据主权、部署形态与合规实践</h1>
+<p class="lede">把用户记忆放在别人的服务器上，是一个需要论证的决定，不是一个默认选项。本文讲清自托管真正解决的问题、三种部署形态怎么选、备份与恢复怎么做才不会在关键时刻失效，以及合规审查时对方会追问的那几个点。所有容量与延迟数字为实测。</p>
+
+<div class="note">
+<p><strong>先明确边界</strong>：自托管不等于自动安全。它把「数据在哪里」这个问题的答案交给你，同时也把「谁负责保护它」的责任交给你。本文按这个前提写，不做「自托管一定更安全」的笼统断言。</p>
+</div>
+
+<h2>一、自托管真正解决的问题</h2>
+
+<p>常见说法是「自托管更安全」。这句话太粗，掩盖了真正有价值的三个具体点。</p>
+
+<h3>1. 删除的彻底性可以被验证</h3>
+<p>用户说「把我的记忆删掉」，托管服务会告诉你「已删除」。但你能验证吗？对方的备份里可能还有、灾备副本里可能还有、日志里可能还有。你只能相信，不能检查。</p>
+<p>自托管下，整个记忆库就是你磁盘上的一个目录。删掉它、确认目录不存在，删除就完成了——没有副本要追。这是可验证的，不是承诺。</p>
+
+<h3>2. 数据不出你的网络边界</h3>
+<p>对受监管行业（医疗、金融、政务），数据出境或离开受控网络本身就是合规事件。自托管让「数据在哪里」变成一个物理问题而不是合同问题。</p>
+
+<h3>3. 成本模型可预测</h3>
+<p>托管按订阅或按调用计费，用量增长时成本线性上升。自托管的边际成本接近零（已有硬件），只在你扩容时才产生支出。对高频写入场景，这个差异会随时间放大。</p>
+
+<h2>二、三种部署形态</h2>
+
+<table>
+<thead><tr><th>形态</th><th>适合</th><th>数据位置</th><th>多用户</th><th>运维成本</th></tr></thead>
+<tbody>
+<tr><td><strong>单机进程</strong></td><td>个人使用、本地开发</td><td>本机磁盘</td><td>不需要</td><td>几乎为零</td></tr>
+<tr><td><strong>容器 + 持久卷</strong></td><td>团队共享、内网服务</td><td>云盘或 NAS</td><td>支持</td><td>中（需管卷与备份）</td></tr>
+<tr><td><strong>Serverless</strong></td><td>低频、突发流量</td><td>取决于挂载</td><td>支持</td><td>低，但冷启动有影响</td></tr>
+</tbody>
+</table>
+
+<h3>形态 A：单机进程</h3>
+<p>最简单的形态。引擎作为库嵌入你的程序，或作为本地进程运行。</p>
+<pre><code>pip install mnemosyne-os
+
+# 作为库使用
+python -c "
+from mnemosyne import Memory
+from mnemosyne.api.config import MemoryConfig
+m = Memory(MemoryConfig(brain_dir='./mem', namespace='default'))
+m.add('Alice 偏好深色模式', user_id='alice')
+print(m.search('alice', filters={'user_id':'alice'}, top_k=3))
+"</code></pre>
+<p>记忆库就是 <code>./mem</code> 这个目录。备份 = 复制目录。</p>
+
+<h3>形态 B：容器 + 持久卷</h3>
+<pre><code># 关键点：记忆库必须挂在持久卷上
+docker run -d   -p 8788:8788   -v /srv/mnemosyne-data:/data   -e MNEMOSYNE_MCP_TOKEN="a-long-random-secret"   -e MNEMOSYNE_DIR=/data   your-image</code></pre>
+<div class="note">
+<p><strong>最容易犯的错</strong>：记忆库落在容器根文件系统。表现是「每次重新部署，所有记忆消失」。这不是 bug，是卷没挂。部署前务必确认挂载点，并用 <code>df -h /data</code> 之类的方式验证它确实是独立卷。</p>
+</div>
+
+<h3>形态 C：Serverless</h3>
+<p>适合调用稀疏的场景。注意两点：冷启动会增加首次调用延迟；本地文件系统通常是临时的，必须挂载持久存储，否则记忆不持久。</p>
+
+<h2>三、备份与恢复：别在关键时刻才发现失效</h2>
+
+<p>记忆库是单文件存储，备份很简单，但「简单」不等于「一定有效」。以下三条来自实际踩坑。</p>
+
+<h3>1. 备份要能恢复，不只是能复制</h3>
+<pre><code># 备份（SQLite 需要一致性快照，不能直接 cp 正在写的库）
+sqlite3 /data/memory.db ".backup '/backup/memory-$(date +%F).db'"
+
+# 或者停进程后整目录打包（更简单，代价是短暂停机）
+tar czf /backup/mem-$(date +%F).tar.gz -C /data .
+
+# 恢复
+tar xzf /backup/mem-2026-10-27.tar.gz -C /data</code></pre>
+<p><strong>必须定期演练恢复</strong>。一个从没恢复过的备份，等于没有备份。建议每月在测试环境恢复一次并跑完整性校验。</p>
+
+<h3>2. 完整性校验是备份的验收标准</h3>
+<pre><code># 校验哈希链，检测篡改并定位到具体记录
+python -c "
+from mnemosyne import Memory
+from mnemosyne.api.config import MemoryConfig
+m = Memory(MemoryConfig(brain_dir='/data', namespace='default'))
+print(m.verify_integrity())
+"
+# 实测输出（120 条）：{'default': {'valid': True, 'total': 120, 'first_broken_at': None}}</code></pre>
+<p>实测 120 条记忆的全链校验耗时 <strong>4.5 ms</strong>，完全可以放进每日定时任务。</p>
+
+<h3>3. 备份要加密，且密钥不要和数据放一起</h3>
+<p>记忆库里是用户的个人事实——偏好、住址、健康状况、工作内容。备份文件如果明文躺在对象存储里，等于把记忆库公开了。加密后再上传，密钥单独管理。</p>
+
+<h2>四、多用户隔离：最容易出事的环节</h2>
+
+<p>自托管常被用于团队或产品后端，这时隔离就是核心风险点。</p>
+
+<table>
+<thead><tr><th>做法</th><th>隔离强度</th><th>失败模式</th></tr></thead>
+<tbody>
+<tr><td>同一张表 + <code>WHERE user_id = ?</code></td><td>弱</td><td>任一处漏写条件 = 跨用户泄露</td></tr>
+<tr><td>每个用户一个命名空间（独立文件）</td><td><strong>强</strong></td><td>查错库需显式传错参数，由文件系统兜底</td></tr>
+<tr><td>每个用户一个数据库实例</td><td>最强</td><td>运维成本高，备份碎片化</td></tr>
+</tbody>
+</table>
+
+<p><strong>为什么推荐物理隔离</strong>：逻辑隔离的安全性依赖「每一处查询都记得加条件」，这是靠人保证的。物理隔离的安全性依赖「参数指向了哪个文件」，这是靠代码路径保证的。后者出错概率低一个量级。</p>
+
+<h3>必须做的一条：命名空间由服务端决定</h3>
+<p>如果 API 接受客户端传 <code>namespace</code> 并直接采信，那么任何持有有效 token 的人都能读别人的库。正确做法是：服务端从 token 反查归属，<strong>强制覆盖</strong>客户端传来的值。</p>
+<pre><code># 错误做法
+ns = request.json.get("namespace")   # 客户端说了算 → 越权
+
+# 正确做法
+ns = key_namespace(token_owner)      # 服务端从 token 推导
+payload["namespace"] = ns            # 强制覆盖</code></pre>
+
+<h2>五、日志：最隐蔽的泄露面</h2>
+
+<p>记忆系统的日志是最容易被忽视的隐私缺口。因为记忆内容会经过日志——请求体、错误堆栈、调试输出都可能带正文。</p>
+
+<table>
+<thead><tr><th>该记</th><th>不该记</th></tr></thead>
+<tbody>
+<tr><td>请求方法、路径、状态码</td><td>请求体（含记忆正文）</td></tr>
+<tr><td>工具名（<code>retain</code> / <code>recall</code>）</td><td>工具参数里的 <code>content</code></td></tr>
+<tr><td>命名空间标识</td><td>用户邮箱、手机号</td></tr>
+<tr><td>耗时、错误类型</td><td>完整异常堆栈里的业务数据</td></tr>
+</tbody>
+</table>
+
+<p>本项目网关的日志实现刻意只打 method、工具名、作用域，不打正文——原因写在源码注释里：记忆内容属用户隐私，日志会进可观测平台，不该出现用户数据。</p>
+
+<div class="note">
+<p><strong>自托管时特别注意</strong>：如果你用的是第三方日志服务或 APM，它们可能默认采集请求体。部署前检查采集配置，必要时在采集侧加字段过滤，而不是只靠应用层不打日志。</p>
+</div>
+
+<h2>七、安全加固清单：自托管必须自己做的事</h2>
+
+<p>托管服务替你做了这些。自托管下，漏掉任何一条都是真实的暴露面。</p>
+
+<table>
+<thead><tr><th>项</th><th>做什么</th><th>漏掉的后果</th></tr></thead>
+<tbody>
+<tr><td>磁盘加密</td><td>整盘或目录级加密（LUKS / BitLocker / 云盘加密）</td><td>磁盘被拆走或快照泄露 = 记忆库明文外泄</td></tr>
+<tr><td>访问控制</td><td>只对内网开放；管理端点不暴露公网</td><td>端口被扫到即被尝试</td></tr>
+<tr><td>TLS</td><td>对外一律 HTTPS，禁止明文</td><td>token 与记忆正文在链路上可被截获</td></tr>
+<tr><td>令牌强度</td><td>长随机串，不用 <code>change-me</code> 这类默认值</td><td>可被字典攻击</td></tr>
+<tr><td>令牌轮换</td><td>定期更换，离职/泄露时立即换</td><td>旧令牌永久有效</td></tr>
+<tr><td>日志脱敏</td><td>不记请求体；第三方日志服务加字段过滤</td><td>记忆明文落盘到日志系统</td></tr>
+<tr><td>备份加密</td><td>加密后上传，密钥单独管理</td><td>备份成为最薄弱的泄露点</td></tr>
+<tr><td>依赖更新</td><td>定期升级引擎与系统包</td><td>已知漏洞长期存在</td></tr>
+<tr><td>完整性监控</td><td>定期 <code>verify_integrity()</code></td><td>篡改无法被发现</td></tr>
+</tbody>
+</table>
+
+<h3>一个具体的配置示例</h3>
+<pre><code># 只监听本机，前面放反向代理做 TLS 与鉴权
+python -m mnemosyne.webui.mcp_server   --transport http --host 127.0.0.1 --port 8788   --brain-dir /data --namespace default
+
+# nginx 侧：强制 HTTPS + 限制来源
+# server {
+#   listen 443 ssl http2;
+#   server_name mem.internal.example.com;
+#   location /mcp {
+#     allow 10.0.0.0/8;   # 只允许内网
+#     deny all;
+#     proxy_pass http://127.0.0.1:8788;
+#   }
+# }</code></pre>
+
+<h2>八、故障排查：自托管特有的坑</h2>
+
+<table>
+<thead><tr><th>现象</th><th>常见原因</th><th>排查命令</th></tr></thead>
+<tbody>
+<tr><td>重启后记忆全丢</td><td>记忆库在容器根文件系统</td><td><code>docker inspect</code> 看 Mounts；<code>df -h /data</code></td></tr>
+<tr><td>写入极慢</td><td>记忆库在网络卷 / NFS / overlay 层</td><td>SQLite 对网络文件系统不友好，换本地卷</td></tr>
+<tr><td>数据库被锁</td><td>多进程同时写同一库</td><td>SQLite 单写者模型；改用单进程或队列</td></tr>
+<tr><td>磁盘满</td><td>未清理旧备份 / 记忆增长超预期</td><td><code>du -sh /data /backup</code></td></tr>
+<tr><td>校验失败</td><td>文件被截断或人为修改</td><td><code>verify_integrity()</code> 返回 <code>first_broken_at</code> 定位</td></tr>
+<tr><td>跨用户看到别人数据</td><td>作用域未强制、或客户端可传 namespace</td><td>检查服务端是否强制覆盖 namespace</td></tr>
+</tbody>
+</table>
+
+<h2>九、容量与性能实测</h2>
+
+<p>本机实测（Windows / Python 3.13.12 / <code>8.1.0.post1</code> / 默认零配置）：</p>
+
+<table>
+<thead><tr><th>指标</th><th>实测值</th></tr></thead>
+<tbody>
+<tr><td>引擎初始化</td><td>0.24 ms</td></tr>
+<tr><td>写入一条（中位）</td><td>11.91 ms</td></tr>
+<tr><td>召回一次（中位）</td><td>3.924 ms</td></tr>
+<tr><td>召回一次（P95）</td><td>5.955 ms</td></tr>
+<tr><td>完整性校验（120 条）</td><td>4.5 ms</td></tr>
+<tr><td><strong>120 条记忆占盘</strong></td><td><strong>5.5 MB</strong></td></tr>
+</tbody>
+</table>
+
+<p><strong>容量估算</strong>：按实测比例，万条记忆约占数百 MB 量级（含向量与索引）。这个量级下单机 SQLite 完全够用。真正的瓶颈在记忆量到十万级时的向量检索延迟——那时需要引入 <code>numpy</code> 加速，或外接专用向量库。</p>
+
+<h2>十、合规审查会问什么</h2>
+
+<table>
+<thead><tr><th>问题</th><th>自托管的回答</th><th>能否举证</th></tr></thead>
+<tbody>
+<tr><td>数据存放在哪里？</td><td>你自己的服务器 / 内网，可指到具体机房与磁盘</td><td>能（物理位置可查）</td></tr>
+<tr><td>是否出境？</td><td>不出境（除非你主动同步）</td><td>能（网络流量可审计）</td></tr>
+<tr><td>谁能访问？</td><td>由你的访问控制决定</td><td>能（访问日志）</td></tr>
+<tr><td>删除如何执行？</td><td>删文件，可当场验证目录不存在</td><td><strong>能（当场验证）</strong></td></tr>
+<tr><td>是否有第三方处理者？</td><td>核心零第三方依赖，不向外部发送数据</td><td>能（依赖清单 + 网络监控）</td></tr>
+<tr><td>如何证明未被篡改？</td><td>哈希链校验，可定位到被改的具体记录</td><td><strong>能（随时自跑）</strong></td></tr>
+</tbody>
+</table>
+
+<p>最后两条是自托管相对托管服务的实质优势：托管服务也可以做哈希链，但校验发生在对方服务器上，你拿到的仍是「对方告诉你的结果」。自托管下你可以自己在任意时间点跑校验，并且能当场演示删除。</p>
+
+<h2>十一、常见问题</h2>
+
+<h3>自托管会不会很麻烦？</h3>
+<p>单机形态几乎零成本——装一个包、跑一行代码。麻烦的是团队形态：卷管理、备份、监控、升级。如果你的使用场景是个人或小团队，麻烦程度远低于想象。</p>
+
+<h3>没有 GPU 能跑吗？</h3>
+<p>能。默认配置用内置 128 维确定性嵌入，不需要 GPU，也不需要下载模型。要更高召回质量时才需要配置嵌入模型，那时可以选远端 API（不占本地算力）或本地模型（需内存/显存）。</p>
+
+<h3>能不能部分自托管？</h3>
+<p>可以。常见组合是：记忆存储自托管（数据在自己手里），嵌入模型用远端 API（省算力）。这时要评估的是「送出去的只有待嵌入的文本片段」，与「整个记忆库在别人服务器」是两个不同量级的暴露面。</p>
+
+<h3>怎么从托管迁回自托管？</h3>
+<p>导出为 JSONL（Memory Exchange Protocol）后导入本地库。建议先核对条数，再切换流量。</p>
+
+<h2>九、下一步</h2>
+<p><a class="cta" href="/ai-agent-memory/">看接入指南 →</a><a class="cta ghost" href="/trust/">看信任中心</a></p>
+
+<section class="related"><h2>继续阅读</h2><ul><li><a href="/ai-memory/">什么是 AI 记忆</a><br><span style="color:var(--fg2);font-size:13px">概念、分层与遗忘经济学</span></li><li><a href="/ai-agent-memory/">给 AI Agent 加记忆</a><br><span style="color:var(--fg2);font-size:13px">从零接入的可执行路径</span></li><li><a href="/mcp-memory-server/">MCP 记忆服务器</a><br><span style="color:var(--fg2);font-size:13px">52 个工具与协议细节</span></li><li><a href="/mem0-alternative/">对比 Mem0</a><br><span style="color:var(--fg2);font-size:13px">工具名、依赖与迁移成本</span></li></ul></section>
+</main>
+
+<footer>
+  <p><strong>Mnemosyne OS</strong> — 本地优先的 AI 记忆引擎。MIT 许可。
+  <a href="/">官网</a> · <a href="/docs/">文档</a> · <a href="/mcp/">MCP</a> ·
+  <a href="/pricing/">价格</a> · <a href="/trust/">信任中心</a> ·
+  <a href="/about/">关于</a></p>
+  <p>安装：<code>pip install mnemosyne-os</code> ·
+  源码：<a href="https://github.com/MnemosyneOS/mnemosyne">github.com/MnemosyneOS/mnemosyne</a> ·
+  页面更新于 2026-10-27，数据来自本机实测（8.1.0.post1）。</p>
+</footer>
+</div>
+</body>
+</html>

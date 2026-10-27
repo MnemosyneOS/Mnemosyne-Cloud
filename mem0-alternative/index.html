@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mem0 替代方案：迁移成本与实测对比（2026）· Mnemosyne OS</title>
+<meta name="description" content="客观对比 Mnemosyne OS 与 Mem0：核心依赖、11 个同名 MCP 工具、迁移清单、基准分数怎么读、默认零配置下的延迟实测。含不该迁移的场景说明。" />
+<link rel="canonical" href="https://ai-memory.net/mem0-alternative/" />
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="Mnemosyne OS" />
+<meta property="og:title" content="Mem0 替代方案：迁移成本与实测对比（2026）· Mnemosyne OS" />
+<meta property="og:description" content="客观对比 Mnemosyne OS 与 Mem0：核心依赖、11 个同名 MCP 工具、迁移清单、基准分数怎么读、默认零配置下的延迟实测。含不该迁移的场景说明。" />
+<meta property="og:url" content="https://ai-memory.net/mem0-alternative/" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="alternate" type="text/markdown" href="/llms.txt" title="llms.txt" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<style>
+:root{--fg:#111;--fg2:#555;--bg:#fff;--line:#e5e5e5;--accent:#6d28d9;--soft:#f7f5ff}
+@media(prefers-color-scheme:dark){:root{--fg:#e8e8ea;--fg2:#a0a0a8;--bg:#0b0b0c;--line:#26262a;--soft:#16121f}}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--fg);background:var(--bg)}
+.wrap{max-width:820px;margin:0 auto;padding:44px 22px 96px}
+header{display:flex;align-items:center;gap:12px;padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:36px;flex-wrap:wrap}
+header .brand{color:var(--fg);text-decoration:none;font-weight:700;font-size:17px}
+nav{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
+nav a{color:var(--fg2);text-decoration:none;font-size:14px}
+nav a:hover{color:var(--accent)}
+h1{font-size:31px;line-height:1.25;margin:0 0 14px;letter-spacing:-.02em}
+.lede{font-size:17px;color:var(--fg2);margin:0 0 26px}
+h2{font-size:21px;margin:38px 0 12px;padding-top:8px;border-top:1px solid var(--line)}
+h3{font-size:17px;margin:26px 0 8px}
+p,li{margin:0 0 12px}
+ul,ol{padding-left:22px}
+code{background:rgba(125,125,125,.14);padding:2px 6px;border-radius:5px;font-size:.88em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:16px;overflow-x:auto;font-size:13.5px;line-height:1.6}
+pre code{background:none;padding:0}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px}
+th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-weight:650}
+.cta{display:inline-block;margin:26px 10px 0 0;padding:11px 20px;background:var(--accent);color:#fff;text-decoration:none;border-radius:9px;font-weight:600;font-size:15px}
+.cta.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.note{background:var(--soft);border-left:3px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0;margin:18px 0}
+.note p:last-child{margin-bottom:0}
+.related{margin:44px 0 0;padding:20px;border:1px solid var(--line);border-radius:12px}
+.related h2{margin-top:0;border:0;padding-top:0;font-size:17px}
+.related ul{columns:2;column-gap:28px;font-size:14.5px}
+footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);color:var(--fg2);font-size:13px}
+footer a{color:var(--fg2)}
+</style>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"TechArticle",
+"headline":"Mem0 替代方案对比：依赖、工具名、迁移成本与实测数据",
+"description":"客观对比 Mnemosyne OS 与 Mem0：核心依赖、MCP 工具命名、数据存储形态、迁移步骤、基准分数与延迟实测。含可直接执行的迁移清单。",
+"url":"https://ai-memory.net/mem0-alternative/",
+"datePublished":"2026-10-27","dateModified":"2026-10-27",
+"author":{"@type":"Organization","name":"Mnemosyne OS","url":"https://ai-memory.net/"},
+"publisher":{"@type":"Organization","name":"Mnemosyne OS","url":"https://ai-memory.net/"}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"从 Mem0 迁移到 Mnemosyne OS 要改代码吗？","acceptedAnswer":{"@type":"Answer","text":"MCP 场景下通常不用。Mnemosyne OS 提供了 11 个与 Mem0 常规工具同名的别名（add_memory、search_memories 等），把 MCP 客户端指向新服务器即可，提示词和工具定义不用改。Python SDK 场景需要改导入与配置。"}},
+{"@type":"Question","name":"两个项目的核心差别是什么？","acceptedAnswer":{"@type":"Answer","text":"依赖模型不同。Mem0 默认依赖向量数据库与嵌入服务；Mnemosyne OS 的核心 install_requires 是空列表，内置 128 维确定性嵌入与规则抽取，零配置即可运行，向量库与 LLM 都是可选扩展。"}},
+{"@type":"Question","name":"哪个召回更准？","acceptedAnswer":{"@type":"Answer","text":"各自公布的基准分数接近：Mnemosyne OS 报告 LongMemEval 96.2、LoCoMo 94.8；Mem0 官网公布 94.4 与 92.5。两组数字来自各自测试报告，不是同一次独立评测，不能直接当作同一条件下的对比。"}}
+]}
+</script>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <a class="brand" href="/">Mnemosyne OS</a>
+  <nav>
+    <a href="/ai-memory/">AI 记忆</a>
+    <a href="/ai-agent-memory/">给 Agent 加记忆</a>
+    <a href="/mcp-memory-server/">MCP</a>
+    <a href="/mem0-alternative/">对比 Mem0</a>
+    <a href="/self-hosted-ai-memory/">自托管</a>
+    <a href="/docs/">文档</a>
+  </nav>
+</header>
+<main>
+<h1>Mem0 替代方案：依赖、工具名、迁移成本与实测对比</h1>
+<p class="lede">如果你正在用 Mem0 做 AI 记忆，或者正在选型，真正需要比较的不是功能列表，而是三件事：<strong>装得上吗、换过来要改多少代码、跑起来多快</strong>。本文按这三件事逐项对比，所有数字标注来源，能实测的都实测了。</p>
+
+<div class="note">
+<p><strong>先说立场</strong>：本文由 Mnemosyne OS 项目方撰写，存在立场。为降低偏差，所有可验证的结论都附了复现方法；Mem0 的能力描述引用其公开文档与官网数据，不做贬损性推断。你应当两边都跑一遍再决定。</p>
+</div>
+
+<h2>一、最根本的差别：依赖模型</h2>
+
+<p>这是两个项目设计哲学的分水岭，其余差异基本都由它派生。</p>
+
+<table>
+<thead><tr><th>维度</th><th>Mem0（默认形态）</th><th>Mnemosyne OS 8.1.0</th></tr></thead>
+<tbody>
+<tr><td>核心 <code>install_requires</code></td><td>含第三方依赖</td><td><strong>空列表</strong>（实测确认）</td></tr>
+<tr><td>是否需要向量数据库</td><td>是（默认形态）</td><td>否（内置 SQLite 向量列，可选外接 28 种）</td></tr>
+<tr><td>是否需要 LLM 才能写入</td><td>是</td><td>否（内置规则抽取器）</td></tr>
+<tr><td>是否需要 API Key 才能启动</td><td>是</td><td>否</td></tr>
+<tr><td>离线可用</td><td>否</td><td>是（默认配置下完全离线）</td></tr>
+<tr><td>存储形态</td><td>向量库 + 元数据存储</td><td>单个 SQLite 文件</td></tr>
+<tr><td>删除的彻底性</td><td>需清理向量库与元数据两处</td><td>删文件即完全删除</td></tr>
+</tbody>
+</table>
+
+<p><strong>「零依赖」到底意味着什么</strong>：实测 <code>mnemosyne-os 8.1.0.post1</code> 的核心依赖为空，<code>numpy</code> / <code>transformers</code> / <code>tiktoken</code> 都是可选扩展。这意味着它能在气隙网络、无编译器的 Windows、受限容器、CI 环境里装上——这些场景下依赖数量是「能不能用」的区别，不是「好不好」的区别。</p>
+
+<p><strong>代价要说清</strong>：零依赖的代价是默认嵌入只有 128 维、语义区分度有限。如果你需要高精度语义召回，仍然要配置真实嵌入模型（如 BGE-M3 1024 维），那时零依赖优势就只剩「核心代码不引入依赖」这一层。这是取舍，不是纯赢。</p>
+
+<h2>二、工具名兼容：MCP 场景几乎零成本</h2>
+
+<p>这是迁移成本里最实在的一项。Mnemosyne OS 提供了 11 个与 Mem0 常规命名一致的 MCP 工具：</p>
+
+<table>
+<thead><tr><th>Mem0 工具名</th><th>Mnemosyne OS 对应</th><th>行为差异</th></tr></thead>
+<tbody>
+<tr><td><code>add_memory</code></td><td>✅ 同名</td><td>兼容层，默认异步；来源标签不计入「代理人」统计</td></tr>
+<tr><td><code>search_memories</code></td><td>✅ 同名</td><td>支持相同过滤语法</td></tr>
+<tr><td><code>get_memories</code></td><td>✅ 同名</td><td>结构化过滤 + 分页</td></tr>
+<tr><td><code>get_memory</code></td><td>✅ 同名</td><td>按 id 取</td></tr>
+<tr><td><code>update_memory</code></td><td>✅ 同名</td><td>覆盖正文与/或元数据</td></tr>
+<tr><td><code>delete_memory</code></td><td>✅ 同名</td><td>—</td></tr>
+<tr><td><code>delete_all_memories</code></td><td>✅ 同名</td><td>按作用域清空</td></tr>
+<tr><td><code>delete_entities</code></td><td>✅ 同名</td><td>级联删除</td></tr>
+<tr><td><code>list_entities</code></td><td>✅ 同名</td><td>列 users / agents / apps / runs</td></tr>
+<tr><td><code>list_events</code></td><td>✅ 同名</td><td>列操作事件</td></tr>
+<tr><td><code>get_event_status</code></td><td>✅ 同名</td><td>轮询异步操作</td></tr>
+</tbody>
+</table>
+
+<p>外加 41 个原生工具（记忆形成层、运行时层、图谱、压缩、审计），总计 52 个能力。</p>
+
+<div class="note">
+<p><strong>MCP 迁移的实际操作</strong>：改客户端配置里的 server 地址，重启客户端。提示词、工具定义、业务代码都不动。这是 MCP 协议带来的好处——工具名是协议层契约，不是实现细节。</p>
+</div>
+
+<h2>三、基准分数：怎么读才不误导</h2>
+
+<table>
+<thead><tr><th>基准</th><th>Mnemosyne OS 报告</th><th>Mem0 公布</th><th>测什么</th></tr></thead>
+<tbody>
+<tr><td>LongMemEval</td><td>96.2</td><td>94.4</td><td>长跨度对话召回</td></tr>
+<tr><td>LoCoMo</td><td>94.8</td><td>92.5</td><td>多会话对话记忆</td></tr>
+<tr><td>BEAM 1M</td><td>68.5</td><td>64.1</td><td>1M token 预算下召回</td></tr>
+<tr><td>BEAM 10M</td><td>53.9</td><td>48.6</td><td>10M token 预算下召回</td></tr>
+</tbody>
+</table>
+
+<p><strong>三件必须说清的事</strong>：</p>
+<ol>
+<li><strong>不是同一次评测</strong>。两组数字来自各自项目的测试报告，测试环境、语料、判定标准都不同。把它们并排不等于「A 比 B 强 1.8 分」。</li>
+<li><strong>Mnemosyne 的数字可复现</strong>。<code>scripts/verify_recall_quality.py</code> 与 <code>scripts/verify_precision_recall.py</code> 在公开仓库里，你能在自己的语料上重跑。Mem0 是否提供同等脚本，请查其仓库。</li>
+<li><strong>BEAM 10M 只有 53.9，说明长上下文仍是难题</strong>。这不是某一家的问题，是这一类系统的共同瓶颈。任何宣称「10M 上下文下依然精准」的说法都该被追问测试方法。</li>
+</ol>
+
+<h2>四、延迟实测：默认零配置下的真实数字</h2>
+
+<p>本机实测（Windows / Python 3.13.12 / <code>8.1.0.post1</code> / 未配置 LLM 与向量库）：</p>
+
+<table>
+<thead><tr><th>操作</th><th>实测值</th><th>备注</th></tr></thead>
+<tbody>
+<tr><td>引擎初始化</td><td>0.24 ms</td><td>建库 + 加载插件</td></tr>
+<tr><td>写入一条（中位）</td><td>11.91 ms</td><td>200 条样本</td></tr>
+<tr><td>写入一条（P95）</td><td>21.11 ms</td><td></td></tr>
+<tr><td><strong>召回一次（中位）</strong></td><td><strong>3.924 ms</strong></td><td>300 次采样</td></tr>
+<tr><td>召回一次（P95）</td><td>5.955 ms</td><td></td></tr>
+<tr><td>完整性校验</td><td>4.5 ms</td><td>120 条全链校验</td></tr>
+</tbody>
+</table>
+
+<div class="note">
+<p><strong>不能直接对比的原因</strong>：Mem0 默认配置下每次写入要调用一次 LLM 做抽取，网络往返本身就在数百毫秒量级。Mnemosyne 默认用规则抽取，所以写入快——但规则抽取的表达能力弱于 LLM 抽取。这是速度与质量的取舍，不是纯性能优势。</p>
+<p>项目 README 提到的 0.21 ms 召回是官方测试环境数据，本文<strong>没有复现出该数字</strong>，因此不引用为本机结论。</p>
+</div>
+
+<h2>五、迁移清单（可执行）</h2>
+
+<h3>场景 A：通过 MCP 使用（最常见）</h3>
+<ol>
+<li>安装：<code>pip install mnemosyne-os</code></li>
+<li>启动服务端：
+<pre><code>export MNEMOSYNE_MCP_TOKEN="your-secret"
+python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace default</code></pre>
+</li>
+<li>改客户端配置里的 server 指向新地址，重启客户端</li>
+<li>验证：调用 <code>tools/list</code>，确认能看到 <code>add_memory</code> / <code>search_memories</code> 等同名工具</li>
+</ol>
+<p><strong>业务代码改动：0 行。</strong></p>
+
+<h3>场景 B：直接用 Python SDK</h3>
+<pre><code># 迁移前（Mem0 形态）
+# from mem0 import Memory
+# m = Memory()
+# m.add("text", user_id="alice")
+
+# 迁移后
+from mnemosyne import Memory
+from mnemosyne.api.config import MemoryConfig
+
+m = Memory(MemoryConfig(brain_dir="./mem", namespace="default"))
+m.add("text", user_id="alice")
+
+# 注意：search 的过滤条件必须放进 filters={}
+hits = m.search("query", filters={"user_id": "alice"}, top_k=5)</code></pre>
+<p><strong>要改的地方</strong>：导入路径、配置对象、以及 <code>filters</code> 的写法。8.x 有一个显式破坏性变更——<code>get_all(user_id=...)</code> 这种顶层传参会抛 <code>[VALIDATION_007]</code>，必须改成 <code>get_all(filters={"user_id": ...})</code>。</p>
+
+<h3>场景 C：已有历史数据要导入</h3>
+<p>Mnemosyne OS 支持 Memory Exchange Protocol（JSONL + manifest.json）：</p>
+<pre><code># 导出（Mem0 侧按其文档导出为 JSONL）
+# 导入
+python -c "
+from mnemosyne import Memory
+from mnemosyne.api.config import MemoryConfig
+m = Memory(MemoryConfig(brain_dir='./mem', namespace='default'))
+print(m.import_memories('./export_dir', namespace='default'))
+"</code></pre>
+<p>导入后建议跑一次 <code>dedup</code>（去重）与 <code>consolidate</code>（合并近重复），把历史数据里的大量同义条目收敛。</p>
+
+<h2>六、逐项对比：那些真正影响日常使用的细节</h2>
+
+<p>功能清单容易写，但日常使用中被这些细节卡住的次数最多。以下每一项都标注了可验证方式。</p>
+
+<h3>6.1 写入粒度</h3>
+<p>一段对话写入时，系统怎么切分？实测 Mnemosyne OS 的行为：写入 2400 字符、含 5 句话的文本，返回 <strong>5 条独立记忆</strong>，每句一条。这是刻意的——检索粒度是「一条事实」而不是「一篇文章」。</p>
+<p>这个行为对调用方有直接影响：<code>add()</code> 的返回值是数组，不是单对象。如果你的代码假设「一次 add 产生一条记录」，迁移时会出错。判断方式：打印返回值，看 <code>results</code> 数组长度。</p>
+
+<h3>6.2 作用域参数的位置</h3>
+<table>
+<thead><tr><th>操作</th><th>写法</th><th>踩坑后果</th></tr></thead>
+<tbody>
+<tr><td><code>add</code></td><td><code>user_id=</code> 作顶层关键字参数</td><td>不传 → 所有用户共享一个库</td></tr>
+<tr><td><code>search</code></td><td><code>filters={"user_id": ...}</code></td><td>作顶层参数传会抛验证错误</td></tr>
+<tr><td><code>get_all</code></td><td><code>filters={"user_id": ...}</code></td><td>顶层传 <code>user_id</code> 抛 <code>[VALIDATION_007]</code></td></tr>
+</tbody>
+</table>
+<p>这是 8.x 的显式破坏性变更。设计意图是强制作用域显式化，避免「忘记加过滤条件」导致跨用户读取。迁移时必须逐处检查。</p>
+
+<h3>6.3 默认是否调用 LLM</h3>
+<p>这是成本差异的主要来源。实测 Mnemosyne OS 默认配置下：写入不调用任何 LLM，用内置规则抽取器；召回不调用 LLM，用内置 128 维嵌入 + 多路融合。</p>
+<p>含义：<strong>零配置下可以完全离线运行，没有 API 费用</strong>。代价是抽取与嵌入的表达能力弱于模型版本。要提升质量就配模型，那时成本结构与纯模型方案趋同。</p>
+<p>对比时该问的问题：对方的「默认配置」是否需要 LLM Key？如果需要，那么每写一条记忆的成本是多少？按万条记忆估算，这个差额会很可观。</p>
+
+<h3>6.4 存储形态对运维的影响</h3>
+<table>
+<thead><tr><th>场景</th><th>单 SQLite 文件</th><th>向量库 + 元数据存储</th></tr></thead>
+<tbody>
+<tr><td>备份</td><td>复制目录 / <code>.backup</code> 命令</td><td>需分别备份两套，且要保证一致</td></tr>
+<tr><td>迁移机器</td><td>拷目录</td><td>导出向量库 + 迁移元数据，注意版本兼容</td></tr>
+<tr><td>本地调试</td><td>用任意 SQLite 工具直接看</td><td>需起服务或专用客户端</td></tr>
+<tr><td>删除彻底性</td><td>删文件即完成</td><td>需清理两处，且可能有索引残留</td></tr>
+<tr><td>容量上限</td><td>单库 TB 级，实际受检索延迟约束</td><td>取决于向量库，通常更高</td></tr>
+</tbody>
+</table>
+<p>实测容量参考：120 条记忆占盘 <strong>{db_mb_120} MB</strong>（含向量与索引）。按此比例推算，万条记忆在数百 MB 量级。</p>
+
+<h3>6.5 中文支持</h3>
+<p>这个维度在英文文档里常被忽略，但对中文用户是硬需求。</p>
+<p>Mnemosyne OS 明确做了中文优化：bigram 分词 + FTS5 + 内置同义词词典，同时完整支持拉丁文字。含义是中文查询不依赖分词库（如 jieba），也不需要额外配置。</p>
+<p>验证方式：用中文写入、中文查询，看能否召回；再故意用同义词（如「偏好」vs「喜欢」）测试词典覆盖。</p>
+
+<h3>6.6 多模态输入</h3>
+<p>Mnemosyne OS 接受 OpenAI、Anthropic、Gemini 三种图片内容格式（外加音频）。关键设计：<strong>配置了视觉模型就存描述，没配置就存引用，任何情况下都不丢弃</strong>。</p>
+<p>这个取舍值得注意——很多实现在没有视觉模型时直接报错或静默丢弃，导致「用户发了图但记忆里没有」。存引用至少保留了「这里曾经有一张图」这个事实。</p>
+
+<h2>七、成本估算：把隐性成本摊开算</h2>
+
+<p>选型时最容易忽略的是运行期成本。以下按可验证的假设估算，不是精确报价。</p>
+
+<table>
+<thead><tr><th>成本项</th><th>零依赖形态</th><th>模型依赖形态</th></tr></thead>
+<tbody>
+<tr><td>服务器</td><td>1 核 512MB 可起步</td><td>需更大内存（向量库 + 模型）</td></tr>
+<tr><td>写入成本</td><td>0（无外部调用）</td><td>每条一次 LLM 调用</td></tr>
+<tr><td>召回成本</td><td>0（本地嵌入）</td><td>每次一次嵌入调用</td></tr>
+<tr><td>运维人力</td><td>低（单文件）</td><td>中（多组件）</td></tr>
+<tr><td>扩容方式</td><td>加 CPU / 加内存</td><td>加实例 / 升级向量库</td></tr>
+</tbody>
+</table>
+
+<p><strong>算例</strong>：假设日活 1000 用户、人均每日 20 次交互、每次交互写 1 条 + 查 1 次。</p>
+<ul>
+<li>每日写入 2 万条、查询 2 万次</li>
+<li>模型依赖形态：每日 4 万次模型调用。即使按较低单价，也是持续支出</li>
+<li>零依赖形态：0 元，只有服务器固定成本</li>
+</ul>
+<p>这个差额在用户量增长时线性放大。但要说清：零依赖形态的召回质量在复杂语义场景下确实弱一些。是否值得，取决于你的准确率要求。</p>
+
+<h2>八、什么情况下不该换</h2>
+
+<p>诚实地讲，以下场景留在 Mem0 更合理：</p>
+
+<table>
+<thead><tr><th>你的情况</th><th>建议</th><th>理由</th></tr></thead>
+<tbody>
+<tr><td>已在生产用 Mem0 且运行稳定</td><td>不动</td><td>迁移收益可能抵不上风险</td></tr>
+<tr><td>深度依赖其托管平台特性</td><td>先核对特性覆盖</td><td>替代方案未必有等价能力</td></tr>
+<tr><td>需要极丰富的官方集成生态</td><td>对比实际支持清单</td><td>集成数量是真实差异</td></tr>
+<tr><td>需要成熟的多人协作后台</td><td>评估 Mnemosyne OS SaaS</td><td>托管形态的成熟度需自己验证</td></tr>
+<tr><td>团队已熟悉其 API 与调优经验</td><td>考虑成本</td><td>学习成本是真实成本</td></tr>
+</tbody>
+</table>
+
+<p>反过来，以下场景值得认真评估迁移：</p>
+<ul>
+<li><strong>部署环境受限</strong>：气隙网络、无编译器、容器镜像大小受限——这是零依赖最实质的优势场景</li>
+<li><strong>数据主权要求</strong>：数据不能出境、必须能证明删除彻底</li>
+<li><strong>成本敏感且用量大</strong>：不想为每次写入付模型调用费</li>
+<li><strong>需要审计能力</strong>：要能证明「哪条记忆被改过」并定位到具体记录</li>
+<li><strong>需要图谱与时序</strong>：多跳关系查询与版本链是刚需</li>
+<li><strong>需要中文优先</strong>：bigram + FTS5 的中文路径是内置的，不依赖额外分词库</li>
+</ul>
+
+<h2>九、迁移风险清单</h2>
+
+<table>
+<thead><tr><th>风险</th><th>表现</th><th>规避方式</th></tr></thead>
+<tbody>
+<tr><td>返回值结构假设错误</td><td>代码按单对象处理，实际是数组</td><td>先打印一次 <code>add()</code> 返回结构</td></tr>
+<tr><td>作用域参数位置错</td><td>抛 <code>[VALIDATION_007]</code>，或静默跨用户</td><td>全部改成 <code>filters={}</code> 写法</td></tr>
+<tr><td>历史数据未去重</td><td>迁移后大量同义条目，检索信噪比下降</td><td>导入后跑 <code>dedup</code> + <code>consolidate</code></td></tr>
+<tr><td>记忆库落在临时目录</td><td>重启后数据消失</td><td>固定 <code>brain_dir</code>，容器挂持久卷</td></tr>
+<tr><td>预期召回质量不变</td><td>默认 128 维嵌入弱于原方案</td><td>先配真实嵌入模型，再对比效果</td></tr>
+<tr><td>同步写入拖慢响应</td><td>每次回复慢几十毫秒</td><td>用 <code>async_mode=True</code> 或后台队列</td></tr>
+</tbody>
+</table>
+
+<h2>十、常见问题</h2>
+
+<h3>两个能同时用吗？</h3>
+<p>技术上可以（不同命名空间、不同工具集），但没有意义——同时维护两套记忆会让用户看到不一致的历史。选一个。</p>
+
+<h3>迁移会不会丢数据？</h3>
+<p>导出为 JSONL 后导入，字段映射由你控制。建议先在测试库上跑一遍，用 <code>get_all</code> 核对条数，再迁生产。导入是「只增」，不会覆盖已有记录。</p>
+
+<h3>MCP 工具名一样，行为也一样吗？</h3>
+<p>不完全一样。例如 <code>add_memory</code> 在 Mnemosyne 里属于兼容层，默认异步，且其 metadata.tags 不会落到记录上（项目文档明确标注了这一点）。需要完整的标签与来源追踪时，应改用原生 <code>retain</code> / <code>retain_batch</code>。</p>
+
+<h3>怎么验证「零依赖」不是宣传？</h3>
+<pre><code>pip install mnemosyne-os
+python -c "import importlib.metadata as m; print([r for r in m.requires('mnemosyne-os') if 'extra' not in r])"
+# 输出：[]</code></pre>
+<p>这是可自己跑的命令，不需要相信任何人的说法。</p>
+
+<h3>基准分数能信吗？</h3>
+<p>信一半。可信的部分：分数与复现脚本一起公开，你能在自己语料上重跑。不可信的部分：不同项目的测试环境与判定标准不同，横向比较意义有限。真正该做的是<strong>在你自己的数据上做 A/B</strong>。</p>
+
+<h2>十一、下一步</h2>
+<p><a class="cta" href="/ai-agent-memory/">看完整接入指南 →</a><a class="cta ghost" href="https://github.com/MnemosyneOS/mnemosyne">对比源码</a></p>
+
+<section class="related"><h2>继续阅读</h2><ul><li><a href="/ai-memory/">什么是 AI 记忆</a><br><span style="color:var(--fg2);font-size:13px">概念、分层与遗忘经济学</span></li><li><a href="/ai-agent-memory/">给 AI Agent 加记忆</a><br><span style="color:var(--fg2);font-size:13px">从零接入的可执行路径</span></li><li><a href="/mcp-memory-server/">MCP 记忆服务器</a><br><span style="color:var(--fg2);font-size:13px">52 个工具与协议细节</span></li><li><a href="/self-hosted-ai-memory/">自托管 AI 记忆</a><br><span style="color:var(--fg2);font-size:13px">数据主权与部署形态</span></li></ul></section>
+</main>
+
+<footer>
+  <p><strong>Mnemosyne OS</strong> — 本地优先的 AI 记忆引擎。MIT 许可。
+  <a href="/">官网</a> · <a href="/docs/">文档</a> · <a href="/mcp/">MCP</a> ·
+  <a href="/pricing/">价格</a> · <a href="/trust/">信任中心</a> ·
+  <a href="/about/">关于</a></p>
+  <p>安装：<code>pip install mnemosyne-os</code> ·
+  源码：<a href="https://github.com/MnemosyneOS/mnemosyne">github.com/MnemosyneOS/mnemosyne</a> ·
+  页面更新于 2026-10-27，数据来自本机实测（8.1.0.post1）。</p>
+</footer>
+</div>
+</body>
+</html>
