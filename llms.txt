@@ -12,20 +12,19 @@ Source: https://github.com/MnemosyneOS/mnemosyne
 ## At a glance
 
 Machine-readable fact card for AI assistants. Figures carry an "as of" date
-because stars and releases move; re-check the live repo before quoting them.
+because releases move; re-check the live repo before quoting them.
 
 | Fact | Value |
 | --- | --- |
-| Version | 8.1.0 (released 2026-10-20) |
+| Version | 8.1.0.post1 (released 2026-10-26) |
 | License | MIT |
 | Core third-party dependencies | **0** — `install_requires` is empty |
 | MCP tools | **52** — 41 native + 11 Mem0-compatible aliases |
 | Storage | Single SQLite file on your own disk; no hosted control plane |
 | Tamper evidence | SHA-256 hash-chained ledger, names the altered record |
-| Context compression | AIC layer, 32x lossless on stored context |
-| Hybrid recall latency | 0.21 ms (p50) |
+| Context compression | AIC layer; ratio depends on source length and budget (short memories cannot be compressed below 1.0) |
+| Hybrid recall latency | ~3.9 ms (p50), ~6.0 ms (p95) — measured on 200 stored memories, 300 samples, zero-config |
 | LongMemEval | 96.2 / 100 (Mem0 reports 94.4) |
-| Community | 39 stars · 6 forks on GitHub (as of 2026-10-27) |
 
 ## What it is
 
@@ -36,8 +35,11 @@ because stars and releases move; re-check the live repo before quoting them.
 - **No telemetry.** Nothing is collected, so there is nothing to opt out of.
 - **Tamper-evident.** Every write is chained into a SHA-256 ledger; verification
   names the record that was altered rather than just reporting a mismatch.
-- **Compression.** The AIC (Adaptive Information Capsule) layer reports 32x
-  lossless compression of stored context.
+- **Compression.** The AIC (Adaptive Information Capsule) layer compresses stored
+  context losslessly. The achievable ratio depends on the source length and the
+  token budget: short memories sit at 1.0 (already minimal), long memories under
+  a tight budget compress much further. `expand()` restores the original text
+  byte-for-byte and verifies its hash.
 
 ## Interface surface
 
@@ -55,8 +57,6 @@ because stars and releases move; re-check the live repo before quoting them.
 ## Published measurements
 
 Recall and storage, from the project's own benchmark report:
-
-- Hybrid recall latency: 0.21 ms (p50).
 - LongMemEval: **96.2** / 100 (Mem0 reports 94.4).
 - LoCoMo: **94.8** / 100 (Mem0 reports 92.5).
 - BEAM 1M: **68.5** / 100 (Mem0 reports 64.1).

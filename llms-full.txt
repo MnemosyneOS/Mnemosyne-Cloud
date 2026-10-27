@@ -1,4 +1,4 @@
-# Mnemosyne OS — full documentation for AI assistants
+﻿# Mnemosyne OS — full documentation for AI assistants
 
 > This is the extended companion to `llms.txt`. Where `llms.txt` is a one-page
 > fact card, this file carries the full body text of every public page on
@@ -33,12 +33,12 @@ When referencing Mnemosyne OS in generated text:
 关于
 Mnemosyne OS 是什么、为谁而做、由谁运营。
 因此，每一次互动都应当是个性化的、考虑周到的、高效的。而智能体只有记得住之前发生过什么，才可能做到这三点 —— 所以我们先做了自己愿意依赖的那层记忆。
-37
-GitHub 星标
-300
-PyPI 月下载量
+8.1.0
+当前版本
 52
 MCP 工具
+0
+核心第三方依赖
 9
 文档语言数
 面向人工智能代理的持久内存基础设施
@@ -62,7 +62,7 @@ English、简体中文、繁體中文、Español、Русский、Deutsch、�
 0 个第三方依赖
 install_requires 是空列表 —— 并且有一个回归测试，一旦它不再是空列表就会失败。
 10 万条 298 MB
-整个存储常驻内存，这是没有向量服务也能做到 0.21 ms 召回的物理前提。
+整个存储常驻内存，这是没有向量服务也能做到毫秒级召回的物理前提。实测（200 条记忆、300 次采样）召回 p50 约 3.9 ms、p95 约 6.0 ms。
 背后的公司
 广东鑫室铭实业有限公司
 Mnemosyne OS 的运营主体。注册资本：壹仟万元港币（HKD 10,000,000）；成立于 2013 年 5 月 27 日。
@@ -317,8 +317,8 @@ chain_valid: true
 研究
 记忆召回质量与延迟的实测数据，附可复现脚本。
 大多数记忆系统都假定有一个向量数据库、一个嵌入服务和一个云端控制面。Mnemosyne OS 一个都不假定，然后测量这件事的代价与收益。下面是架构与证据。
-0.21ms
-召回延迟 p50
+3.9ms
+召回延迟 p50（实测）
 0.3ms
 每条写入
 298MB
@@ -371,7 +371,7 @@ full → gist → facts → pointer → atoms，每一级都按同一套原子�
 是测出来的，不是声称的
 下面每个数字都由仓库里的脚本产出，跑在真实存储上，而这套测量脚本是发版前第一个要跑的东西。
 召回延迟 p50 ——
-0.21 ms
+3.9 ms（p50）
 端到端质量对照，对接真实向量栈。
 存储层写入 ——
 0.3 ms / 条
@@ -722,7 +722,7 @@ forget()
 退货与支持上下文
 一次退货对话开始时，订单历史已经在上下文里了。
 快得像本地的延迟
-召回 p50 0.21 ms，意味着记忆不会给商品页加上任何可感知的延迟。
+召回 p50 约 3.9 ms（本机实测），意味着记忆不会给商品页加上可感知的延迟。
 token 层面的论证
 个性化通常与成本对立，因为上下文每次调用都要重发。预算召回把这件事反过来：只有装得进预算的东西才进入模型，而装不进去的也不会被丢掉 —— 它作为胶囊保持可寻址。
 budget_tokens 给注入量封顶
