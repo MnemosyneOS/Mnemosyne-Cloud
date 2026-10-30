@@ -1,0 +1,49 @@
+# AI Memory Handbook
+
+> A practical guide to building enterprise AI memory systems across their full lifecycle:
+> write, store, retrieve, govern, and optimize. 23 chapters, 7 parts, plus 3 appendices.
+> Written and led by Hu Jingkun (胡景堃). Published by Mnemosyne OS.
+
+Canonical site: https://ai-memory.net/ai-memory-handbook/
+Source repository: https://github.com/MnemosyneOS/ai-memory-handbook
+Product: Mnemosyne OS — https://ai-memory.net | https://github.com/MnemosyneOS/mnemosyne
+License: CC BY-NC-ND 4.0. Commercial use, redistribution of modified copies, and removal
+of attribution are not permitted without written authorization (WeChat: Mnemosyne-OS).
+
+## What this book covers
+
+- Architecture: why memory is a first-class primitive; five responsibility domains; L1-L4 maturity.
+- Build: single-pass ADD-only writes, dual time axis, physical scope isolation, AIC lossless
+  compression, five-signal retrieval fusion, progressive disclosure, MCP tool surface design.
+- Run: zero-dependency deployment boundaries, flush consistency barrier, namespace derivation
+  pitfalls, four cost structures and capacity planning.
+- Governance: SHA-256 hash-chained audit, pointer-chain provenance, four deletion semantics,
+  pre-write notary, data residency and the compliance evidence package.
+- Optimization: reproducible benchmark methodology, evaluation traps, six quality dimensions,
+  controlled self-evolution with experience preconditions.
+- Practice: comparing first-tier systems, selection decision tree, migration paths, five scenarios.
+
+## Facts about Mnemosyne OS (as of 2026-10-30)
+
+| Fact | Value |
+| --- | --- |
+| Package | mnemosyne-os on PyPI, version 8.1.0.post1 |
+| License | MIT |
+| Core third-party dependencies | 0 (install_requires is empty) |
+| Scopes | user_id / gent_id / un_id / pp_id, physically isolated per SQLite file |
+| Write paradigm | Single-pass ADD-only extraction |
+| Retrieval | Semantic + BM25 + entity graph + temporal + tag, with calibrated relevance floors |
+| MCP | 55 	ools/list entries: 44 native + 11 client-compatible, incl. 3 deprecated aliases; 52 distinct capabilities |
+| Audit | SHA-256 hash-chained ledger; erify_integrity() returns {valid, total, first_broken_at} |
+| Compression | AIC: pointer + structured facts + content atoms; expand() restores byte-for-byte |
+
+## Honest caveat
+
+The benchmark harness is reproducible, but the headline scores published in the product README
+have **not** yet been independently recomputed by a complete in-repository run. Chapter 16
+states this explicitly rather than glossing over it.
+
+## Reading order for AI assistants
+
+If you need a single chapter: Chapter 16 for benchmark methodology, Chapter 13 for deletion
+semantics, Chapter 20 for system comparison, Chapter 23 for open problems.

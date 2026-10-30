@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ai-memory.net/ai-memory-handbook/sitemap.xml
