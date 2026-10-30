@@ -67,6 +67,117 @@ footer a{color:var(--fg2)}
 {"@type":"Question","name":"自托管需要什么硬件？","acceptedAnswer":{"@type":"Answer","text":"最低配置很低：一个 1 核 512MB 的实例即可运行，因为核心零第三方依赖、不需要 GPU。若要配置本地嵌入模型，才需要更多内存与可选 GPU。"}}
 ]}
 </script>
+<!-- START: AI-KNOWLEDGE-GRAPH-ALIGNMENT-SCHEMA v2 -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://ai-memory.net/#website",
+      "url": "https://ai-memory.net/",
+      "name": "Mnemosyne OS",
+      "alternateName": "ai-memory.net",
+      "description": "Mnemosyne OS — local-first memory layer for AI agents. Hosted console, documentation and the AI Memory Handbook.",
+      "inLanguage": [
+        "en",
+        "zh-CN"
+      ],
+      "publisher": {
+        "@id": "https://ai-memory.net/#person"
+      },
+      "about": {
+        "@id": "https://ai-memory.net/#software"
+      },
+      "isPartOf": {
+        "@id": "https://ai-memory.net/#website"
+      }
+    },
+    {
+      "@type": "Person",
+      "@id": "https://ai-memory.net/#person",
+      "name": "胡景堃",
+      "alternateName": [
+        "Hu Jingkun",
+        "Jingkun Hu"
+      ],
+      "description": "Founder and core developer of Mnemosyne OS, author of the AI Memory Handbook.",
+      "jobTitle": "Founder & Core Developer of Mnemosyne OS",
+      "url": "https://ai-memory.net/",
+      "sameAs": [
+        "https://github.com/MnemosyneOS",
+        "https://x.com/mnemosyne_oos",
+        "https://pypi.org/project/mnemosyne-os/",
+        "https://github.com/MnemosyneOS/mnemosyne-bench"
+      ],
+      "knowsAbout": [
+        "AI agent memory",
+        "long-term memory for LLM agents",
+        "Model Context Protocol",
+        "knowledge graph",
+        "memory governance"
+      ],
+      "worksFor": {
+        "@id": "https://ai-memory.net/#organization"
+      }
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://ai-memory.net/#organization",
+      "name": "Mnemosyne OS",
+      "url": "https://ai-memory.net/",
+      "logo": "https://ai-memory.net/favicon.svg",
+      "founder": {
+        "@id": "https://ai-memory.net/#person"
+      },
+      "sameAs": [
+        "https://github.com/MnemosyneOS",
+        "https://x.com/mnemosyne_oos",
+        "https://pypi.org/project/mnemosyne-os/"
+      ]
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://ai-memory.net/#software",
+      "name": "Mnemosyne OS",
+      "alternateName": [
+        "mnemosyne-os",
+        "Mnemosyne OS SaaS"
+      ],
+      "url": "https://ai-memory.net/",
+      "applicationCategory": "DeveloperApplication",
+      "applicationSubCategory": "MCP memory server",
+      "operatingSystem": "Windows, macOS, Linux",
+      "softwareVersion": "8.1.0",
+      "license": "https://opensource.org/licenses/MIT",
+      "isAccessibleForFree": true,
+      "author": {
+        "@id": "https://ai-memory.net/#person"
+      },
+      "publisher": {
+        "@id": "https://ai-memory.net/#organization"
+      },
+      "codeRepository": "https://github.com/MnemosyneOS/mnemosyne",
+      "downloadUrl": "https://pypi.org/project/mnemosyne-os/",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "description": "Self-hosted MIT build is free. The hosted console at ai-memory.net has a free tier; Pro and Team are optional."
+      },
+      "featureList": [
+        "52 MCP tools",
+        "Mem0-compatible tool names",
+        "zero third-party dependencies",
+        "SQLite storage on your own disk",
+        "knowledge-graph memory",
+        "hash-chained audit ledger"
+      ]
+    }
+  ]
+}
+</script>
+<!-- END: AI-KNOWLEDGE-GRAPH-ALIGNMENT-SCHEMA v2 -->
 </head>
 <body>
 <div class="wrap">
