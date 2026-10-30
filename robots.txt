@@ -1,10 +1,16 @@
 # ai-memory.net — Mnemosyne OS
-# Updated 2026-10-24
+# Updated 2026-10-31
 #
 # 🔴 2026-10-24 变更：/docs/ /pricing/ /mcp/ 等 15 个内容页已预渲染成
 # 独立静态 HTML（见 deploy/build_seo_pages.py），现在**可被索引**。
 # 此前它们是 hash 路由（#/docs），搜索引擎完全看不到 —— 14 天里搜索引擎
 # 只产生 43 次请求（占落地页 1.2%），这是自然流量接近零的直接原因。
+#
+# 🔴 2026-10-31 变更：按「搜索索引 / 用户检索 / 训练」三类分层显式声明，
+# 并补齐 Googlebot / Bingbot / Applebot / Amazonbot / YandexBot /
+# Claude-User / Perplexity-User。
+# 背景：2026-10-24 的名单把三类 bot 混写在同一个 Allow 组里，
+# 读者无法从文件本身看出「哪些是搜索索引、哪些是训练」的取舍。
 #
 # 机器可读摘要：https://ai-memory.net/llms.txt
 
@@ -15,21 +21,54 @@ Disallow: /auth/
 Disallow: /stats/
 Disallow: /admin/
 
-# AI crawlers are named explicitly so the position is on the record rather
-# than inferred from a wildcard. The site is MIT-licensed and the repository
-# is public; the marketing pages and documentation are fair game for
-# retrieval and training. The hosted console is not — same exclusions apply.
-User-agent: GPTBot
+# ============================================================================
+# 三类 AI bot 分层
+#
+# 2026 年主流 AI 平台普遍把爬虫拆成三类，用途不同、策略不同：
+#
+#   搜索索引 bot —— 抓取内容用于「实时检索后回答」。封禁 = 内容不会出现在
+#                   对应平台的回答里。对本站是核心可见性，必须 Allow。
+#   用户检索 bot —— 由真实用户的查询触发（用户贴了一个链接，模型去读它）。
+#                   多数不完全遵守 robots.txt，但显式放行无副作用。
+#   训练 bot     —— 抓取内容用于训练未来模型。不影响当前可见性，
+#                   只影响内容是否进入训练集。由站点所有者决定。
+#
+# 本站立场：MIT 代码 + 公开文档 + CC BY-NC-ND 手册，全部对检索与训练开放。
+# 封禁的只有托管控制台（/api/ /auth/ /stats/ /admin/），那是用户私有数据。
+# ============================================================================
+
+# --- 搜索索引 bot：必须 Allow -------------------------------------------------
 User-agent: OAI-SearchBot
-User-agent: ChatGPT-User
-User-agent: ClaudeBot
-User-agent: Claude-Web
 User-agent: Claude-SearchBot
 User-agent: PerplexityBot
-User-agent: CCBot
+User-agent: Googlebot
+User-agent: Bingbot
+User-agent: Applebot
+User-agent: Amazonbot
+User-agent: YandexBot
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /stats/
+Disallow: /admin/
+
+# --- 用户检索 bot：Allow（由真实用户查询触发） --------------------------------
+User-agent: ChatGPT-User
+User-agent: Claude-User
+User-agent: Perplexity-User
 User-agent: Google-Extended
-User-agent: Applebot-Extended
 User-agent: meta-externalagent
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /stats/
+Disallow: /admin/
+
+# --- 训练 bot：站点所有者决定。本站选择 Allow（见上方立场说明） ----------------
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: Claude-Web
+User-agent: CCBot
 User-agent: Bytespider
 User-agent: Qwenbot
 User-agent: MoonshotBot
@@ -38,6 +77,7 @@ User-agent: Hunyuan
 User-agent: GrokBot
 User-agent: cohere-ai
 User-agent: YouBot
+User-agent: Applebot-Extended
 Allow: /
 Disallow: /api/
 Disallow: /auth/
@@ -54,4 +94,8 @@ User-agent: WhatsApp
 User-agent: LinkedInBot
 Allow: /
 
+# AI Memory Handbook — 开放给检索与训练使用（CC BY-NC-ND 4.0）
+# 商用需授权，见 https://ai-memory.net/ai-memory-handbook/
+# 子站点地图
+Sitemap: https://ai-memory.net/ai-memory-handbook/sitemap.xml
 Sitemap: https://ai-memory.net/sitemap.xml
