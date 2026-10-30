@@ -16,6 +16,29 @@
 <link rel="icon" href="/favicon.ico" sizes="any" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "@id": "https://ai-memory.net/docs/#webpage",
+  "url": "https://ai-memory.net/docs/",
+  "name": "文档 · Mnemosyne OS",
+  "description": "Mnemosyne OS 的完整使用文档：安装、快速开始、记忆 API、MCP 工具。",
+  "inLanguage": "zh-CN",
+  "isPartOf": {
+    "@id": "https://ai-memory.net/#website"
+  },
+  "about": {
+    "@id": "https://ai-memory.net/#software"
+  },
+  "author": {
+    "@id": "https://ai-memory.net/#person"
+  },
+  "publisher": {
+    "@id": "https://ai-memory.net/#organization"
+  }
+}
+</script>
 <style>
   :root{--fg:#111;--fg2:#555;--bg:#fff;--line:#e5e5e5;--accent:#6d28d9}
   @media(prefers-color-scheme:dark){:root{--fg:#eee;--fg2:#aaa;--bg:#0b0b0c;--line:#26262a}}
@@ -56,7 +79,7 @@
 <p><strong>Mnemosyne OS 让 AI 智能体的记忆活得比会话更久。装一个包，在代码旁边留一个 SQLite 文件，然后让智能体自己决定什么值得记住。</strong></p>
 <h3>记住你的第一个记忆</h3>
 <p>五分钟快速入门。不需要账号、不需要 API 密钥、不发网络请求 —— 引擎只跑 Python 标准库。</p>
-<pre><code class="lang-python">pip install mnemosyne-os
+<pre><code class="lang-python">pip install ai-memo-os
 
 from mnemosyne import MemoryBrain
 
@@ -71,7 +94,7 @@ print(f"{score:.4f}  {record['content']}")</code></pre>
 <h3>给你的编码代理增加内存</h3>
 <p>先从 Claude Code 开始，然后任何支持 MCP 的宿主都可以。它们都指向同一个 stdio 服务端，所以记忆是共享的，而不是每个编辑器各存一份。</p>
 <h4>Claude Code / Claude Desktop</h4>
-<p>把客户端指向 stdio 服务端，52 个工具直接出现，不用写适配层。</p>
+<p>把客户端指向 stdio 服务端，20 个工具直接出现，不用写适配层。</p>
 <h4>Cursor</h4>
 <p>同一段配置放进 mcp.json，编辑器就能跨会话记住你的项目决策。</p>
 <h4>DeepSeek Harness</h4>
@@ -88,10 +111,6 @@ mnemosyne --dir ./mem retain --content "Founded in 1976"
 mnemosyne --dir ./mem recall "founded" --k 5
 
 # 3 · 用租户令牌通过 MCP 暴露出去
-# PowerShell：
-$env:MNEMOSYNE_MCP_TOKEN="your-secret-token"
-python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace default
-# macOS / Linux：
 export MNEMOSYNE_MCP_TOKEN="your-secret-token"
 python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace default
 
@@ -124,7 +143,7 @@ python -m mnemosyne.webui.web_server --port 9090</code></pre>
   <a href="/">首页</a> · <a href="/legal.html">法律条款</a> ·
   <a href="https://github.com/MnemosyneOS/mnemosyne">GitHub</a></p>
   <nav aria-label="Sitemap" style="margin-top:14px;line-height:2">
-    <a href="/ai-memory/" style="margin-right:14px">什么是 AI 记忆</a><a href="/ai-agent-memory/" style="margin-right:14px">给 Agent 加记忆</a><a href="/mcp-memory-server/" style="margin-right:14px">MCP 记忆服务器</a><a href="/mem0-alternative/" style="margin-right:14px">对比 Mem0</a><a href="/self-hosted-ai-memory/" style="margin-right:14px">自托管记忆</a><a href="/docs/" style="margin-right:14px">文档</a>
+    <a href="/docs/" style="margin-right:14px">文档</a>
     <a href="/api-reference/" style="margin-right:14px">API 参考</a>
     <a href="/mcp/" style="margin-right:14px">MCP 集成</a>
     <a href="/cli/" style="margin-right:14px">命令行</a>

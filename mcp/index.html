@@ -16,6 +16,29 @@
 <link rel="icon" href="/favicon.ico" sizes="any" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "@id": "https://ai-memory.net/mcp/#webpage",
+  "url": "https://ai-memory.net/mcp/",
+  "name": "MCP 集成 · Mnemosyne OS",
+  "description": "把 Mnemosyne OS 接入 Claude Desktop、Cursor 等 MCP 客户端，52 个工具开箱可用。",
+  "inLanguage": "zh-CN",
+  "isPartOf": {
+    "@id": "https://ai-memory.net/#website"
+  },
+  "about": {
+    "@id": "https://ai-memory.net/#software"
+  },
+  "author": {
+    "@id": "https://ai-memory.net/#person"
+  },
+  "publisher": {
+    "@id": "https://ai-memory.net/#organization"
+  }
+}
+</script>
 <style>
   :root{--fg:#111;--fg2:#555;--bg:#fff;--line:#e5e5e5;--accent:#6d28d9}
   @media(prefers-color-scheme:dark){:root{--fg:#eee;--fg2:#aaa;--bg:#0b0b0c;--line:#26262a}}
@@ -53,15 +76,11 @@
 <main>
 <h1>MCP 集成</h1>
 <p class="lede">把 Mnemosyne OS 接入 Claude Desktop、Cursor 等 MCP 客户端，52 个工具开箱可用。</p>
-<p><strong>MCP 服务端跑 stdio JSON-RPC，支持可选的令牌鉴权与多租户命名空间。五十二个工具、一条命令，没有需要长期维护的适配层。</strong></p>
+<p><strong>MCP 服务端跑 stdio JSON-RPC，支持可选的令牌鉴权与多租户命名空间。三十一个工具、一条命令，没有需要长期维护的适配层。</strong></p>
 <h3>启动服务端</h3>
 <p>桌面客户端走 stdio，跑在端口后面的一切走 Streamable HTTP。</p>
 <pre><code class="lang-bash"># stdio —— 每个桌面客户端都认的形状
-# PowerShell（可选，但建议开启）：
-$env:MNEMOSYNE_MCP_TOKEN="your-secret-token"
-python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace default
-# macOS / Linux：
-export MNEMOSYNE_MCP_TOKEN="your-secret-token"
+export MNEMOSYNE_MCP_TOKEN="your-secret-token"   # 可选，但建议开启
 python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace default
 
 # 客户端一侧就是三个键加一条命令
@@ -114,7 +133,7 @@ python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace default
   <a href="/">首页</a> · <a href="/legal.html">法律条款</a> ·
   <a href="https://github.com/MnemosyneOS/mnemosyne">GitHub</a></p>
   <nav aria-label="Sitemap" style="margin-top:14px;line-height:2">
-    <a href="/ai-memory/" style="margin-right:14px">什么是 AI 记忆</a><a href="/ai-agent-memory/" style="margin-right:14px">给 Agent 加记忆</a><a href="/mcp-memory-server/" style="margin-right:14px">MCP 记忆服务器</a><a href="/mem0-alternative/" style="margin-right:14px">对比 Mem0</a><a href="/self-hosted-ai-memory/" style="margin-right:14px">自托管记忆</a><a href="/docs/" style="margin-right:14px">文档</a>
+    <a href="/docs/" style="margin-right:14px">文档</a>
     <a href="/api-reference/" style="margin-right:14px">API 参考</a>
     <a href="/mcp/" style="margin-right:14px">MCP 集成</a>
     <a href="/cli/" style="margin-right:14px">命令行</a>
