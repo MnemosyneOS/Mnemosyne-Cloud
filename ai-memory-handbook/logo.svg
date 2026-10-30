@@ -1,16 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="AI Memory Handbook">
-  <rect width="64" height="64" rx="14" fill="#0F1115"/>
-  <circle cx="20" cy="20" r="4" fill="#5B9DFF"/>
-  <circle cx="44" cy="20" r="4" fill="#5B9DFF"/>
-  <circle cx="32" cy="32" r="5" fill="#FFFFFF"/>
-  <circle cx="20" cy="44" r="4" fill="#5B9DFF"/>
-  <circle cx="44" cy="44" r="4" fill="#5B9DFF"/>
-  <g stroke="#5B9DFF" stroke-width="1.6" opacity="0.85">
-    <line x1="20" y1="20" x2="32" y2="32"/>
-    <line x1="44" y1="20" x2="32" y2="32"/>
-    <line x1="20" y1="44" x2="32" y2="32"/>
-    <line x1="44" y1="44" x2="32" y2="32"/>
-    <line x1="20" y1="20" x2="44" y2="20"/>
-    <line x1="20" y1="44" x2="44" y2="44"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Mnemosyne OS"><title>Mnemosyne OS 图形标（渐变核心）</title><defs><linearGradient id="mng" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#5EEAD4"/><stop offset="100%" stop-color="#8B7CF6"/></linearGradient></defs><g stroke="#A9B8D6" stroke-width="1.35" stroke-opacity="0.44"><line x1="32.0" y1="32.0" x2="47.40" y2="32.00"/><line x1="32.0" y1="32.0" x2="39.70" y2="45.34"/><line x1="32.0" y1="32.0" x2="24.30" y2="45.34"/><line x1="32.0" y1="32.0" x2="16.60" y2="32.00"/><line x1="32.0" y1="32.0" x2="24.30" y2="18.66"/><line x1="32.0" y1="32.0" x2="39.70" y2="18.66"/><line x1="47.40" y1="32.00" x2="53.65" y2="44.50"/><line x1="47.40" y1="32.00" x2="32.00" y2="57.00"/><line x1="39.70" y1="45.34" x2="32.00" y2="57.00"/><line x1="39.70" y1="45.34" x2="10.35" y2="44.50"/><line x1="24.30" y1="45.34" x2="10.35" y2="44.50"/><line x1="24.30" y1="45.34" x2="10.35" y2="19.50"/><line x1="16.60" y1="32.00" x2="10.35" y2="19.50"/><line x1="16.60" y1="32.00" x2="32.00" y2="7.00"/><line x1="24.30" y1="18.66" x2="32.00" y2="7.00"/><line x1="24.30" y1="18.66" x2="53.65" y2="19.50"/><line x1="39.70" y1="18.66" x2="53.65" y2="19.50"/><line x1="39.70" y1="18.66" x2="53.65" y2="44.50"/></g><circle cx="47.40" cy="32.00" r="3.9" fill="#66779F"/><circle cx="39.70" cy="45.34" r="3.9" fill="#66779F"/><circle cx="24.30" cy="45.34" r="3.9" fill="#66779F"/><circle cx="16.60" cy="32.00" r="3.9" fill="#66779F"/><circle cx="24.30" cy="18.66" r="3.9" fill="#66779F"/><circle cx="39.70" cy="18.66" r="3.9" fill="#66779F"/><circle cx="53.65" cy="44.50" r="4.6" fill="#A9B8D6"/><circle cx="32.00" cy="57.00" r="4.2" fill="#A9B8D6"/><circle cx="10.35" cy="44.50" r="4.7" fill="#A9B8D6"/><circle cx="10.35" cy="19.50" r="4.2" fill="#A9B8D6"/><circle cx="32.00" cy="7.00" r="4.6" fill="#A9B8D6"/><circle cx="53.65" cy="19.50" r="4.3" fill="#A9B8D6"/><circle cx="32.0" cy="32.0" r="6.6" fill="url(#mng)"/></svg>
