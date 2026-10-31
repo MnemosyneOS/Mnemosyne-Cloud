@@ -788,6 +788,38 @@
         <a class="text-accent hover:underline" href="https://github.com/MnemosyneOS/mnemosyne" target="_blank" rel="noopener">github.com/MnemosyneOS/mnemosyne</a> ·
         package: <a class="text-accent hover:underline" href="https://pypi.org/project/mnemosyne-os/" target="_blank" rel="noopener">PyPI mnemosyne-os</a>.
       </p>
+
+      <!-- 中文段落：与上方英文段对应，覆盖中文搜索词。
+           为什么需要：用户大量用中文搜索「AI 记忆」「长期记忆」「记忆层」，
+           纯英文页面在这些查询下匹配不到。 -->
+      <div class="mt-10 pt-8 hair-t">
+        <h3 class="h3">Mnemosyne OS 是什么：中文说明</h3>
+        <p class="sub mt-5">
+          <strong>Mnemosyne OS</strong>（官方站点 <strong>ai-memory.net</strong>）是一套开源的
+          <strong>AI 记忆层</strong>，为 AI Agent 与 LLM 应用提供<strong>长期记忆</strong>。
+          它让模型在多轮对话、多个会话之间保留信息，不再「聊完就忘」。
+        </p>
+        <p class="sub mt-4">
+          与只做相似度检索的<strong>向量数据库</strong>不同，完整的
+          <strong>AI 记忆系统</strong>还要处理写入抽取、去重与冲突消解、
+          <strong>知识图谱</strong>关联、<strong>语义记忆</strong>与
+          <strong>情景记忆</strong>分层、遗忘与压缩、以及可审计。
+          这一整套东西合起来，才叫<strong>记忆基础设施</strong>，
+          而不是一个「更好的检索框」。这也是<strong>上下文工程</strong>（context engineering）
+          与「加个向量库」的分水岭。
+        </p>
+        <p class="sub mt-4">
+          它支持 <strong>Model Context Protocol（MCP）</strong>，可挂载到 Claude Code、Cursor、
+          OpenWebUI 等客户端，提供 52 个工具，其中 11 个与 Mem0 同名，迁移无需改提示词。
+          也提供 Python 库、CLI 与 HTTP API 三种形态。
+          关于 <strong>RAG</strong> 与记忆的区别：RAG 是查资料，记忆是记住你。
+        </p>
+        <p class="sub mt-4">
+          配套技术书 <a class="text-accent hover:underline" href="/ai-memory-handbook/"><strong>AI Memory Handbook</strong></a>
+          覆盖写入、存储、检索、治理、调优全链路，可在线免费阅读。
+          项目由 <strong>胡景堃（Hu Jingkun）</strong> 发起并主导开发，MIT 许可。
+        </p>
+      </div>
     </div>
   </div>
 </section>
