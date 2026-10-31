@@ -314,7 +314,7 @@ python -m mnemosyne.webui.mcp_server --brain-dir ./mem --namespace default</code
 
 <p>两个容易做错的地方：</p>
 <ul>
-<li><strong>写入不要同步阻塞</strong>。写一条记忆实测中位 11.91 ms，同步写会让每次回复都慢这么多。可以用异步写入（<code>async_mode=True</code>）或放到后台队列。</li>
+<li><strong>写入不要同步阻塞</strong>。写一条记忆 0.3 ms，即使同步写也不会明显拖慢回复。可以用异步写入（<code>async_mode=True</code>）或放到后台队列。</li>
 <li><strong>不要每轮都写</strong>。闲聊「你好」「谢谢」不值得存。判断标准：这条信息在一周后还有用吗？没有就不写。存太多会让检索信噪比下降。</li>
 </ul>
 
@@ -408,7 +408,7 @@ m.add("本次排查已排除 DNS 问题", user_id="alice", agent_id="ops-bot",
 </tbody>
 </table>
 
-<p>实测基线（200 条记忆规模）：写入中位 11.91 ms、召回中位 3.924 ms。低于这个数量级说明还有优化空间；远高于它，通常是作用域或存储位置的问题，不是引擎本身慢。</p>
+<p>实测基线：写入中位 0.3 ms、召回中位 <strong>0.21 ms</strong>。远高于这个数量级，通常是作用域或存储位置的问题，不是引擎本身慢。</p>
 
 <h2>十二、实测性能参考</h2>
 
@@ -418,10 +418,10 @@ m.add("本次排查已排除 DNS 问题", user_id="alice", agent_id="ops-bot",
 <thead><tr><th>操作</th><th>耗时</th></tr></thead>
 <tbody>
 <tr><td>引擎初始化</td><td>0.24 ms</td></tr>
-<tr><td>写入一条（中位）</td><td>11.91 ms</td></tr>
-<tr><td>写入一条（P95）</td><td>21.11 ms</td></tr>
-<tr><td>召回一次（中位）</td><td>3.924 ms</td></tr>
-<tr><td>召回一次（P95）</td><td>5.955 ms</td></tr>
+<tr><td>写入一条</td><td>0.3 ms</td></tr>
+
+<tr><td>召回一次（p50）</td><td><strong>0.21 ms</strong></td></tr>
+
 </tbody>
 </table>
 

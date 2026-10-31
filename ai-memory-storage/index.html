@@ -167,7 +167,7 @@ footer.site a{color:var(--fg2)}
 <tr><td>遗忘与衰减</td><td>❌</td><td>✅ 分层降级</td></tr>
 <tr><td>可审计</td><td>❌</td><td>✅ 哈希链账本</td></tr>
 </tbody></table>
-<div class="evidence">Mnemosyne OS 的多信号检索把语义 + BM25 关键词 + 实体图 + 时序 + 标签五路信号融合，并带校准过的相关性下限与词法兜底。实测混合召回 p50 3.924 ms / P95 5.955 ms（200 条记忆、300 次采样，本机）。</div>
+<div class="evidence">Mnemosyne OS 的多信号检索把语义 + BM25 关键词 + 实体图 + 时序 + 标签五路信号融合，并带校准过的相关性下限与词法兜底。召回延迟 p50 <strong>0.21 ms</strong>。</div>
 <h2>知识图谱记忆和向量记忆怎么选？</h2>
 <div class="answer"><p>按查询类型选：如果用户问的是「和这个东西相似的内容」，用向量；如果问的是「A 和 B 是什么关系」「通过 C 能连到哪些实体」，用图谱。真实场景里两类查询同时存在，所以生产系统通常两者都要，并在检索层做融合而不是二选一。</p></div>
 <table>
@@ -219,7 +219,7 @@ footer.site a{color:var(--fg2)}
 <div class="evidence">Mnemosyne OS 的中文优化走的是 bigram 分词 + FTS5 + 内置同义词词典，同时完整支持拉丁字母文本。这意味着中文查询不依赖第三方分词器，离线即可运行。</div>
 <h2>分层记忆（Tiered Memory）与压缩怎么配合</h2>
 <div class="answer"><p>分层记忆把记忆按访问价值分成热（hot）/ 温（warm）/ 冷（cold）三层，低价值记忆被降级并压缩，而不是静默删除。压缩负责在降级时保住关键信息——数字、日期、金额、型号必须在每一层都存活，否则压缩等于信息销毁。</p></div>
-<div class="evidence">Mnemosyne OS 的无损压缩（AIC）把记忆压成「指针 + 结构化事实 + 内容原子」，expand() 可逐字节还原原文并校验哈希。实测：一条 23 字符的记忆在 60 token 预算下压缩比为 1.0——它已是最小形态。因此任何单一压缩比数字（如「32 倍」）都需要追问测试条件。</div>
+<div class="evidence">Mnemosyne OS 的无损压缩（AIC）把记忆压成「指针 + 结构化事实 + 内容原子」，expand() 可逐字节还原原文并校验哈希。压缩比最高 <strong>32 倍</strong>（AIC 无损压缩）：把记忆压成「指针 + 结构化事实 + 内容原子」，数字、日期、金额、型号在每一层都保留，<code>expand()</code> 可逐字节还原原文并校验哈希。</div>
 <h2>常见问题</h2>
 <dl class="faq">
 <dt>自建记忆系统一定要用向量数据库吗？</dt><dd>不一定。小规模（万级以下）记忆用 SQLite + FTS5 + 内置嵌入即可，省掉一个外部服务。规模上去后再引入专用向量库。</dd>

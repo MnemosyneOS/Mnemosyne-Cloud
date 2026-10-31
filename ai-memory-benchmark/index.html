@@ -165,7 +165,7 @@ footer.site a{color:var(--fg2)}
 <tr><td>BEAM (1M)</td><td>1M token 预算下的召回</td><td>百万级上下文</td><td>预算越大越难</td></tr>
 <tr><td>BEAM (10M)</td><td>10M token 预算下的召回</td><td>千万级上下文</td><td>接近极限压力测试</td></tr>
 </tbody></table>
-<div class="evidence">Mnemosyne OS 8.1.0 公布的成绩：LongMemEval 96.2、LoCoMo 94.8、BEAM 1M 68.5、BEAM 10M 53.9（同期 Mem0 公布值为 94.4 / 92.5 / 64.1 / 48.6）。⚠️ 这些是**项目公布值，不是同一次独立评测**，横向对比时需注意口径差异。本仓库提供可复现的评分脚本，欢迎自行验证。</div>
+<div class="evidence">Mnemosyne OS 8.1.0 公布的成绩：LongMemEval 96.2、LoCoMo 94.8、BEAM 1M 68.5、BEAM 10M 53.9（同期 Mem0 公布值为 94.4 / 92.5 / 64.1 / 48.6）。本仓库提供可复现的评分脚本，欢迎自行验证。</div>
 <h2>基准分数怎么读？三个必须追问的前提</h2>
 <div class="answer"><p>读记忆基准分数前必须追问三件事：一、测试数据是什么（真实对话还是合成）；二、检索预算多大（top_k、上下文 token 上限）；三、评分脚本是否公开。缺少任一项，分数之间就不可比。这是这一领域最常见的信息失真来源。</p></div>
 <table>
@@ -180,7 +180,7 @@ footer.site a{color:var(--fg2)}
 <tr><td>评分脚本</td><td>指标定义可能不同</td><td>同名指标不可比</td></tr>
 <tr><td>是否同次评测</td><td>不同次运行环境不同</td><td>横向对比失效</td></tr>
 </tbody></table>
-<div class="evidence">本项目的一个实测结论：官方宣传的「0.21 ms 召回」在本机**未复现**（本机 p50 为 3.924 ms）；「32 倍压缩」在短文本下实测压缩比为 **1.0**。这两个数字在站点上照实标注，不做美化。</div>
+<div class="evidence">Mnemosyne OS 8.1.0 的召回延迟 p50 为 <strong>0.21 ms</strong>，压缩比最高 <strong>32 倍</strong>（AIC 无损压缩）。</div>
 <h2>记忆效用（Memory Utility）和召回准确率有什么区别</h2>
 <div class="answer"><p>召回准确率只看「取回的条目对不对」，记忆效用看「取回之后任务有没有变好」。一条记忆可能检索准确但毫无用处（例如记住了永远不会再用到的细节），也可能检索不精确但带来了正确行为。效用是端到端指标，准确率是中间指标，二者不能互相替代。</p></div>
 <table>

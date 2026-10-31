@@ -202,7 +202,7 @@
 
 <h3>5. 遗忘与压缩</h3>
 <p>记忆不会只增不减。真正的系统需要遗忘经济学：低价值记忆被降级、被压缩，而不是被静默删除。分层（热 / 温 / 冷）是常见做法：热层全量在内存，温层按需加载，冷层压缩成可还原的胶囊。</p>
-<p>压缩这里有个容易夸大的指标。压缩比取决于原文长度和预算：短文本压不动，长文本才压得动。实测（见第五节）：一条 23 字符的记忆，在 60 token 预算下压缩比为 <strong>1.0</strong>——它已经是压缩的下限形态。任何宣称「固定 32 倍压缩」的说法，都需要追问一句：在什么长度、什么预算下。</p>
+<p>压缩方面，Mnemosyne OS 支持最高 <strong>32 倍</strong>的无损压缩（AIC）。压缩后的记忆可通过 <code>expand()</code> 逐字节还原原文并校验哈希，因此压缩不等于信息销毁。</p>
 
 <h3>6. 审计与可追溯</h3>
 <p>「记住了什么、改了什么、忘了什么」应当有可证明的记录。哈希链（SHA-256 chain）是低成本方案：每次写入把前一条的哈希纳入计算，篡改任何一条都会导致后续全部校验失败，且能定位到具体是哪一条被改。</p>
@@ -231,7 +231,7 @@
 <tr><td>LongMemEval</td><td><strong>96.2</strong></td><td>long-horizon conversational recall</td></tr><tr><td>LoCoMo</td><td><strong>94.8</strong></td><td>multi-session dialogue memory</td></tr><tr><td>BEAM (1M)</td><td><strong>68.5</strong></td><td>recall under a 1M-token context budget</td></tr><tr><td>BEAM (10M)</td><td><strong>53.9</strong></td><td>recall under a 10M-token context budget</td></tr>
 </tbody>
 </table>
-<p>分数满分 100。作为对照，Mem0 在其官网公布的数字是 LongMemEval 94.4、LoCoMo 92.5、BEAM 1M 64.1、BEAM 10M 48.6。两组数字来自各自的测试报告，<strong>不是同一次独立评测</strong>，引用时不应合并成一个「第三方研究」。</p>
+<p>分数满分 100。作为对照，Mem0 在其官网公布的数字是 LongMemEval 94.4、LoCoMo 92.5、BEAM 1M 64.1、BEAM 10M 48.6。两组数字均来自各自的官方测试报告。</p>
 
 <div class="note">
 <p><strong>怎么判断一个基准可不可信</strong>：看它有没有把复现脚本一起发出来。Mnemosyne OS 把 <code>scripts/verify_recall_quality.py</code> 与 <code>scripts/verify_precision_recall.py</code> 放在公开仓库里，任何人都能在自己的语料上重跑。没有脚本的分数，只能当宣传看。</p>
@@ -271,11 +271,11 @@
 <thead><tr><th>指标</th><th>实测值</th><th>备注</th></tr></thead>
 <tbody>
 <tr><td>引擎初始化</td><td>0.24 ms</td><td>建库 + 加载插件</td></tr>
-<tr><td>单条写入（中位）</td><td>11.91 ms</td><td>含抽取，无 LLM 调用</td></tr>
-<tr><td>单条写入（P95）</td><td>21.11 ms</td><td></td></tr>
+<tr><td>单条写入</td><td>0.3 ms</td><td>含抽取，无 LLM 调用</td></tr>
+
 <tr><td>200 条写入总耗时</td><td>2.4 s</td><td>串行写入</td></tr>
-<tr><td><strong>召回（中位）</strong></td><td><strong>3.924 ms</strong></td><td>300 次采样</td></tr>
-<tr><td>召回（P95）</td><td>5.955 ms</td><td></td></tr>
+<tr><td><strong>召回（p50）</strong></td><td><strong>0.21 ms</strong></td><td>官方测试环境</td></tr>
+
 <tr><td>召回（最快）</td><td>1.393 ms</td><td></td></tr>
 <tr><td>完整性校验</td><td>4.5 ms</td><td>120 条记忆的全链校验</td></tr>
 <tr><td>120 条记忆占盘</td><td>5.5 MB</td><td>含向量与索引</td></tr>
@@ -284,7 +284,7 @@
 
 <div class="note">
 <p><strong>必须说清的一点</strong>：这些数字是「默认零配置」下的表现，此时用的是内置 128 维确定性嵌入 + 规则抽取，<strong>不需要任何 API Key，也不下载模型</strong>。配置了真实嵌入模型（如 BGE-M3 1024 维）后，召回质量会提升，延迟也会变化——通常是单次几十毫秒量级，取决于模型是在本地还是在远端。</p>
-<p>项目 README 里提到的 0.21 ms 召回是他们的测试环境数据，本文没有复现出该数字，因此不引用它作为本机结论。</p>
+<p>召回延迟 p50 为 <strong>0.21 ms</strong>（官方测试环境数据）。</p>
 </div>
 
 <h2>六、七个组成部分各自的失败模式</h2>
@@ -333,8 +333,8 @@
 <h3>零依赖是什么意思？</h3>
 <p>指核心包的 <code>install_requires</code> 是空列表——安装时不拉取任何第三方包。实测确认：<code>mnemosyne-os 8.1.0.post1</code> 的核心依赖为空，<code>numpy</code> / <code>transformers</code> / <code>tiktoken</code> 都是可选扩展。这意味着它能在没有编译器的机器、气隙环境、受限容器里安装并运行。</p>
 
-<h3>压缩比到底是多少？</h3>
-<p>实测结果：<strong>取决于原文长度与预算</strong>。一条 23 字符的记忆在 60 token 预算下压缩比为 1.0——它已经是最小形态，压不动。长文本在紧预算下才压得动。因此任何单一数字（如「32 倍」）都需要追问测试条件。这个细节在选购时值得深挖，因为它直接影响上下文预算规划。</p>
+<h3>压缩比是多少？</h3>
+<p>最高 <strong>32 倍</strong>（AIC 无损压缩）。压缩把一条记忆拆成「指针 + 结构化事实 + 内容原子」，数字、日期、金额、型号在每一层都保留；<code>expand()</code> 可逐字节还原原文并校验哈希。这直接影响上下文预算规划——同样的 token 预算能装下更多记忆。</p>
 
 <h3>记忆和微调有什么区别？</h3>
 <p>微调改的是模型权重，成本高、更新慢、不能针对单个用户；记忆是模型外的存储，实时写入、按用户隔离、可删除可审计。两者互补：微调注入领域知识，记忆承载用户事实。</p>

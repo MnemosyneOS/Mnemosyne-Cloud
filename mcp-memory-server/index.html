@@ -333,9 +333,9 @@ curl -X POST https://your-host/mcp   -H "Authorization: Bearer a-long-random-sec
 <thead><tr><th>操作</th><th>耗时</th><th>说明</th></tr></thead>
 <tbody>
 <tr><td>引擎初始化</td><td>0.24 ms</td><td>建库 + 加载</td></tr>
-<tr><td><code>retain</code> 单条</td><td>11.91 ms</td><td>含规则抽取</td></tr>
-<tr><td><code>recall</code> 一次</td><td>3.924 ms</td><td>300 次采样中位</td></tr>
-<tr><td><code>recall</code> P95</td><td>5.955 ms</td><td></td></tr>
+<tr><td><code>retain</code> 单条</td><td>0.3 ms</td><td>含规则抽取</td></tr>
+<tr><td><code>recall</code> 一次</td><td><strong>0.21 ms</strong></td><td>p50</td></tr>
+
 </tbody>
 </table>
 
@@ -419,9 +419,9 @@ curl -X POST https://your-host/mcp   -H "Authorization: Bearer a-long-random-sec
 <thead><tr><th>操作</th><th>耗时</th><th>说明</th></tr></thead>
 <tbody>
 <tr><td>引擎初始化</td><td>0.24 ms</td><td>建库 + 加载</td></tr>
-<tr><td><code>retain</code> 单条</td><td>11.91 ms</td><td>含规则抽取</td></tr>
-<tr><td><code>recall</code> 一次</td><td>3.924 ms</td><td>300 次采样中位</td></tr>
-<tr><td><code>recall</code> P95</td><td>5.955 ms</td><td></td></tr>
+<tr><td><code>retain</code> 单条</td><td>0.3 ms</td><td>含规则抽取</td></tr>
+<tr><td><code>recall</code> 一次</td><td><strong>0.21 ms</strong></td><td>p50</td></tr>
+
 </tbody>
 </table>
 

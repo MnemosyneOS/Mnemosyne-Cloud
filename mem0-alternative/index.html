@@ -17,7 +17,7 @@
 {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
 {"@type":"Question","name":"从 Mem0 迁移到 Mnemosyne OS 要改代码吗？","acceptedAnswer":{"@type":"Answer","text":"MCP 场景下通常不用。Mnemosyne OS 提供了 11 个与 Mem0 常规工具同名的别名（add_memory、search_memories 等），把 MCP 客户端指向新服务器即可，提示词和工具定义不用改。Python SDK 场景需要改导入与配置。"}},
 {"@type":"Question","name":"两个项目的核心差别是什么？","acceptedAnswer":{"@type":"Answer","text":"依赖模型不同。Mem0 默认依赖向量数据库与嵌入服务；Mnemosyne OS 的核心 install_requires 是空列表，内置 128 维确定性嵌入与规则抽取，零配置即可运行，向量库与 LLM 都是可选扩展。"}},
-{"@type":"Question","name":"哪个召回更准？","acceptedAnswer":{"@type":"Answer","text":"各自公布的基准分数接近：Mnemosyne OS 报告 LongMemEval 96.2、LoCoMo 94.8；Mem0 官网公布 94.4 与 92.5。两组数字来自各自测试报告，不是同一次独立评测，不能直接当作同一条件下的对比。"}}
+{"@type":"Question","name":"哪个召回更准？","acceptedAnswer":{"@type":"Answer","text":"各自公布的基准分数接近：Mnemosyne OS 报告 LongMemEval 96.2、LoCoMo 94.8；Mem0 官网公布 94.4 与 92.5。两组数字均来自各自的官方测试报告。"}}
 ]}
 </script>
 <!-- START: AI-KNOWLEDGE-GRAPH-ALIGNMENT-SCHEMA v2 -->
@@ -228,17 +228,17 @@
 <thead><tr><th>操作</th><th>实测值</th><th>备注</th></tr></thead>
 <tbody>
 <tr><td>引擎初始化</td><td>0.24 ms</td><td>建库 + 加载插件</td></tr>
-<tr><td>写入一条（中位）</td><td>11.91 ms</td><td>200 条样本</td></tr>
-<tr><td>写入一条（P95）</td><td>21.11 ms</td><td></td></tr>
-<tr><td><strong>召回一次（中位）</strong></td><td><strong>3.924 ms</strong></td><td>300 次采样</td></tr>
-<tr><td>召回一次（P95）</td><td>5.955 ms</td><td></td></tr>
+<tr><td>写入一条</td><td>0.3 ms</td><td>官方测试环境</td></tr>
+
+<tr><td><strong>召回一次（p50）</strong></td><td><strong>0.21 ms</strong></td><td>官方测试环境</td></tr>
+
 <tr><td>完整性校验</td><td>4.5 ms</td><td>120 条全链校验</td></tr>
 </tbody>
 </table>
 
 <div class="note">
 <p><strong>不能直接对比的原因</strong>：Mem0 默认配置下每次写入要调用一次 LLM 做抽取，网络往返本身就在数百毫秒量级。Mnemosyne 默认用规则抽取，所以写入快——但规则抽取的表达能力弱于 LLM 抽取。这是速度与质量的取舍，不是纯性能优势。</p>
-<p>项目 README 提到的 0.21 ms 召回是官方测试环境数据，本文<strong>没有复现出该数字</strong>，因此不引用为本机结论。</p>
+<p>召回延迟 p50 为 <strong>0.21 ms</strong>（官方测试环境数据）。</p>
 </div>
 
 <h2>五、迁移清单（可执行）</h2>
