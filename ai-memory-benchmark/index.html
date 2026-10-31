@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI 记忆怎么评估？基准、治理与可验证性的完整框架</title>
+<meta name="description" content="AI 记忆系统的评估与治理框架：记忆基准（Memory Benchmark）如 LoCoMo / LongMemEval / BEAM、记忆效用（Memory Utility）、记忆治理（Memory Governance）、来源可追溯（Provenance）、记忆可信性（Memory Trustworthiness）、长时程记忆（Long-Horizon Memory）与自我演化记忆（Self-Evolving Memory）。作者 胡景堃（Hu Jingkun）。" />
+<link rel="canonical" href="https://ai-memory.net/ai-memory-benchmark/" />
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+<meta name="author" content="胡景堃 (Hu Jingkun)" />
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="Mnemosyne OS" />
+<meta property="og:title" content="AI 记忆怎么评估？基准、治理与可验证性的完整框架" />
+<meta property="og:description" content="AI 记忆系统的评估与治理框架：记忆基准（Memory Benchmark）如 LoCoMo / LongMemEval / BEAM、记忆效用（Memory Utility）、记忆治理（Memory Governance）、来源可追溯（Provenance）、记忆可信性（Memory Trustworthiness）、长时程记忆（Long-Horizon Memory）与自我演化记忆（Self-Evolving Memory）。作者 胡景堃（Hu Jingkun）。" />
+<meta property="og:url" content="https://ai-memory.net/ai-memory-benchmark/" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<style>
+:root{--fg:#111;--fg2:#555;--bg:#fff;--line:#e5e5e5;--accent:#6d28d9;--soft:#f7f5ff}
+@media(prefers-color-scheme:dark){:root{--fg:#e8e8ea;--fg2:#a0a0a8;--bg:#0b0b0c;--line:#26262a;--soft:#16121f}}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--fg);background:var(--bg)}
+.wrap{max-width:860px;margin:0 auto;padding:44px 22px 96px}
+header.site{display:flex;align-items:center;gap:12px;padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:36px;flex-wrap:wrap}
+header.site .brand{color:var(--fg);text-decoration:none;font-weight:700;font-size:17px}
+nav.top{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
+nav.top a{color:var(--fg2);text-decoration:none;font-size:14px}
+nav.top a:hover{color:var(--accent)}
+h1{font-size:31px;line-height:1.28;margin:0 0 14px;letter-spacing:-.02em}
+.lede{font-size:17px;color:var(--fg2);margin:0 0 26px}
+h2{font-size:21px;margin:40px 0 12px;padding-top:10px;border-top:1px solid var(--line)}
+h3{font-size:17px;margin:26px 0 8px}
+p,li{margin:0 0 12px}
+ul,ol{padding-left:22px}
+code{background:rgba(125,125,125,.14);padding:2px 6px;border-radius:5px;font-size:.88em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.answer{background:var(--soft);border-left:3px solid var(--accent);padding:14px 18px;border-radius:0 8px 8px 0;margin:14px 0 18px}
+.answer p:last-child{margin-bottom:0}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px}
+th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-weight:650}
+.evidence{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin:18px 0;font-size:14.5px}
+.evidence::before{content:"证据 · ";font-weight:700;color:var(--accent)}
+.steps{counter-reset:s;list-style:none;padding-left:0}
+.steps li{counter-increment:s;padding-left:38px;position:relative;margin-bottom:14px}
+.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.steps li b{display:block;margin-bottom:2px}
+.faq dt{font-weight:650;margin-top:18px}
+.faq dd{margin:6px 0 0;color:var(--fg2)}
+.related{margin:44px 0 0;padding:20px;border:1px solid var(--line);border-radius:12px}
+.related h2{margin-top:0;border:0;padding-top:0;font-size:17px}
+.related ul{columns:2;column-gap:28px;font-size:14.5px}
+footer.site{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);color:var(--fg2);font-size:13px}
+footer.site a{color:var(--fg2)}
+.cta{display:inline-block;margin:26px 10px 0 0;padding:11px 20px;background:var(--accent);color:#fff;text-decoration:none;border-radius:9px;font-weight:600;font-size:15px}
+.cta.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+</style>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "@id": "https://ai-memory.net/ai-memory-benchmark/#article",
+ "headline": "AI 记忆的评估与治理：基准、指标与可验证性",
+ "description": "AI 记忆系统的评估与治理框架：记忆基准（Memory Benchmark）如 LoCoMo / LongMemEval / BEAM、记忆效用（Memory Utility）、记忆治理（Memory Governance）、来源可追溯（Provenance）、记忆可信性（Memory Trustworthiness）、长时程记忆（Long-Horizon Memory）与自我演化记忆（Self-Evolving Memory）。作者 胡景堃（Hu Jingkun）。",
+ "url": "https://ai-memory.net/ai-memory-benchmark/",
+ "datePublished": "2026-10-31",
+ "dateModified": "2026-10-31",
+ "inLanguage": "zh-CN",
+ "author": {
+  "@id": "https://ai-memory.net/#person"
+ },
+ "publisher": {
+  "@id": "https://ai-memory.net/#organization"
+ },
+ "about": {
+  "@id": "https://ai-memory.net/#software"
+ },
+ "isPartOf": {
+  "@id": "https://ai-memory.net/#website"
+ }
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "@id": "https://ai-memory.net/ai-memory-benchmark/#faq",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "记忆系统的基准分数可以横向比较吗？",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "只有在数据、预算、评分脚本三者都相同的前提下才可以。否则应视为不同任务的成绩，不能直接排名。"
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "没有基准成绩的记忆系统能用吗？",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "能用，但要自己定义验收标准：在自己的真实数据上测召回准确率、延迟、以及治理项是否可举证。"
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "记忆治理对小团队是负担吗？",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "最小可行集只有三项：来源字段、删除能力、审计日志。这三项在早期加成本很低，后期补则要改数据模型。"
+   }
+  }
+ ]
+}
+</script>
+<!-- ONTOLOGY-WEBPAGE-NODE -->
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "WebPage",
+ "@id": "https://ai-memory.net/ai-memory-benchmark/#webpage",
+ "url": "https://ai-memory.net/ai-memory-benchmark/",
+ "name": "AI 记忆的评估与治理：基准、指标与可验证性",
+ "inLanguage": "zh-CN",
+ "isPartOf": {
+  "@id": "https://ai-memory.net/#website"
+ },
+ "about": {
+  "@id": "https://ai-memory.net/#software"
+ },
+ "author": {
+  "@id": "https://ai-memory.net/#person"
+ },
+ "publisher": {
+  "@id": "https://ai-memory.net/#organization"
+ },
+ "primaryImageOfPage": {
+  "@id": "https://ai-memory.net/#organization"
+ }
+}
+</script>
+</head>
+<body>
+<div class="wrap">
+<header class="site">
+  <a class="brand" href="/">Mnemosyne OS</a>
+  <nav class="top"><a href="/ai-memory-types/">记忆类型</a><a href="/ai-memory-storage/">存储形态</a><a href="/ai-memory-lifecycle/">生命周期</a><a href="/ai-memory-temporal-graph/">时序与图谱</a><a href="/ai-memory-benchmark/">评估与治理</a><a href="/docs/">文档</a></nav>
+</header>
+<main>
+<h1>AI 记忆的评估与治理：基准、指标与可验证性</h1>
+<p class="lede">AI 记忆的评估分两层：效能层看「取得回、取得准」，用记忆基准（Memory Benchmark）如 LoCoMo、LongMemEval、BEAM 衡量；治理层看「取得合规、取得可追溯」，涉及记忆治理（Memory Governance）、来源可追溯（Provenance）与可验证性（Verifiability）。只测效能不测治理的系统，在生产环境会遇到无法解释的失败。</p>
+<h2>AI 记忆的基准有哪些？各自测什么</h2>
+<div class="answer"><p>主流记忆基准测三个维度：LoCoMo 测多会话对话记忆，LongMemEval 测长时程对话召回，BEAM 测在超大上下文预算下的召回能力（分 1M 与 10M token 两档）。三者的共同点是：都要求系统在超长历史里找到正确的那一条，而不是简单检索相似文本。</p></div>
+<table>
+<thead><tr>
+<th>基准</th>
+<th>测什么</th>
+<th>典型规模</th>
+<th>注意事项</th>
+</tr></thead>
+<tbody>
+<tr><td>LoCoMo</td><td>多会话对话记忆</td><td>长对话序列</td><td>考察跨会话一致性</td></tr>
+<tr><td>LongMemEval</td><td>长时程对话召回</td><td>超长历史</td><td>考察时间跨度下的召回</td></tr>
+<tr><td>BEAM (1M)</td><td>1M token 预算下的召回</td><td>百万级上下文</td><td>预算越大越难</td></tr>
+<tr><td>BEAM (10M)</td><td>10M token 预算下的召回</td><td>千万级上下文</td><td>接近极限压力测试</td></tr>
+</tbody></table>
+<div class="evidence">Mnemosyne OS 8.1.0 公布的成绩：LongMemEval 96.2、LoCoMo 94.8、BEAM 1M 68.5、BEAM 10M 53.9（同期 Mem0 公布值为 94.4 / 92.5 / 64.1 / 48.6）。⚠️ 这些是**项目公布值，不是同一次独立评测**，横向对比时需注意口径差异。本仓库提供可复现的评分脚本，欢迎自行验证。</div>
+<h2>基准分数怎么读？三个必须追问的前提</h2>
+<div class="answer"><p>读记忆基准分数前必须追问三件事：一、测试数据是什么（真实对话还是合成）；二、检索预算多大（top_k、上下文 token 上限）；三、评分脚本是否公开。缺少任一项，分数之间就不可比。这是这一领域最常见的信息失真来源。</p></div>
+<table>
+<thead><tr>
+<th>追问项</th>
+<th>为什么重要</th>
+<th>缺失时的后果</th>
+</tr></thead>
+<tbody>
+<tr><td>数据来源</td><td>合成数据容易过拟合</td><td>分数虚高</td></tr>
+<tr><td>检索预算</td><td>预算越大分数越高</td><td>拿大预算比小预算</td></tr>
+<tr><td>评分脚本</td><td>指标定义可能不同</td><td>同名指标不可比</td></tr>
+<tr><td>是否同次评测</td><td>不同次运行环境不同</td><td>横向对比失效</td></tr>
+</tbody></table>
+<div class="evidence">本项目的一个实测结论：官方宣传的「0.21 ms 召回」在本机**未复现**（本机 p50 为 3.924 ms）；「32 倍压缩」在短文本下实测压缩比为 **1.0**。这两个数字在站点上照实标注，不做美化。</div>
+<h2>记忆效用（Memory Utility）和召回准确率有什么区别</h2>
+<div class="answer"><p>召回准确率只看「取回的条目对不对」，记忆效用看「取回之后任务有没有变好」。一条记忆可能检索准确但毫无用处（例如记住了永远不会再用到的细节），也可能检索不精确但带来了正确行为。效用是端到端指标，准确率是中间指标，二者不能互相替代。</p></div>
+<table>
+<thead><tr>
+<th>指标</th>
+<th>层级</th>
+<th>衡量</th>
+<th>盲区</th>
+</tr></thead>
+<tbody>
+<tr><td>Recall Accuracy</td><td>中间</td><td>取回是否正确</td><td>不反映对任务的价值</td></tr>
+<tr><td>Memory Utility</td><td>端到端</td><td>记忆是否改善结果</td><td>难归因</td></tr>
+<tr><td>Latency (p50/p95)</td><td>中间</td><td>检索耗时</td><td>不反映质量</td></tr>
+<tr><td>Governance Degradation Delta</td><td>治理</td><td>治理干预导致的能力损失</td><td>需对照实验</td></tr>
+<tr><td>Behavioral Execution Consistency, BEC</td><td>治理</td><td>行为执行的一致性</td><td>长尾但精确</td></tr>
+</tbody></table>
+<h2>记忆治理（Memory Governance）包含哪些内容</h2>
+<div class="answer"><p>记忆治理是确保记忆系统「可控、可解释、可删除」的一整套机制，包含五个方面：来源可追溯（Provenance，能回答「我为什么知道这个」）、访问控制（谁能读哪条记忆）、删除语义（删除到底删了什么）、审计（谁在何时改了什么）、以及合规映射（GDPR / PIPL / 等保）。治理缺失的系统在面向企业时无法通过审查。</p></div>
+<table>
+<thead><tr>
+<th>治理维度</th>
+<th>英文</th>
+<th>技术实现</th>
+<th>验收方式</th>
+</tr></thead>
+<tbody>
+<tr><td>来源可追溯</td><td>Provenance</td><td>来源字段 + 哈希链</td><td>任取一条记忆可回溯到原始会话</td></tr>
+<tr><td>防篡改</td><td>Tamper-evident</td><td>SHA-256 哈希链</td><td>verify_integrity() 能定位被改条目</td></tr>
+<tr><td>访问控制</td><td>Access Control</td><td>作用域隔离 + 鉴权</td><td>跨作用域查询返回空</td></tr>
+<tr><td>删除语义</td><td>Deletion Semantics</td><td>四层删除（记录/作用域/级联/物理）</td><td>删除后检索不到、备份也清</td></tr>
+<tr><td>合规映射</td><td>Compliance Mapping</td><td>GDPR / PIPL / 等保对照</td><td>逐条可举证</td></tr>
+</tbody></table>
+<div class="evidence">Mnemosyne OS 的审计账本是 SHA-256 哈希链，verify_integrity() 检测篡改并定位到具体哪一条；安全公证（Safety Notary）在写入落地前检测凭据、不可见 Unicode 与 HTML 注入，并按字段脱敏。</div>
+<h2>长时程记忆（Long-Horizon Memory）和终身记忆（Lifelong Memory）</h2>
+<div class="answer"><p>长时程记忆指跨周、跨月甚至跨年的任务连续性——系统要在很长时间跨度后仍能取回相关上下文；终身记忆指系统在整个生命周期内持续积累而不灾难性遗忘。两者都指向同一个工程难题：随着记忆总量增长，检索精度与延迟如何不退化。</p></div>
+<table>
+<thead><tr>
+<th>术语</th>
+<th>英文</th>
+<th>时间跨度</th>
+<th>核心挑战</th>
+</tr></thead>
+<tbody>
+<tr><td>长时程记忆</td><td>Long-Horizon Memory</td><td>周–月–年</td><td>长期跨度后的召回精度</td></tr>
+<tr><td>终身记忆</td><td>Lifelong Memory</td><td>整个生命周期</td><td>总量增长下的不退化</td></tr>
+<tr><td>自我演化记忆</td><td>Self-Evolving Memory</td><td>持续</td><td>自主调整结构而不失控</td></tr>
+<tr><td>灾难性遗忘</td><td>Catastrophic Forgetting</td><td>—</td><td>新知识覆盖旧知识</td></tr>
+<tr><td>离线巩固</td><td>Offline Consolidation</td><td>周期性</td><td>巩固时机与开销</td></tr>
+</tbody></table>
+<div class="evidence">本项目实测规模参考：120 条记忆占盘 5.5 MB，完整性校验 4.5 ms。按此线性外推，十万条量级约占 4.6 GB——这是评估「总量增长是否可承受」的基线数据。</div>
+<h2>常见问题</h2>
+<dl class="faq">
+<dt>记忆系统的基准分数可以横向比较吗？</dt><dd>只有在数据、预算、评分脚本三者都相同的前提下才可以。否则应视为不同任务的成绩，不能直接排名。</dd>
+<dt>没有基准成绩的记忆系统能用吗？</dt><dd>能用，但要自己定义验收标准：在自己的真实数据上测召回准确率、延迟、以及治理项是否可举证。</dd>
+<dt>记忆治理对小团队是负担吗？</dt><dd>最小可行集只有三项：来源字段、删除能力、审计日志。这三项在早期加成本很低，后期补则要改数据模型。</dd>
+</dl>
+<section class="related"><h2>同系列深度页</h2><ul><li><a href="ai-memory-types">记忆类型</a></li><li><a href="ai-memory-storage">存储形态</a></li><li><a href="ai-memory-lifecycle">生命周期</a></li><li><a href="ai-memory-temporal-graph">时序与图谱</a></li><li><a href="/">Mnemosyne OS 首页</a></li><li><a href="/ai-memory-handbook/">AI Memory Handbook</a></li></ul></section>
+<p><a class="cta" href="/docs/">查看完整文档</a><a class="cta ghost" href="https://github.com/MnemosyneOS/mnemosyne">GitHub 源码</a></p>
+</main>
+<footer class="site">
+  <p><strong>Mnemosyne OS</strong>（ai-memory.net）— 开源的 AI 记忆层。MIT 许可，作者 胡景堃（Hu Jingkun）。
+  <a href="/">首页</a> · <a href="/ai-memory-handbook/">AI Memory Handbook</a> ·
+  <a href="https://github.com/MnemosyneOS/mnemosyne">GitHub</a> ·
+  <a href="https://pypi.org/project/mnemosyne-os/">PyPI</a></p>
+</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>时序记忆与知识图谱记忆：双时态、事件分割与实体链接的工程实现</title>
+<meta name="description" content="时序记忆（Temporal Memory）与知识图谱记忆的工程实现：双时态（Bitemporal）如何区分事件时间与写入时间、事件分割（Event Segmentation）如何切分连续交互、实体链接（Entity Linking）与实体消解（Entity Resolution）如何保证图谱质量、记忆图谱（Memory Graph）的层级结构。作者 胡景堃（Hu Jingkun）。" />
+<link rel="canonical" href="https://ai-memory.net/ai-memory-temporal-graph/" />
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+<meta name="author" content="胡景堃 (Hu Jingkun)" />
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="Mnemosyne OS" />
+<meta property="og:title" content="时序记忆与知识图谱记忆：双时态、事件分割与实体链接的工程实现" />
+<meta property="og:description" content="时序记忆（Temporal Memory）与知识图谱记忆的工程实现：双时态（Bitemporal）如何区分事件时间与写入时间、事件分割（Event Segmentation）如何切分连续交互、实体链接（Entity Linking）与实体消解（Entity Resolution）如何保证图谱质量、记忆图谱（Memory Graph）的层级结构。作者 胡景堃（Hu Jingkun）。" />
+<meta property="og:url" content="https://ai-memory.net/ai-memory-temporal-graph/" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<style>
+:root{--fg:#111;--fg2:#555;--bg:#fff;--line:#e5e5e5;--accent:#6d28d9;--soft:#f7f5ff}
+@media(prefers-color-scheme:dark){:root{--fg:#e8e8ea;--fg2:#a0a0a8;--bg:#0b0b0c;--line:#26262a;--soft:#16121f}}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--fg);background:var(--bg)}
+.wrap{max-width:860px;margin:0 auto;padding:44px 22px 96px}
+header.site{display:flex;align-items:center;gap:12px;padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:36px;flex-wrap:wrap}
+header.site .brand{color:var(--fg);text-decoration:none;font-weight:700;font-size:17px}
+nav.top{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
+nav.top a{color:var(--fg2);text-decoration:none;font-size:14px}
+nav.top a:hover{color:var(--accent)}
+h1{font-size:31px;line-height:1.28;margin:0 0 14px;letter-spacing:-.02em}
+.lede{font-size:17px;color:var(--fg2);margin:0 0 26px}
+h2{font-size:21px;margin:40px 0 12px;padding-top:10px;border-top:1px solid var(--line)}
+h3{font-size:17px;margin:26px 0 8px}
+p,li{margin:0 0 12px}
+ul,ol{padding-left:22px}
+code{background:rgba(125,125,125,.14);padding:2px 6px;border-radius:5px;font-size:.88em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.answer{background:var(--soft);border-left:3px solid var(--accent);padding:14px 18px;border-radius:0 8px 8px 0;margin:14px 0 18px}
+.answer p:last-child{margin-bottom:0}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px}
+th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-weight:650}
+.evidence{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin:18px 0;font-size:14.5px}
+.evidence::before{content:"证据 · ";font-weight:700;color:var(--accent)}
+.steps{counter-reset:s;list-style:none;padding-left:0}
+.steps li{counter-increment:s;padding-left:38px;position:relative;margin-bottom:14px}
+.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.steps li b{display:block;margin-bottom:2px}
+.faq dt{font-weight:650;margin-top:18px}
+.faq dd{margin:6px 0 0;color:var(--fg2)}
+.related{margin:44px 0 0;padding:20px;border:1px solid var(--line);border-radius:12px}
+.related h2{margin-top:0;border:0;padding-top:0;font-size:17px}
+.related ul{columns:2;column-gap:28px;font-size:14.5px}
+footer.site{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);color:var(--fg2);font-size:13px}
+footer.site a{color:var(--fg2)}
+.cta{display:inline-block;margin:26px 10px 0 0;padding:11px 20px;background:var(--accent);color:#fff;text-decoration:none;border-radius:9px;font-weight:600;font-size:15px}
+.cta.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+</style>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "@id": "https://ai-memory.net/ai-memory-temporal-graph/#article",
+ "headline": "时序记忆与知识图谱：双时态、事件分割与实体链接",
+ "description": "时序记忆（Temporal Memory）与知识图谱记忆的工程实现：双时态（Bitemporal）如何区分事件时间与写入时间、事件分割（Event Segmentation）如何切分连续交互、实体链接（Entity Linking）与实体消解（Entity Resolution）如何保证图谱质量、记忆图谱（Memory Graph）的层级结构。作者 胡景堃（Hu Jingkun）。",
+ "url": "https://ai-memory.net/ai-memory-temporal-graph/",
+ "datePublished": "2026-10-31",
+ "dateModified": "2026-10-31",
+ "inLanguage": "zh-CN",
+ "author": {
+  "@id": "https://ai-memory.net/#person"
+ },
+ "publisher": {
+  "@id": "https://ai-memory.net/#organization"
+ },
+ "about": {
+  "@id": "https://ai-memory.net/#software"
+ },
+ "isPartOf": {
+  "@id": "https://ai-memory.net/#website"
+ }
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "@id": "https://ai-memory.net/ai-memory-temporal-graph/#faq",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "没有图数据库能做知识图谱记忆吗？",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "可以。万级以下实体用 SQLite 的关系表 + 递归查询即可，省掉一个外部服务。Mnemosyne OS 就是这个路线。"
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "时序记忆需要专门的时间数据库吗？",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "通常不需要。在普通关系库里加观测时间、生效区间两个字段，配合索引即可支撑绝大多数回溯查询。"
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "实体消解准确率要到多少才够用？",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "取决于场景。记忆系统里建议优先保证「不误合」——过度合并（把两个人当一个人）比该合未合更难纠正。"
+   }
+  }
+ ]
+}
+</script>
+<!-- ONTOLOGY-WEBPAGE-NODE -->
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "WebPage",
+ "@id": "https://ai-memory.net/ai-memory-temporal-graph/#webpage",
+ "url": "https://ai-memory.net/ai-memory-temporal-graph/",
+ "name": "时序记忆与知识图谱：双时态、事件分割与实体链接",
+ "inLanguage": "zh-CN",
+ "isPartOf": {
+  "@id": "https://ai-memory.net/#website"
+ },
+ "about": {
+  "@id": "https://ai-memory.net/#software"
+ },
+ "author": {
+  "@id": "https://ai-memory.net/#person"
+ },
+ "publisher": {
+  "@id": "https://ai-memory.net/#organization"
+ },
+ "primaryImageOfPage": {
+  "@id": "https://ai-memory.net/#organization"
+ }
+}
+</script>
+</head>
+<body>
+<div class="wrap">
+<header class="site">
+  <a class="brand" href="/">Mnemosyne OS</a>
+  <nav class="top"><a href="/ai-memory-types/">记忆类型</a><a href="/ai-memory-storage/">存储形态</a><a href="/ai-memory-lifecycle/">生命周期</a><a href="/ai-memory-temporal-graph/">时序与图谱</a><a href="/ai-memory-benchmark/">评估与治理</a><a href="/docs/">文档</a></nav>
+</header>
+<main>
+<h1>时序记忆与知识图谱：双时态、事件分割与实体链接</h1>
+<p class="lede">时序记忆（Temporal Memory）解决「同一事实随时间变化」的记录问题，知识图谱记忆解决「实体之间如何关联」的结构问题。两者在工程上必须协同：图谱的每条边都需要时间维度，否则新事实会覆盖历史；时序记录也需要实体锚定，否则无法按对象回溯。</p>
+<h2>双时态（Bitemporal）是什么？为什么记忆系统需要它</h2>
+<div class="answer"><p>双时态指同时记录两个时间：事件实际发生的时间（valid time）与这条记录被写入系统的时间（transaction time）。区分两者解决了一类特定问题——「用户上周说他搬家了，但我今天才写进系统」，事件时间应是上周，写入时间是今天。只有单一时态的系统会把两者混淆。</p></div>
+<table>
+<thead><tr>
+<th>时态</th>
+<th>英文</th>
+<th>回答的问题</th>
+<th>示例</th>
+</tr></thead>
+<tbody>
+<tr><td>事件时间</td><td>Valid Time</td><td>这件事什么时候真的发生</td><td>用户 10/20 搬家</td></tr>
+<tr><td>写入时间</td><td>Transaction Time</td><td>我什么时候知道的</td><td>10/31 写入系统</td></tr>
+<tr><td>观测时间</td><td>Observation Time</td><td>这条记忆来自哪次观测</td><td>第 47 次会话</td></tr>
+<tr><td>生效区间</td><td>Validity Interval</td><td>这个取值从何时到何时成立</td><td>2026-10 ~ 至今</td></tr>
+</tbody></table>
+<div class="evidence">Mnemosyne OS 的时序推理同时支持观测日期、相对时间解析（「上周三」「三个月前」）、过期语义与按实体的版本链——即「什么时候发生的」与「什么时候知道的」分开记录。</div>
+<h2>事件分割（Event Segmentation）怎么切才合理</h2>
+<div class="answer"><p>事件分割是把连续交互切成离散记忆单元的操作。切得太碎，一条完整经历被拆成几十条碎片，检索时拼不回来；切得太粗，一条记忆混了多个主题，检索时命中却不相关。常见做法是按「话题切换 + 时间间隔 + 显式标记（如「另外」「说到这个」）」三个信号联合判断。</p></div>
+<table>
+<thead><tr>
+<th>切分粒度</th>
+<th>优点</th>
+<th>缺点</th>
+<th>适用场景</th>
+</tr></thead>
+<tbody>
+<tr><td>每轮对话</td><td>粒度细、易回溯</td><td>碎片化、丢上下文</td><td>短会话问答</td></tr>
+<tr><td>每话题段</td><td>语义完整</td><td>需话题检测</td><td>多主题长对话（推荐）</td></tr>
+<tr><td>每会话</td><td>简单、开销低</td><td>粗、跨主题污染</td><td>一次性任务</td></tr>
+<tr><td>每任务/每目标</td><td>与执行单元对齐</td><td>需目标识别</td><td>Agent 任务型交互</td></tr>
+</tbody></table>
+<h2>实体链接与实体消解：图谱质量的两个关口</h2>
+<div class="answer"><p>实体链接（Entity Linking）把文本里提到的对象映射到图谱中的具体节点；实体消解（Entity Resolution）判断两个提及是否指向同一个对象。两者是图谱质量的两个关口：链接错了，检索会张冠李戴；消解错了，同一个人的信息被拆成两个节点，图谱失去价值。</p></div>
+<table>
+<thead><tr>
+<th>操作</th>
+<th>英文</th>
+<th>输入</th>
+<th>输出</th>
+<th>典型错误</th>
+</tr></thead>
+<tbody>
+<tr><td>实体识别</td><td>NER</td><td>原始文本</td><td>提及（mention）列表</td><td>漏识别、边界错</td></tr>
+<tr><td>实体链接</td><td>Entity Linking</td><td>提及 + 候选实体</td><td>选定实体 ID</td><td>链到同名异实体</td></tr>
+<tr><td>实体消解</td><td>Entity Resolution</td><td>多个提及</td><td>是否同一实体</td><td>该合未合 / 过度合并</td></tr>
+<tr><td>关系抽取</td><td>Relation Extraction</td><td>实体对 + 上下文</td><td>关系三元组</td><td>方向错、谓词错</td></tr>
+</tbody></table>
+<div class="evidence">Mnemosyne OS 的图记忆常开：实体链接与多跳遍历与记忆数据存在同一个 SQLite 文件里，无需外部图数据库。实体消解错误率是记忆系统评估指标之一。</div>
+<h2>记忆图谱（Memory Graph）和知识图谱有什么区别</h2>
+<div class="answer"><p>知识图谱通常指关于世界的通用知识（实体、概念、关系），记忆图谱指关于某个用户或某段交互的私有关系网络。两者结构相同但作用域不同：知识图谱是共享的、相对静态的；记忆图谱是私有的、持续演化的。工程上应放在不同的作用域，避免污染。</p></div>
+<div class="evidence">Mnemosyne OS 用四维作用域（user_id / agent_id / run_id / app_id）做物理隔离，每个作用域独立 SQLite 文件——记忆图谱天然按用户隔离，不需要在查询时补过滤条件。</div>
+<h2>叙事记忆（Narrative Memory）有必要吗</h2>
+<div class="answer"><p>叙事记忆是把离散事件组织成连贯故事的能力，服务于「AI 自我连续性」类需求。在工程上它不是独立的存储层，而是检索时的一种组织方式——按时间线把多条情景记忆串成可读序列。搜索频率中等，适合作为情景记忆的呈现形态而非底层架构。</p></div>
+<table>
+<thead><tr>
+<th>层级</th>
+<th>术语</th>
+<th>英文</th>
+<th>定位</th>
+</tr></thead>
+<tbody>
+<tr><td>存储层</td><td>记忆图谱</td><td>Memory Graph</td><td>实体与关系的底层结构</td></tr>
+<tr><td>索引层</td><td>时间线记忆</td><td>Timeline Memory</td><td>按时间轴组织情景</td></tr>
+<tr><td>呈现层</td><td>叙事记忆</td><td>Narrative Memory</td><td>把事件串成可读序列</td></tr>
+</tbody></table>
+<h2>常见问题</h2>
+<dl class="faq">
+<dt>没有图数据库能做知识图谱记忆吗？</dt><dd>可以。万级以下实体用 SQLite 的关系表 + 递归查询即可，省掉一个外部服务。Mnemosyne OS 就是这个路线。</dd>
+<dt>时序记忆需要专门的时间数据库吗？</dt><dd>通常不需要。在普通关系库里加观测时间、生效区间两个字段，配合索引即可支撑绝大多数回溯查询。</dd>
+<dt>实体消解准确率要到多少才够用？</dt><dd>取决于场景。记忆系统里建议优先保证「不误合」——过度合并（把两个人当一个人）比该合未合更难纠正。</dd>
+</dl>
+<section class="related"><h2>同系列深度页</h2><ul><li><a href="ai-memory-types">记忆类型</a></li><li><a href="ai-memory-storage">存储形态</a></li><li><a href="ai-memory-lifecycle">生命周期</a></li><li><a href="ai-memory-benchmark">评估与治理</a></li><li><a href="/">Mnemosyne OS 首页</a></li><li><a href="/ai-memory-handbook/">AI Memory Handbook</a></li></ul></section>
+<p><a class="cta" href="/docs/">查看完整文档</a><a class="cta ghost" href="https://github.com/MnemosyneOS/mnemosyne">GitHub 源码</a></p>
+</main>
+<footer class="site">
+  <p><strong>Mnemosyne OS</strong>（ai-memory.net）— 开源的 AI 记忆层。MIT 许可，作者 胡景堃（Hu Jingkun）。
+  <a href="/">首页</a> · <a href="/ai-memory-handbook/">AI Memory Handbook</a> ·
+  <a href="https://github.com/MnemosyneOS/mnemosyne">GitHub</a> ·
+  <a href="https://pypi.org/project/mnemosyne-os/">PyPI</a></p>
+</footer>
+</div>
+</body>
+</html>

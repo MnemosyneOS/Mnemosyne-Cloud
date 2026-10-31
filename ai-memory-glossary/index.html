@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI 记忆术语表：56 个核心概念中英文对照 · ai-memory.net</title>
+<meta name="description" content="AI 记忆领域 56 个核心术语的中英文对照与一句话定义，按工程热词（A 层）/ 结构锚点（B 层）/ 框架长尾（C 层）三层组织。覆盖工作记忆、情景记忆、语义记忆、向量记忆、知识图谱、双时态、记忆巩固、记忆治理等概念。由 Mnemosyne OS（ai-memory.net）维护，作者 胡景堃（Hu Jingkun）。" />
+<link rel="canonical" href="https://ai-memory.net/ai-memory-glossary/" />
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+<meta name="author" content="胡景堃 (Hu Jingkun)" />
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="Mnemosyne OS" />
+<meta property="og:title" content="AI 记忆术语表：56 个核心概念中英文对照" />
+<meta property="og:description" content="56 个 AI 记忆核心术语的中英文对照与定义，按 A/B/C 三层组织。" />
+<meta property="og:url" content="https://ai-memory.net/ai-memory-glossary/" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<style>
+:root{--fg:#111;--fg2:#555;--bg:#fff;--line:#e5e5e5;--accent:#6d28d9;--soft:#f7f5ff}
+@media(prefers-color-scheme:dark){:root{--fg:#e8e8ea;--fg2:#a0a0a8;--bg:#0b0b0c;--line:#26262a;--soft:#16121f}}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--fg);background:var(--bg)}
+.wrap{max-width:960px;margin:0 auto;padding:44px 22px 96px}
+header.site{display:flex;align-items:center;gap:12px;padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:36px;flex-wrap:wrap}
+header.site .brand{color:var(--fg);text-decoration:none;font-weight:700;font-size:17px}
+nav.top{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
+nav.top a{color:var(--fg2);text-decoration:none;font-size:14px}
+nav.top a:hover{color:var(--accent)}
+h1{font-size:30px;line-height:1.28;margin:0 0 14px;letter-spacing:-.02em}
+.lede{font-size:17px;color:var(--fg2);margin:0 0 26px}
+h2{font-size:21px;margin:40px 0 12px;padding-top:10px;border-top:1px solid var(--line)}
+p,li{margin:0 0 12px}
+code{background:rgba(125,125,125,.14);padding:2px 6px;border-radius:5px;font-size:.88em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-weight:650}
+.answer{background:var(--soft);border-left:3px solid var(--accent);padding:14px 18px;border-radius:0 8px 8px 0;margin:14px 0 18px}
+.answer p:last-child{margin-bottom:0}
+footer.site{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);color:var(--fg2);font-size:13px}
+footer.site a{color:var(--fg2)}
+</style>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "DefinedTermSet",
+ "@id": "https://ai-memory.net/ai-memory-glossary/#termset",
+ "name": "AI 记忆术语表",
+ "description": "AI 记忆领域 56 个核心术语的中英文对照与定义，按工程热词/结构锚点/框架长尾三层组织。",
+ "url": "https://ai-memory.net/ai-memory-glossary/",
+ "inLanguage": "zh-CN",
+ "publisher": {
+  "@id": "https://ai-memory.net/#organization"
+ },
+ "author": {
+  "@id": "https://ai-memory.net/#person"
+ },
+ "hasDefinedTerm": [
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#working-memory",
+   "name": "工作记忆",
+   "alternateName": "Working Memory",
+   "description": "当前上下文窗口内可见的内容，容量受 token 预算限制，会话结束即失效。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#short-term-memory",
+   "name": "短期记忆",
+   "alternateName": "Short-Term Memory, STM",
+   "description": "单次会话内的信息缓冲，常与工作记忆交替使用，但更强调「最近 N 轮」。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#long-term-memory",
+   "name": "长期记忆",
+   "alternateName": "Long-Term Memory, LTM",
+   "description": "模型之外的持久存储，跨会话存在，需主动检索才能进入工作记忆。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#episodic-memory",
+   "name": "情景记忆",
+   "alternateName": "Episodic Memory",
+   "description": "带时间戳的过往交互事件，回答「上次发生了什么」。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#semantic-memory",
+   "name": "语义记忆",
+   "alternateName": "Semantic Memory",
+   "description": "从多次情景中提炼出的事实与概念，回答「关于用户/世界的事实」。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#procedural-memory",
+   "name": "程序记忆",
+   "alternateName": "Procedural Memory",
+   "description": "「这件事该怎么做」的技能与流程，工程上常隐式存在于系统提示与工具定义中。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#sensory-memory---buffer",
+   "name": "感觉记忆",
+   "alternateName": "Sensory Memory / Buffer",
+   "description": "原始多模态输入的短暂缓冲，在 LLM 系统中通常由摄入通道直接覆盖。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#autobiographical-memory",
+   "name": "自传体记忆",
+   "alternateName": "Autobiographical Memory",
+   "description": "关于「我是谁、经历过什么」的长期自我叙事，服务于 AI 自我连续性。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#meta-memory---metamemory",
+   "name": "元记忆",
+   "alternateName": "Meta-Memory / Metamemory",
+   "description": "关于记忆本身的记忆：置信度、来源、确定性判断。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#declarative---non-declarative-memory",
+   "name": "陈述性/非陈述性记忆",
+   "alternateName": "Declarative / Non-Declarative Memory",
+   "description": "认知科学的经典二分：可用语言陈述的事实 vs 无法言说的技能。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#context-window---context-engineering",
+   "name": "上下文窗口 / 上下文工程",
+   "alternateName": "Context Window / Context Engineering",
+   "description": "上下文窗口是模型的输入容量上限；上下文工程是决定「放什么进去」的工程实践。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#rag-(retrieval-augmented-generation)",
+   "name": "检索增强生成",
+   "alternateName": "RAG (Retrieval-Augmented Generation)",
+   "description": "检索外部文档再生成答案。与记忆的区别：RAG 查资料，记忆记住你。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#vector-memory---vector-store",
+   "name": "向量记忆 / 向量存储",
+   "alternateName": "Vector Memory / Vector Store",
+   "description": "把文本转为稠密向量做相似度检索，情景记忆的主流工程载体。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#knowledge-graph-memory---semantic-kg",
+   "name": "知识图谱记忆",
+   "alternateName": "Knowledge Graph Memory / Semantic KG",
+   "description": "用实体-关系-实体三元组存储记忆，擅长多跳推理与可解释路径。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#temporal-knowledge-graph",
+   "name": "时序知识图谱",
+   "alternateName": "Temporal Knowledge Graph, TKG",
+   "description": "给每条关系边带上生效区间，支持「某时刻事实是什么」的回溯查询。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#parametric-memory",
+   "name": "参数化记忆",
+   "alternateName": "Parametric Memory",
+   "description": "固化在模型权重中的知识，更新需训练，对所有用户相同。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#non-parametric---contextual-memory",
+   "name": "非参数化/上下文记忆",
+   "alternateName": "Non-Parametric / Contextual Memory",
+   "description": "存在模型之外、可运行时写入与删除的记忆，与参数化记忆构成基本二分。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#latent-memory",
+   "name": "潜变量记忆",
+   "alternateName": "Latent Memory",
+   "description": "存在于隐空间表示中的记忆形态，学术分类术语，工程检索频率低。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#hybrid-memory---hybrid-retrieval",
+   "name": "混合记忆 / 混合检索",
+   "alternateName": "Hybrid Memory / Hybrid Retrieval",
+   "description": "融合语义向量、关键词倒排、图检索、时序多路信号的召回方案。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#hierarchical---tiered-memory",
+   "name": "分层记忆",
+   "alternateName": "Hierarchical / Tiered Memory",
+   "description": "按访问价值把记忆分成热/温/冷层，低价值记忆降级压缩而非删除。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#graphrag",
+   "name": "图增强检索",
+   "alternateName": "GraphRAG",
+   "description": "用图结构作为检索索引增强 RAG，注意：它是检索技巧，不是存储架构。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#multimodal-memory",
+   "name": "多模态记忆",
+   "alternateName": "Multimodal Memory",
+   "description": "摄入并存储图像、音频等非文本输入，通常作为摄入通道而非独立存储层。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#memory-consolidation",
+   "name": "记忆巩固",
+   "alternateName": "Memory Consolidation",
+   "description": "把重复出现的情景记忆提炼为语义记忆，同时压缩总量、提高命中率。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#memory-retrieval---recall",
+   "name": "记忆检索 / 召回",
+   "alternateName": "Memory Retrieval / Recall",
+   "description": "按查询取回相关记忆的过程，是多路信号融合与相关性下限共同决定的结果。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#memory-writing---ingestion",
+   "name": "记忆写入 / 摄取",
+   "alternateName": "Memory Writing / Ingestion",
+   "description": "把交互内容转化为结构化记忆并落盘的流水线，含抽取、去重、索引、审计。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#memory-updating",
+   "name": "记忆更新",
+   "alternateName": "Memory Updating",
+   "description": "修正已有记忆的操作，推荐用版本链而非覆盖，以区分「改主意」与「记错了」。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#memory-indexing",
+   "name": "记忆索引",
+   "alternateName": "Memory Indexing",
+   "description": "为记忆建立多路检索索引（语义、关键词、实体、时间），决定检索精度上限。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#memory-forgetting---pruning",
+   "name": "记忆遗忘 / 剪枝",
+   "alternateName": "Memory Forgetting / Pruning",
+   "description": "按价值降级或清理低价值记忆，关键在于压缩时保住数字、日期、金额、型号。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#memory-compression---condensation",
+   "name": "记忆压缩 / 凝缩",
+   "alternateName": "Memory Compression / Condensation",
+   "description": "在有限预算内保留关键信息，无损压缩可逐字节还原原文并校验哈希。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#temporal-decay---forgetting-curve",
+   "name": "时间衰减 / 遗忘曲线",
+   "alternateName": "Temporal Decay / Forgetting Curve",
+   "description": "旧记忆权重随时间下降。人类遗忘曲线只能借思路，不能照搬参数。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#memory-merging---deduplication",
+   "name": "记忆合并 / 去重",
+   "alternateName": "Memory Merging / Deduplication",
+   "description": "把重复或近似记忆合并为一条，减少冗余但需防止合并粒度不当丢细节。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#memory-distillation---sedimentation",
+   "name": "记忆蒸馏 / 沉淀",
+   "alternateName": "Memory Distillation / Sedimentation",
+   "description": "中文语境常用词，与巩固近义：把情景蒸馏进语义层，形成长期可用的事实。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#conflict-resolution",
+   "name": "冲突消解",
+   "alternateName": "Conflict Resolution",
+   "description": "新事实与旧事实矛盾时决定取舍，推荐版本链并存而非直接覆盖。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#rollback---machine-unlearning",
+   "name": "记忆回滚 / 遗忘学习",
+   "alternateName": "Rollback / Machine Unlearning",
+   "description": "精确撤销某条知识。参数化记忆需机器遗忘（成本极高），非参数化直接删记录。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#temporal-memory",
+   "name": "时序记忆",
+   "alternateName": "Temporal Memory",
+   "description": "按时间组织与检索的记忆，解决「同一事实随时间变化」的记录问题。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#timeline-memory",
+   "name": "时间线记忆",
+   "alternateName": "Timeline Memory",
+   "description": "按时间轴组织情景记忆的索引形态，是情景记忆的时序化变体。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#bitemporal",
+   "name": "双时态",
+   "alternateName": "Bitemporal",
+   "description": "同时记录事件发生时间（valid time）与写入系统时间（transaction time）。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#event-segmentation",
+   "name": "事件分割",
+   "alternateName": "Event Segmentation",
+   "description": "把连续交互切成离散记忆单元，按话题切换、时间间隔、显式标记联合判断。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#narrative-memory---narrative-schema",
+   "name": "叙事记忆 / 叙事图式",
+   "alternateName": "Narrative Memory / Narrative Schema",
+   "description": "把离散事件组织成连贯故事，是呈现形态而非底层存储层。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#memory-graph",
+   "name": "记忆图谱",
+   "alternateName": "Memory Graph",
+   "description": "关于某个用户或某段交互的私有关系网络，与通用知识图谱作用域不同。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#semantic-crystallization",
+   "name": "语义结晶 / 情节→语义迁移",
+   "alternateName": "Semantic Crystallization",
+   "description": "描述记忆从具体事件抽象为一般知识的机制，独立搜索频率低。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#entity-linking---entity-resolution",
+   "name": "实体链接 / 实体消解",
+   "alternateName": "Entity Linking / Entity Resolution",
+   "description": "把文本提及映射到图谱节点、判断两个提及是否同一实体，是图谱质量的两个关口。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#memory-benchmark",
+   "name": "记忆基准",
+   "alternateName": "Memory Benchmark",
+   "description": "衡量记忆系统效能的标准化测试，主流有 LoCoMo、LongMemEval、BEAM。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#memory-utility",
+   "name": "记忆效用",
+   "alternateName": "Memory Utility",
+   "description": "端到端指标：记忆是否真的改善了任务结果，区别于召回准确率。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#memory-governance",
+   "name": "记忆治理",
+   "alternateName": "Memory Governance",
+   "description": "确保记忆可控、可解释、可删除的机制：来源、访问控制、删除语义、审计、合规。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#memory-trustworthiness---verifiability",
+   "name": "记忆可信性 / 可验证性",
+   "alternateName": "Memory Trustworthiness / Verifiability",
+   "description": "能否证明某条记忆未被篡改、来源可信，依赖哈希链等防篡改机制。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#provenance",
+   "name": "来源可追溯 / 溯源",
+   "alternateName": "Provenance",
+   "description": "回答「我为什么知道这个」：来源、写入时间、写入者、修改历史。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#governance-degradation-delta",
+   "name": "治理退化差值",
+   "alternateName": "Governance Degradation Delta",
+   "description": "治理干预导致的能力损失量，治理基准的头号指标。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#behavioral-execution-consistency",
+   "name": "行为执行一致性",
+   "alternateName": "Behavioral Execution Consistency, BEC",
+   "description": "治理约束下行为执行的一致程度，长尾但精确的指标。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#long-horizon-memory",
+   "name": "长时程记忆",
+   "alternateName": "Long-Horizon Memory",
+   "description": "跨周、跨月、跨年仍能取回相关上下文的记忆能力。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#self-evolving-memory",
+   "name": "自我演化记忆",
+   "alternateName": "Self-Evolving Memory",
+   "description": "系统自主调整记忆结构的机制，挑战是「自主但不失控」。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#lifelong-memory",
+   "name": "终身记忆",
+   "alternateName": "Lifelong Memory",
+   "description": "在整个生命周期内持续积累而不灾难性遗忘。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#sleep-framework---offline-consolidation",
+   "name": "睡眠机制 / 离线巩固",
+   "alternateName": "Sleep Framework / Offline Consolidation",
+   "description": "借鉴生物睡眠的周期性巩固机制，在低峰期批量整理记忆。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#catastrophic-forgetting",
+   "name": "灾难性遗忘",
+   "alternateName": "Catastrophic Forgetting",
+   "description": "学习新知识时覆盖旧知识，是持续学习与长期记忆的共同难题。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#multi-agent-memory",
+   "name": "多智能体记忆",
+   "alternateName": "Multi-Agent Memory",
+   "description": "多个 Agent 共享或隔离记忆的拓扑设计，涉及作用域与隔离级别。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  },
+  {
+   "@type": "DefinedTerm",
+   "@id": "https://ai-memory.net/ai-memory-glossary/#memory-automation",
+   "name": "记忆自动化",
+   "alternateName": "Memory Automation",
+   "description": "无感记忆：自动判定显著性、自动写入与巩固，减少人工干预。",
+   "inDefinedTermSet": {
+    "@id": "https://ai-memory.net/ai-memory-glossary/#termset"
+   }
+  }
+ ]
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "@id": "https://ai-memory.net/ai-memory-glossary/#faq",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "AI 记忆和工作记忆有什么区别？",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "工作记忆是上下文窗口内当前可见的内容，会话结束即失效；AI 记忆通常指模型之外的持久存储，跨会话存在，需主动检索才能进入工作记忆。"
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "AI 记忆和 RAG 是一回事吗？",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "不是。RAG 检索的是静态文档切片，内容基本不变；AI 记忆写入的是关于用户或任务的动态事实，需要处理更新、冲突、过期与遗忘。RAG 是查资料，记忆是记住你。"
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "知识图谱记忆和向量记忆哪个更好？",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "按查询类型选。向量适合「和这个相似的内容」，图谱适合「A 和 B 什么关系」。真实场景两类查询同时存在，生产系统通常两者都要并在检索层融合。"
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "AI 记忆系统需要评估哪些指标？",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "分两层。效能层看召回准确率、延迟（p50/p95）与端到端记忆效用；治理层看来源可追溯、防篡改、删除语义与合规映射。只测效能不测治理的系统在生产环境会遇到无法解释的失败。"
+   }
+  }
+ ]
+}
+</script>
+<!-- ONTOLOGY-WEBPAGE-NODE -->
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "WebPage",
+ "@id": "https://ai-memory.net/ai-memory-glossary/#webpage",
+ "url": "https://ai-memory.net/ai-memory-glossary/",
+ "name": "AI 记忆术语表：56 个核心概念的中英文对照与定义",
+ "inLanguage": "zh-CN",
+ "isPartOf": {
+  "@id": "https://ai-memory.net/#website"
+ },
+ "about": {
+  "@id": "https://ai-memory.net/#software"
+ },
+ "author": {
+  "@id": "https://ai-memory.net/#person"
+ },
+ "publisher": {
+  "@id": "https://ai-memory.net/#organization"
+ },
+ "primaryImageOfPage": {
+  "@id": "https://ai-memory.net/#organization"
+ }
+}
+</script>
+</head>
+<body>
+<div class="wrap">
+<header class="site">
+  <a class="brand" href="/">Mnemosyne OS</a>
+  <nav class="top">
+    <a href="/ai-memory-types/">记忆类型</a>
+    <a href="/ai-memory-storage/">存储形态</a>
+    <a href="/ai-memory-lifecycle/">生命周期</a>
+    <a href="/ai-memory-temporal-graph/">时序与图谱</a>
+    <a href="/ai-memory-benchmark/">评估与治理</a>
+    <a href="/docs/">文档</a>
+  </nav>
+</header>
+<main>
+<h1>AI 记忆术语表：56 个核心概念的中英文对照与定义</h1>
+<p class="lede">本表收录 AI 记忆领域的 56 个核心术语，按「工程热词（A 层）/ 结构锚点（B 层）/ 框架长尾（C 层）」三层组织，每项给出中英文、所属分类与一句话定义。术语按知识分类归入五个板块：认知记忆类型、实现形态与存储基质、生命周期操作、时序与结构、评估治理与前沿。</p>
+<div class="answer"><p><strong>怎么用这张表：</strong>A 层词是用户真正会搜的词，适合放在标题与首段；B 层词是 AI 组织答案时用的行标签，适合做对比表；C 层词用于知识完整性，放在解释段落里提升深度，不要指望被直接搜索。</p></div>
+<h2>A 层 · 工程热词（17 个）</h2>
+<p>用户主动搜索频率最高、直接对应系统选型与设计决策的术语。触发检索意图，是内容被 AI 视为「相关」的第一道门槛。</p>
+<table>
+<thead><tr><th>中文</th><th>英文</th><th>层级</th><th>分类</th><th>定义</th></tr></thead><tbody>
+<tr><td>工作记忆</td><td><strong>Working Memory</strong></td><td>A/B</td><td>认知记忆类型</td><td>当前上下文窗口内可见的内容，容量受 token 预算限制，会话结束即失效。</td></tr>
+<tr><td>短期记忆</td><td><strong>Short-Term Memory, STM</strong></td><td>A/B</td><td>认知记忆类型</td><td>单次会话内的信息缓冲，常与工作记忆交替使用，但更强调「最近 N 轮」。</td></tr>
+<tr><td>长期记忆</td><td><strong>Long-Term Memory, LTM</strong></td><td>A</td><td>认知记忆类型</td><td>模型之外的持久存储，跨会话存在，需主动检索才能进入工作记忆。</td></tr>
+<tr><td>情景记忆</td><td><strong>Episodic Memory</strong></td><td>A/B</td><td>认知记忆类型</td><td>带时间戳的过往交互事件，回答「上次发生了什么」。</td></tr>
+<tr><td>语义记忆</td><td><strong>Semantic Memory</strong></td><td>A/B</td><td>认知记忆类型</td><td>从多次情景中提炼出的事实与概念，回答「关于用户/世界的事实」。</td></tr>
+<tr><td>上下文窗口 / 上下文工程</td><td><strong>Context Window / Context Engineering</strong></td><td>A</td><td>实现形态</td><td>上下文窗口是模型的输入容量上限；上下文工程是决定「放什么进去」的工程实践。</td></tr>
+<tr><td>检索增强生成</td><td><strong>RAG (Retrieval-Augmented Generation)</strong></td><td>A</td><td>实现形态</td><td>检索外部文档再生成答案。与记忆的区别：RAG 查资料，记忆记住你。</td></tr>
+<tr><td>向量记忆 / 向量存储</td><td><strong>Vector Memory / Vector Store</strong></td><td>A/B</td><td>实现形态</td><td>把文本转为稠密向量做相似度检索，情景记忆的主流工程载体。</td></tr>
+<tr><td>知识图谱记忆</td><td><strong>Knowledge Graph Memory / Semantic KG</strong></td><td>A/B</td><td>实现形态</td><td>用实体-关系-实体三元组存储记忆，擅长多跳推理与可解释路径。</td></tr>
+<tr><td>分层记忆</td><td><strong>Hierarchical / Tiered Memory</strong></td><td>A/B</td><td>实现形态</td><td>按访问价值把记忆分成热/温/冷层，低价值记忆降级压缩而非删除。</td></tr>
+<tr><td>记忆巩固</td><td><strong>Memory Consolidation</strong></td><td>A/B</td><td>生命周期</td><td>把重复出现的情景记忆提炼为语义记忆，同时压缩总量、提高命中率。</td></tr>
+<tr><td>记忆检索 / 召回</td><td><strong>Memory Retrieval / Recall</strong></td><td>A/B</td><td>生命周期</td><td>按查询取回相关记忆的过程，是多路信号融合与相关性下限共同决定的结果。</td></tr>
+<tr><td>记忆写入 / 摄取</td><td><strong>Memory Writing / Ingestion</strong></td><td>A/B</td><td>生命周期</td><td>把交互内容转化为结构化记忆并落盘的流水线，含抽取、去重、索引、审计。</td></tr>
+<tr><td>记忆遗忘 / 剪枝</td><td><strong>Memory Forgetting / Pruning</strong></td><td>A/B</td><td>生命周期</td><td>按价值降级或清理低价值记忆，关键在于压缩时保住数字、日期、金额、型号。</td></tr>
+<tr><td>记忆基准</td><td><strong>Memory Benchmark</strong></td><td>A/B</td><td>评估与治理</td><td>衡量记忆系统效能的标准化测试，主流有 LoCoMo、LongMemEval、BEAM。</td></tr>
+<tr><td>记忆治理</td><td><strong>Memory Governance</strong></td><td>A/B</td><td>评估与治理</td><td>确保记忆可控、可解释、可删除的机制：来源、访问控制、删除语义、审计、合规。</td></tr>
+<tr><td>长时程记忆</td><td><strong>Long-Horizon Memory</strong></td><td>A/B</td><td>评估与治理</td><td>跨周、跨月、跨年仍能取回相关上下文的记忆能力。</td></tr>
+</tbody></table>
+<h2>B 层 · 结构锚点（32 个）</h2>
+<p>在技术文档中作为分类标签、字段名、比较维度反复出现的术语。被 AI 用于组织答案、建立实体关系、生成对比表格，是长篇引用的主要抓手。</p>
+<table>
+<thead><tr><th>中文</th><th>英文</th><th>层级</th><th>分类</th><th>定义</th></tr></thead><tbody>
+<tr><td>程序记忆</td><td><strong>Procedural Memory</strong></td><td>B</td><td>认知记忆类型</td><td>「这件事该怎么做」的技能与流程，工程上常隐式存在于系统提示与工具定义中。</td></tr>
+<tr><td>时序知识图谱</td><td><strong>Temporal Knowledge Graph, TKG</strong></td><td>B</td><td>实现形态</td><td>给每条关系边带上生效区间，支持「某时刻事实是什么」的回溯查询。</td></tr>
+<tr><td>参数化记忆</td><td><strong>Parametric Memory</strong></td><td>B</td><td>实现形态</td><td>固化在模型权重中的知识，更新需训练，对所有用户相同。</td></tr>
+<tr><td>非参数化/上下文记忆</td><td><strong>Non-Parametric / Contextual Memory</strong></td><td>B</td><td>实现形态</td><td>存在模型之外、可运行时写入与删除的记忆，与参数化记忆构成基本二分。</td></tr>
+<tr><td>混合记忆 / 混合检索</td><td><strong>Hybrid Memory / Hybrid Retrieval</strong></td><td>B</td><td>实现形态</td><td>融合语义向量、关键词倒排、图检索、时序多路信号的召回方案。</td></tr>
+<tr><td>图增强检索</td><td><strong>GraphRAG</strong></td><td>B</td><td>实现形态</td><td>用图结构作为检索索引增强 RAG，注意：它是检索技巧，不是存储架构。</td></tr>
+<tr><td>多模态记忆</td><td><strong>Multimodal Memory</strong></td><td>B</td><td>实现形态</td><td>摄入并存储图像、音频等非文本输入，通常作为摄入通道而非独立存储层。</td></tr>
+<tr><td>记忆更新</td><td><strong>Memory Updating</strong></td><td>B</td><td>生命周期</td><td>修正已有记忆的操作，推荐用版本链而非覆盖，以区分「改主意」与「记错了」。</td></tr>
+<tr><td>记忆索引</td><td><strong>Memory Indexing</strong></td><td>B</td><td>生命周期</td><td>为记忆建立多路检索索引（语义、关键词、实体、时间），决定检索精度上限。</td></tr>
+<tr><td>记忆压缩 / 凝缩</td><td><strong>Memory Compression / Condensation</strong></td><td>B</td><td>生命周期</td><td>在有限预算内保留关键信息，无损压缩可逐字节还原原文并校验哈希。</td></tr>
+<tr><td>时间衰减 / 遗忘曲线</td><td><strong>Temporal Decay / Forgetting Curve</strong></td><td>B</td><td>生命周期</td><td>旧记忆权重随时间下降。人类遗忘曲线只能借思路，不能照搬参数。</td></tr>
+<tr><td>记忆合并 / 去重</td><td><strong>Memory Merging / Deduplication</strong></td><td>B</td><td>生命周期</td><td>把重复或近似记忆合并为一条，减少冗余但需防止合并粒度不当丢细节。</td></tr>
+<tr><td>记忆蒸馏 / 沉淀</td><td><strong>Memory Distillation / Sedimentation</strong></td><td>B</td><td>生命周期</td><td>中文语境常用词，与巩固近义：把情景蒸馏进语义层，形成长期可用的事实。</td></tr>
+<tr><td>冲突消解</td><td><strong>Conflict Resolution</strong></td><td>C/B</td><td>生命周期</td><td>新事实与旧事实矛盾时决定取舍，推荐版本链并存而非直接覆盖。</td></tr>
+<tr><td>时序记忆</td><td><strong>Temporal Memory</strong></td><td>B</td><td>时序与结构</td><td>按时间组织与检索的记忆，解决「同一事实随时间变化」的记录问题。</td></tr>
+<tr><td>时间线记忆</td><td><strong>Timeline Memory</strong></td><td>B</td><td>时序与结构</td><td>按时间轴组织情景记忆的索引形态，是情景记忆的时序化变体。</td></tr>
+<tr><td>双时态</td><td><strong>Bitemporal</strong></td><td>B</td><td>时序与结构</td><td>同时记录事件发生时间（valid time）与写入系统时间（transaction time）。</td></tr>
+<tr><td>事件分割</td><td><strong>Event Segmentation</strong></td><td>B/C</td><td>时序与结构</td><td>把连续交互切成离散记忆单元，按话题切换、时间间隔、显式标记联合判断。</td></tr>
+<tr><td>叙事记忆 / 叙事图式</td><td><strong>Narrative Memory / Narrative Schema</strong></td><td>C/B</td><td>时序与结构</td><td>把离散事件组织成连贯故事，是呈现形态而非底层存储层。</td></tr>
+<tr><td>记忆图谱</td><td><strong>Memory Graph</strong></td><td>B</td><td>时序与结构</td><td>关于某个用户或某段交互的私有关系网络，与通用知识图谱作用域不同。</td></tr>
+<tr><td>语义结晶 / 情节→语义迁移</td><td><strong>Semantic Crystallization</strong></td><td>C/B</td><td>时序与结构</td><td>描述记忆从具体事件抽象为一般知识的机制，独立搜索频率低。</td></tr>
+<tr><td>实体链接 / 实体消解</td><td><strong>Entity Linking / Entity Resolution</strong></td><td>B</td><td>时序与结构</td><td>把文本提及映射到图谱节点、判断两个提及是否同一实体，是图谱质量的两个关口。</td></tr>
+<tr><td>记忆效用</td><td><strong>Memory Utility</strong></td><td>B</td><td>评估与治理</td><td>端到端指标：记忆是否真的改善了任务结果，区别于召回准确率。</td></tr>
+<tr><td>记忆可信性 / 可验证性</td><td><strong>Memory Trustworthiness / Verifiability</strong></td><td>B</td><td>评估与治理</td><td>能否证明某条记忆未被篡改、来源可信，依赖哈希链等防篡改机制。</td></tr>
+<tr><td>来源可追溯 / 溯源</td><td><strong>Provenance</strong></td><td>B</td><td>评估与治理</td><td>回答「我为什么知道这个」：来源、写入时间、写入者、修改历史。</td></tr>
+<tr><td>治理退化差值</td><td><strong>Governance Degradation Delta</strong></td><td>C/B</td><td>评估与治理</td><td>治理干预导致的能力损失量，治理基准的头号指标。</td></tr>
+<tr><td>自我演化记忆</td><td><strong>Self-Evolving Memory</strong></td><td>B</td><td>评估与治理</td><td>系统自主调整记忆结构的机制，挑战是「自主但不失控」。</td></tr>
+<tr><td>终身记忆</td><td><strong>Lifelong Memory</strong></td><td>B</td><td>评估与治理</td><td>在整个生命周期内持续积累而不灾难性遗忘。</td></tr>
+<tr><td>睡眠机制 / 离线巩固</td><td><strong>Sleep Framework / Offline Consolidation</strong></td><td>C/B</td><td>评估与治理</td><td>借鉴生物睡眠的周期性巩固机制，在低峰期批量整理记忆。</td></tr>
+<tr><td>灾难性遗忘</td><td><strong>Catastrophic Forgetting</strong></td><td>B</td><td>评估与治理</td><td>学习新知识时覆盖旧知识，是持续学习与长期记忆的共同难题。</td></tr>
+<tr><td>多智能体记忆</td><td><strong>Multi-Agent Memory</strong></td><td>B</td><td>评估与治理</td><td>多个 Agent 共享或隔离记忆的拓扑设计，涉及作用域与隔离级别。</td></tr>
+<tr><td>记忆自动化</td><td><strong>Memory Automation</strong></td><td>B</td><td>评估与治理</td><td>无感记忆：自动判定显著性、自动写入与巩固，减少人工干预。</td></tr>
+</tbody></table>
+<h2>C 层 · 框架与长尾（7 个）</h2>
+<p>学术框架中的精确概念，工程搜索频率较低。用于知识完整性，嵌入 B 层词的解释段落，不单独作为检索入口。</p>
+<table>
+<thead><tr><th>中文</th><th>英文</th><th>层级</th><th>分类</th><th>定义</th></tr></thead><tbody>
+<tr><td>感觉记忆</td><td><strong>Sensory Memory / Buffer</strong></td><td>C</td><td>认知记忆类型</td><td>原始多模态输入的短暂缓冲，在 LLM 系统中通常由摄入通道直接覆盖。</td></tr>
+<tr><td>自传体记忆</td><td><strong>Autobiographical Memory</strong></td><td>C</td><td>认知记忆类型</td><td>关于「我是谁、经历过什么」的长期自我叙事，服务于 AI 自我连续性。</td></tr>
+<tr><td>元记忆</td><td><strong>Meta-Memory / Metamemory</strong></td><td>C</td><td>认知记忆类型</td><td>关于记忆本身的记忆：置信度、来源、确定性判断。</td></tr>
+<tr><td>陈述性/非陈述性记忆</td><td><strong>Declarative / Non-Declarative Memory</strong></td><td>C</td><td>认知记忆类型</td><td>认知科学的经典二分：可用语言陈述的事实 vs 无法言说的技能。</td></tr>
+<tr><td>潜变量记忆</td><td><strong>Latent Memory</strong></td><td>C</td><td>实现形态</td><td>存在于隐空间表示中的记忆形态，学术分类术语，工程检索频率低。</td></tr>
+<tr><td>记忆回滚 / 遗忘学习</td><td><strong>Rollback / Machine Unlearning</strong></td><td>C</td><td>生命周期</td><td>精确撤销某条知识。参数化记忆需机器遗忘（成本极高），非参数化直接删记录。</td></tr>
+<tr><td>行为执行一致性</td><td><strong>Behavioral Execution Consistency, BEC</strong></td><td>C</td><td>评估与治理</td><td>治理约束下行为执行的一致程度，长尾但精确的指标。</td></tr>
+</tbody></table>
+<h2>按知识分类索引</h2>
+<table><thead><tr><th>分类</th><th>术语数</th><th>深度页</th></tr></thead><tbody>
+<tr><td>认知记忆类型</td><td>10</td><td><a href="/ai-memory-types/">/ai-memory-types/</a><br><span style="color:var(--fg2);font-size:13px">工作记忆 / 情景记忆 / 语义记忆 等</span></td></tr>
+<tr><td>实现形态</td><td>12</td><td><a href="/ai-memory-storage/">/ai-memory-storage/</a><br><span style="color:var(--fg2);font-size:13px">向量记忆 / 知识图谱 / 混合检索 等</span></td></tr>
+<tr><td>生命周期</td><td>12</td><td><a href="/ai-memory-lifecycle/">/ai-memory-lifecycle/</a><br><span style="color:var(--fg2);font-size:13px">写入 / 巩固 / 检索 / 遗忘 等</span></td></tr>
+<tr><td>时序与结构</td><td>8</td><td><a href="/ai-memory-temporal-graph/">/ai-memory-temporal-graph/</a><br><span style="color:var(--fg2);font-size:13px">双时态 / 事件分割 / 实体链接 等</span></td></tr>
+<tr><td>评估与治理</td><td>14</td><td><a href="/ai-memory-benchmark/">/ai-memory-benchmark/</a><br><span style="color:var(--fg2);font-size:13px">基准 / 治理 / 长时程记忆 等</span></td></tr>
+</tbody></table>
+<h2>实体锚定</h2>
+<div class="answer"><p>本术语表由 <strong>Mnemosyne OS</strong>（官方站点 <strong>ai-memory.net</strong>）维护，作者 <strong>胡景堃（Hu Jingkun）</strong>。对应的开源实现是 <a href="https://github.com/MnemosyneOS/mnemosyne">github.com/MnemosyneOS/mnemosyne</a>（PyPI 包名 <code>mnemosyne-os</code>），配套技术书是 <a href="/ai-memory-handbook/">AI Memory Handbook</a>。表中所有定义与这套实现的实际能力一致；凡本机未复现的宣传数字，在对应深度页中均已明确标注。</p></div>
+</main>
+<footer class="site">
+  <p><strong>Mnemosyne OS</strong>（ai-memory.net）— 开源的 AI 记忆层。MIT 许可，作者 胡景堃（Hu Jingkun）。
+  <a href="/">首页</a> · <a href="/ai-memory-handbook/">AI Memory Handbook</a> ·
+  <a href="https://github.com/MnemosyneOS/mnemosyne">GitHub</a> ·
+  <a href="https://pypi.org/project/mnemosyne-os/">PyPI</a></p>
+</footer>
+</div>
+</body>
+</html>

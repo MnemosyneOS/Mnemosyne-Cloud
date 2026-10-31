@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agent 记忆怎么设计？工作记忆、情景记忆与语义记忆的分层方案</title>
+<meta name="description" content="Agent 记忆的认知分层方案：工作记忆（Working Memory）、短期记忆（STM）、长期记忆（LTM）、情景记忆（Episodic Memory）、语义记忆（Semantic Memory）、程序记忆（Procedural Memory）各自对应什么工程实现、何时该用哪一层。含对比表与 Mnemosyne OS 实测数据。作者 胡景堃（Hu Jingkun）。" />
+<link rel="canonical" href="https://ai-memory.net/ai-memory-types/" />
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+<meta name="author" content="胡景堃 (Hu Jingkun)" />
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="Mnemosyne OS" />
+<meta property="og:title" content="Agent 记忆怎么设计？工作记忆、情景记忆与语义记忆的分层方案" />
+<meta property="og:description" content="Agent 记忆的认知分层方案：工作记忆（Working Memory）、短期记忆（STM）、长期记忆（LTM）、情景记忆（Episodic Memory）、语义记忆（Semantic Memory）、程序记忆（Procedural Memory）各自对应什么工程实现、何时该用哪一层。含对比表与 Mnemosyne OS 实测数据。作者 胡景堃（Hu Jingkun）。" />
+<meta property="og:url" content="https://ai-memory.net/ai-memory-types/" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<style>
+:root{--fg:#111;--fg2:#555;--bg:#fff;--line:#e5e5e5;--accent:#6d28d9;--soft:#f7f5ff}
+@media(prefers-color-scheme:dark){:root{--fg:#e8e8ea;--fg2:#a0a0a8;--bg:#0b0b0c;--line:#26262a;--soft:#16121f}}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--fg);background:var(--bg)}
+.wrap{max-width:860px;margin:0 auto;padding:44px 22px 96px}
+header.site{display:flex;align-items:center;gap:12px;padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:36px;flex-wrap:wrap}
+header.site .brand{color:var(--fg);text-decoration:none;font-weight:700;font-size:17px}
+nav.top{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
+nav.top a{color:var(--fg2);text-decoration:none;font-size:14px}
+nav.top a:hover{color:var(--accent)}
+h1{font-size:31px;line-height:1.28;margin:0 0 14px;letter-spacing:-.02em}
+.lede{font-size:17px;color:var(--fg2);margin:0 0 26px}
+h2{font-size:21px;margin:40px 0 12px;padding-top:10px;border-top:1px solid var(--line)}
+h3{font-size:17px;margin:26px 0 8px}
+p,li{margin:0 0 12px}
+ul,ol{padding-left:22px}
+code{background:rgba(125,125,125,.14);padding:2px 6px;border-radius:5px;font-size:.88em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.answer{background:var(--soft);border-left:3px solid var(--accent);padding:14px 18px;border-radius:0 8px 8px 0;margin:14px 0 18px}
+.answer p:last-child{margin-bottom:0}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px}
+th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-weight:650}
+.evidence{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin:18px 0;font-size:14.5px}
+.evidence::before{content:"证据 · ";font-weight:700;color:var(--accent)}
+.steps{counter-reset:s;list-style:none;padding-left:0}
+.steps li{counter-increment:s;padding-left:38px;position:relative;margin-bottom:14px}
+.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.steps li b{display:block;margin-bottom:2px}
+.faq dt{font-weight:650;margin-top:18px}
+.faq dd{margin:6px 0 0;color:var(--fg2)}
+.related{margin:44px 0 0;padding:20px;border:1px solid var(--line);border-radius:12px}
+.related h2{margin-top:0;border:0;padding-top:0;font-size:17px}
+.related ul{columns:2;column-gap:28px;font-size:14.5px}
+footer.site{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);color:var(--fg2);font-size:13px}
+footer.site a{color:var(--fg2)}
+.cta{display:inline-block;margin:26px 10px 0 0;padding:11px 20px;background:var(--accent);color:#fff;text-decoration:none;border-radius:9px;font-weight:600;font-size:15px}
+.cta.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+</style>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "@id": "https://ai-memory.net/ai-memory-types/#article",
+ "headline": "Agent 记忆怎么设计：认知记忆类型的分层方案",
+ "description": "Agent 记忆的认知分层方案：工作记忆（Working Memory）、短期记忆（STM）、长期记忆（LTM）、情景记忆（Episodic Memory）、语义记忆（Semantic Memory）、程序记忆（Procedural Memory）各自对应什么工程实现、何时该用哪一层。含对比表与 Mnemosyne OS 实测数据。作者 胡景堃（Hu Jingkun）。",
+ "url": "https://ai-memory.net/ai-memory-types/",
+ "datePublished": "2026-10-31",
+ "dateModified": "2026-10-31",
+ "inLanguage": "zh-CN",
+ "author": {
+  "@id": "https://ai-memory.net/#person"
+ },
+ "publisher": {
+  "@id": "https://ai-memory.net/#organization"
+ },
+ "about": {
+  "@id": "https://ai-memory.net/#software"
+ },
+ "isPartOf": {
+  "@id": "https://ai-memory.net/#website"
+ }
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "@id": "https://ai-memory.net/ai-memory-types/#faq",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Agent 记忆最少要分几层？",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "至少三层：工作记忆（上下文）、情景记忆（带时间的事件）、语义记忆（事实）。只做一层（例如只加向量库）得到的是可搜索的文档库，不是记忆系统。"
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "五层认知架构（含感觉记忆、元记忆）有必要实现吗？",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "多数工程系统不需要。感觉记忆在 LLM 系统中通常由多模态摄入直接覆盖，元记忆可作为置信度字段存在，不必单独建层。把它们当作知识完整性的一部分即可。"
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "工作记忆能直接当长期记忆用吗？",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "不能。上下文窗口扩容只延长单次会话，跨会话状态仍会丢失，且长上下文的检索精度会随长度下降。"
+   }
+  }
+ ]
+}
+</script>
+<!-- ONTOLOGY-WEBPAGE-NODE -->
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "WebPage",
+ "@id": "https://ai-memory.net/ai-memory-types/#webpage",
+ "url": "https://ai-memory.net/ai-memory-types/",
+ "name": "Agent 记忆类型：工作记忆、情景记忆与语义记忆的分层方案",
+ "inLanguage": "zh-CN",
+ "isPartOf": {
+  "@id": "https://ai-memory.net/#website"
+ },
+ "about": {
+  "@id": "https://ai-memory.net/#software"
+ },
+ "author": {
+  "@id": "https://ai-memory.net/#person"
+ },
+ "publisher": {
+  "@id": "https://ai-memory.net/#organization"
+ },
+ "primaryImageOfPage": {
+  "@id": "https://ai-memory.net/#organization"
+ }
+}
+</script>
+</head>
+<body>
+<div class="wrap">
+<header class="site">
+  <a class="brand" href="/">Mnemosyne OS</a>
+  <nav class="top"><a href="/ai-memory-types/">记忆类型</a><a href="/ai-memory-storage/">存储形态</a><a href="/ai-memory-lifecycle/">生命周期</a><a href="/ai-memory-temporal-graph/">时序与图谱</a><a href="/ai-memory-benchmark/">评估与治理</a><a href="/docs/">文档</a></nav>
+</header>
+<main>
+<h1>Agent 记忆怎么设计：认知记忆类型的分层方案</h1>
+<p class="lede">AI Agent 的记忆通常按认知科学分为三层：工作记忆（Working Memory，对应上下文窗口）、情景记忆（Episodic Memory，对应「上次发生了什么」）、语义记忆（Semantic Memory，对应事实与概念）。长期记忆（Long-Term Memory, LTM）是后两者的总称，而程序记忆（Procedural Memory）在工程上常隐式存在于系统提示与工具描述中。</p>
+<h2>Agent 记忆分为哪几层？三句话讲清</h2>
+<div class="answer"><p>Agent 记忆的工程分层与认知科学对应：工作记忆 = 当前上下文窗口内可见的内容，容量受 token 限制；情景记忆 = 带时间戳的过往交互事件，回答「上次我们聊到哪」；语义记忆 = 从多次情景中提炼出的事实与概念，回答「用户偏好什么」。长期记忆（LTM）是情景与语义两层合起来的称呼，与短期记忆（STM）相对。</p></div>
+<table>
+<thead><tr>
+<th>类型</th>
+<th>英文</th>
+<th>层级</th>
+<th>工程载体</th>
+<th>回答什么问题</th>
+</tr></thead>
+<tbody>
+<tr><td>工作记忆</td><td>Working Memory</td><td>A/B</td><td>上下文窗口（context window）</td><td>这一轮对话里有什么</td></tr>
+<tr><td>短期记忆</td><td>Short-Term Memory, STM</td><td>A/B</td><td>会话缓冲、最近 N 轮</td><td>刚才说了什么</td></tr>
+<tr><td>长期记忆</td><td>Long-Term Memory, LTM</td><td>A</td><td>外部存储 + 检索</td><td>跨会话还记得什么</td></tr>
+<tr><td>情景记忆</td><td>Episodic Memory</td><td>A/B</td><td>时序记录、向量存储</td><td>上次发生了什么</td></tr>
+<tr><td>语义记忆</td><td>Semantic Memory</td><td>A/B</td><td>知识图谱、事实表</td><td>关于这个世界/用户的事实</td></tr>
+<tr><td>程序记忆</td><td>Procedural Memory</td><td>B</td><td>系统提示、工具定义、技能库</td><td>这件事该怎么做</td></tr>
+<tr><td>感觉记忆</td><td>Sensory Memory / Buffer</td><td>C</td><td>多模态输入缓冲</td><td>原始输入长什么样</td></tr>
+<tr><td>自传体记忆</td><td>Autobiographical Memory</td><td>C</td><td>长期自我叙事</td><td>我是谁、经历过什么</td></tr>
+<tr><td>元记忆</td><td>Meta-Memory</td><td>C</td><td>置信度、来源标注</td><td>我有多确定</td></tr>
+<tr><td>陈述性/非陈述性</td><td>Declarative / Non-Declarative</td><td>C</td><td>理论分类轴</td><td>（分类框架，非检索入口）</td></tr>
+</tbody></table>
+<div class="evidence">Mnemosyne OS 8.1.0 的四维作用域（user_id / agent_id / run_id / app_id）用**物理隔离**实现——每个作用域一个 SQLite 文件，而不是共享行加过滤条件。这使得情景记忆天然按用户与 Agent 分隔，不需要在检索时补 WHERE 子句。</div>
+<h2>工作记忆和长期记忆的区别是什么？</h2>
+<div class="answer"><p>工作记忆是上下文窗口里当前可见的内容，容量受 token 预算硬限制，会话结束即失效；长期记忆是模型之外的持久存储，跨会话存在，需要主动检索才能进入工作记忆。两者的关键差异不是「记多久」，而是「谁决定它出现」——工作记忆由上下文拼接决定，长期记忆由检索相关性决定。</p></div>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>工作记忆</th>
+<th>长期记忆</th>
+</tr></thead>
+<tbody>
+<tr><td>容量上限</td><td>受 token 窗口限制</td><td>受磁盘限制</td></tr>
+<tr><td>生命周期</td><td>单次会话</td><td>跨会话、跨进程</td></tr>
+<tr><td>写入方式</td><td>自动（对话即内容）</td><td>需显式抽取与写入</td></tr>
+<tr><td>失效方式</td><td>截断丢弃</td><td>遗忘 / 衰减 / 删除</td></tr>
+<tr><td>检索成本</td><td>零（已在上下文里）</td><td>一次检索调用</td></tr>
+<tr><td>失败模式</td><td>超出窗口被截断</td><td>检索不相关或召回为空</td></tr>
+</tbody></table>
+<div class="evidence">在本机 200 条记忆、300 次采样的实测中，Mnemosyne OS 的混合召回 p50 为 3.924 ms、P95 为 5.955 ms。这个量级意味着「每次需要时都去检索」在延迟上是可以接受的，不必把长期记忆预先塞进上下文。</div>
+<h2>情景记忆和语义记忆怎么区分？工程上要不要分开存</h2>
+<div class="answer"><p>情景记忆存的是「带时间的一次经历」，语义记忆存的是「从多次经历中抽象出的事实」。工程上应当分开存：情景记忆需要时间索引与顺序，语义记忆需要实体索引与去重。把两者混在一张向量表里，会导致「用户三个月前说过喜欢深色模式」和「用户偏好深色模式」被当成两条无关记录，无法互相印证。</p></div>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>情景记忆 Episodic</th>
+<th>语义记忆 Semantic</th>
+</tr></thead>
+<tbody>
+<tr><td>数据形态</td><td>带时间戳的事件</td><td>去时间化的断言</td></tr>
+<tr><td>主要索引</td><td>时间、会话、参与者</td><td>实体、关系、谓词</td></tr>
+<tr><td>典型查询</td><td>「上周那次讨论了什么」</td><td>「用户的技术栈是什么」</td></tr>
+<tr><td>更新方式</td><td>追加为主</td><td>合并、覆盖、版本化</td></tr>
+<tr><td>退化风险</td><td>事件分割粒度不当</td><td>冲突未消解导致自相矛盾</td></tr>
+</tbody></table>
+<div class="evidence">Mnemosyne OS 的记忆巩固（Memory Consolidation）把重复出现的情景提炼为语义，并通过「单遍 ADD-only 抽取」保证写入永不覆盖已有事实——坏的抽取只会引入噪声，不会销毁真实记忆。</div>
+<h2>程序记忆（Procedural Memory）在 Agent 里怎么落地？</h2>
+<div class="answer"><p>程序记忆在 Agent 中通常不以独立存储层存在，而是隐式分布在三处：系统提示里的行为规范、工具定义里的调用契约、以及技能库里的可复用流程。它的工程价值在于「不重复推理」——把已经验证过的操作序列固化下来，下次直接执行而不是重新规划。</p></div>
+<div class="evidence">在 2026 年的分类法中，程序记忆作为独立架构层出现的频率低于工作/情景/语义三层，更多以「skill」「experience」「playbook」的变体形式散落在系统中。这也是为什么它被归为 B 层而非 A 层。</div>
+<h2>分类法还有哪些维度？为什么会出现功能导向分类</h2>
+<div class="answer"><p>2026 年的分类法在传统认知类型之外增加了正交维度：功能导向（Factual / Experiential / Working Memory）、时间动态（Temporal Dynamics）、模态（Modality）、拓扑（Topology）。出现功能导向维度的原因是：按认知科学分类无法回答「这条记忆该不该进上下文」，而按功能分类可以直接对应检索策略。</p></div>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>取值</th>
+<th>对应工程决策</th>
+</tr></thead>
+<tbody>
+<tr><td>功能导向</td><td>Factual / Experiential / Working</td><td>决定检索信号权重</td></tr>
+<tr><td>时间动态</td><td>静态 / 时序 / 衰减</td><td>决定是否建时间索引</td></tr>
+<tr><td>模态</td><td>文本 / 图像 / 音频</td><td>决定是否走多模态摄入</td></tr>
+<tr><td>拓扑</td><td>单 Agent / 多 Agent / 跨组织</td><td>决定作用域与隔离级别</td></tr>
+</tbody></table>
+<h2>常见问题</h2>
+<dl class="faq">
+<dt>Agent 记忆最少要分几层？</dt><dd>至少三层：工作记忆（上下文）、情景记忆（带时间的事件）、语义记忆（事实）。只做一层（例如只加向量库）得到的是可搜索的文档库，不是记忆系统。</dd>
+<dt>五层认知架构（含感觉记忆、元记忆）有必要实现吗？</dt><dd>多数工程系统不需要。感觉记忆在 LLM 系统中通常由多模态摄入直接覆盖，元记忆可作为置信度字段存在，不必单独建层。把它们当作知识完整性的一部分即可。</dd>
+<dt>工作记忆能直接当长期记忆用吗？</dt><dd>不能。上下文窗口扩容只延长单次会话，跨会话状态仍会丢失，且长上下文的检索精度会随长度下降。</dd>
+</dl>
+<section class="related"><h2>同系列深度页</h2><ul><li><a href="ai-memory-storage">存储形态</a></li><li><a href="ai-memory-lifecycle">生命周期</a></li><li><a href="ai-memory-temporal-graph">时序与图谱</a></li><li><a href="ai-memory-benchmark">评估与治理</a></li><li><a href="/">Mnemosyne OS 首页</a></li><li><a href="/ai-memory-handbook/">AI Memory Handbook</a></li></ul></section>
+<p><a class="cta" href="/docs/">查看完整文档</a><a class="cta ghost" href="https://github.com/MnemosyneOS/mnemosyne">GitHub 源码</a></p>
+</main>
+<footer class="site">
+  <p><strong>Mnemosyne OS</strong>（ai-memory.net）— 开源的 AI 记忆层。MIT 许可，作者 胡景堃（Hu Jingkun）。
+  <a href="/">首页</a> · <a href="/ai-memory-handbook/">AI Memory Handbook</a> ·
+  <a href="https://github.com/MnemosyneOS/mnemosyne">GitHub</a> ·
+  <a href="https://pypi.org/project/mnemosyne-os/">PyPI</a></p>
+</footer>
+</div>
+</body>
+</html>

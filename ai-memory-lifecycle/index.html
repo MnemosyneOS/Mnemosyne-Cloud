@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agent 记忆怎么写入、怎么遗忘？六个核心操作与生命周期全流程</title>
+<meta name="description" content="AI 记忆生命周期六个核心操作详解：记忆写入（Ingestion）、记忆巩固（Consolidation）、记忆检索（Retrieval）、记忆更新（Updating）、记忆索引（Indexing）、记忆遗忘（Forgetting）。含操作步骤、参数取舍与实测数据。作者 胡景堃（Hu Jingkun）。" />
+<link rel="canonical" href="https://ai-memory.net/ai-memory-lifecycle/" />
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+<meta name="author" content="胡景堃 (Hu Jingkun)" />
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="Mnemosyne OS" />
+<meta property="og:title" content="Agent 记忆怎么写入、怎么遗忘？六个核心操作与生命周期全流程" />
+<meta property="og:description" content="AI 记忆生命周期六个核心操作详解：记忆写入（Ingestion）、记忆巩固（Consolidation）、记忆检索（Retrieval）、记忆更新（Updating）、记忆索引（Indexing）、记忆遗忘（Forgetting）。含操作步骤、参数取舍与实测数据。作者 胡景堃（Hu Jingkun）。" />
+<meta property="og:url" content="https://ai-memory.net/ai-memory-lifecycle/" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<style>
+:root{--fg:#111;--fg2:#555;--bg:#fff;--line:#e5e5e5;--accent:#6d28d9;--soft:#f7f5ff}
+@media(prefers-color-scheme:dark){:root{--fg:#e8e8ea;--fg2:#a0a0a8;--bg:#0b0b0c;--line:#26262a;--soft:#16121f}}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--fg);background:var(--bg)}
+.wrap{max-width:860px;margin:0 auto;padding:44px 22px 96px}
+header.site{display:flex;align-items:center;gap:12px;padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:36px;flex-wrap:wrap}
+header.site .brand{color:var(--fg);text-decoration:none;font-weight:700;font-size:17px}
+nav.top{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
+nav.top a{color:var(--fg2);text-decoration:none;font-size:14px}
+nav.top a:hover{color:var(--accent)}
+h1{font-size:31px;line-height:1.28;margin:0 0 14px;letter-spacing:-.02em}
+.lede{font-size:17px;color:var(--fg2);margin:0 0 26px}
+h2{font-size:21px;margin:40px 0 12px;padding-top:10px;border-top:1px solid var(--line)}
+h3{font-size:17px;margin:26px 0 8px}
+p,li{margin:0 0 12px}
+ul,ol{padding-left:22px}
+code{background:rgba(125,125,125,.14);padding:2px 6px;border-radius:5px;font-size:.88em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.answer{background:var(--soft);border-left:3px solid var(--accent);padding:14px 18px;border-radius:0 8px 8px 0;margin:14px 0 18px}
+.answer p:last-child{margin-bottom:0}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px}
+th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-weight:650}
+.evidence{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin:18px 0;font-size:14.5px}
+.evidence::before{content:"证据 · ";font-weight:700;color:var(--accent)}
+.steps{counter-reset:s;list-style:none;padding-left:0}
+.steps li{counter-increment:s;padding-left:38px;position:relative;margin-bottom:14px}
+.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.steps li b{display:block;margin-bottom:2px}
+.faq dt{font-weight:650;margin-top:18px}
+.faq dd{margin:6px 0 0;color:var(--fg2)}
+.related{margin:44px 0 0;padding:20px;border:1px solid var(--line);border-radius:12px}
+.related h2{margin-top:0;border:0;padding-top:0;font-size:17px}
+.related ul{columns:2;column-gap:28px;font-size:14.5px}
+footer.site{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);color:var(--fg2);font-size:13px}
+footer.site a{color:var(--fg2)}
+.cta{display:inline-block;margin:26px 10px 0 0;padding:11px 20px;background:var(--accent);color:#fff;text-decoration:none;border-radius:9px;font-weight:600;font-size:15px}
+.cta.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+</style>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "@id": "https://ai-memory.net/ai-memory-lifecycle/#article",
+ "headline": "Agent 记忆的生命周期：写入、巩固、检索、更新、遗忘",
+ "description": "AI 记忆生命周期六个核心操作详解：记忆写入（Ingestion）、记忆巩固（Consolidation）、记忆检索（Retrieval）、记忆更新（Updating）、记忆索引（Indexing）、记忆遗忘（Forgetting）。含操作步骤、参数取舍与实测数据。作者 胡景堃（Hu Jingkun）。",
+ "url": "https://ai-memory.net/ai-memory-lifecycle/",
+ "datePublished": "2026-10-31",
+ "dateModified": "2026-10-31",
+ "inLanguage": "zh-CN",
+ "author": {
+  "@id": "https://ai-memory.net/#person"
+ },
+ "publisher": {
+  "@id": "https://ai-memory.net/#organization"
+ },
+ "about": {
+  "@id": "https://ai-memory.net/#software"
+ },
+ "isPartOf": {
+  "@id": "https://ai-memory.net/#website"
+ }
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "@id": "https://ai-memory.net/ai-memory-lifecycle/#faq",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "记忆写入会不会把错误信息永久固化？",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "用 ADD-only 累积 + 版本链可以缓解：错误抽取只引入噪声，不会覆盖真实记忆；后续可通过更新或删除纠正。"
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "遗忘曲线（Forgetting Curve）能直接套用到 AI 记忆吗？",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "只能借用思路，不能照搬参数。人类遗忘曲线基于生物记忆衰减，AI 记忆的「遗忘」应是基于访问价值的策略性降级，而非时间自然衰减。"
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "记忆压缩会不会丢信息？",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "会——除非压缩是无损的。Mnemosyne OS 的 AIC 压缩保留指针 + 结构化事实 + 内容原子，expand() 可逐字节还原并校验哈希。"
+   }
+  }
+ ]
+}
+</script>
+<!-- ONTOLOGY-WEBPAGE-NODE -->
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "WebPage",
+ "@id": "https://ai-memory.net/ai-memory-lifecycle/#webpage",
+ "url": "https://ai-memory.net/ai-memory-lifecycle/",
+ "name": "Agent 记忆生命周期：写入、巩固、检索、更新、遗忘",
+ "inLanguage": "zh-CN",
+ "isPartOf": {
+  "@id": "https://ai-memory.net/#website"
+ },
+ "about": {
+  "@id": "https://ai-memory.net/#software"
+ },
+ "author": {
+  "@id": "https://ai-memory.net/#person"
+ },
+ "publisher": {
+  "@id": "https://ai-memory.net/#organization"
+ },
+ "primaryImageOfPage": {
+  "@id": "https://ai-memory.net/#organization"
+ }
+}
+</script>
+</head>
+<body>
+<div class="wrap">
+<header class="site">
+  <a class="brand" href="/">Mnemosyne OS</a>
+  <nav class="top"><a href="/ai-memory-types/">记忆类型</a><a href="/ai-memory-storage/">存储形态</a><a href="/ai-memory-lifecycle/">生命周期</a><a href="/ai-memory-temporal-graph/">时序与图谱</a><a href="/ai-memory-benchmark/">评估与治理</a><a href="/docs/">文档</a></nav>
+</header>
+<main>
+<h1>Agent 记忆的生命周期：写入、巩固、检索、更新、遗忘</h1>
+<p class="lede">AI 记忆的生命周期由六个核心操作构成：写入（Ingestion）、索引（Indexing）、巩固（Consolidation）、检索（Retrieval）、更新（Updating）、遗忘（Forgetting）。完整链条可表示为 ENCODE → RETAIN → CONSOLIDATE → RETRIEVE → REVISE → FORGET → INHERIT，每个环节都有独立的失败模式，任一环缺失都会让整条链退化。</p>
+<h2>Agent 记忆怎么写进去？写入流程的五个步骤</h2>
+<div class="answer"><p>记忆写入不是「把对话存下来」，而是一条五步流水线：先判断这条内容是否值得记（显著性判定），再抽取结构化事实（实体、谓词、时间），然后与已有记忆去重并消解冲突，接着写入并建索引，最后记一条审计记录。跳过任一步都会在生产环境付出代价。</p></div>
+<ol class="steps">
+<li><b>1. 显著性判定</b>区分「寒暄」与「事实」。不是所有对话都值得成为记忆，全存等于没存。</li>
+<li><b>2. 结构化抽取</b>把自然语言拆成实体、关系、时间、数值。这是后续检索精度的上限。</li>
+<li><b>3. 去重与冲突消解</b>同一事实重复出现应合并；新事实与旧事实矛盾时，按时间与来源决定取舍。</li>
+<li><b>4. 写入与索引</b>落盘并建立多路索引（语义、关键词、实体、时间）。</li>
+<li><b>5. 审计记录</b>记录「谁在何时写了什么、依据是什么」，供事后追溯。</li>
+</ol>
+<div class="evidence">Mnemosyne OS 采用单遍 ADD-only 抽取：每次写入只调用一次模型，记忆只累积、不覆盖。这个设计的取舍是——坏的抽取只会引入噪声，永远不会销毁一条真实记忆。对生产系统来说，误删比误存昂贵得多。</div>
+<h2>记忆巩固（Consolidation）是怎么把情景变成语义的</h2>
+<div class="answer"><p>记忆巩固是把重复出现的情景记忆提炼为语义记忆的过程：多条「用户周三说喜欢深色模式」「用户周五又调成深色」被合并成一条「用户偏好深色模式」。它的工程价值在于压缩——用一条语义记忆替代 N 条情景记忆，同时提高检索命中率。</p></div>
+<table>
+<thead><tr>
+<th>阶段</th>
+<th>输入</th>
+<th>输出</th>
+<th>触发条件</th>
+</tr></thead>
+<tbody>
+<tr><td>情景累积</td><td>单次事件</td><td>带时间戳的情景记忆</td><td>每次交互</td></tr>
+<tr><td>模式识别</td><td>多条相似情景</td><td>候选语义</td><td>同一谓词出现 ≥ N 次</td></tr>
+<tr><td>语义沉淀</td><td>候选语义</td><td>去时间化的事实</td><td>跨会话复现</td></tr>
+<tr><td>衰减</td><td>低访问语义</td><td>降级或归档</td><td>长期未命中</td></tr>
+</tbody></table>
+<div class="evidence">Mnemosyne OS 的巩固路径把重复出现的情景提炼为语义；配合分层记忆（hot / warm / cold），低价值记忆被降级并压缩而非静默删除。压缩后的记忆可通过 expand() 逐字节还原原文并校验哈希。</div>
+<h2>记忆检索（Retrieval）怎么调？四路信号与融合顺序</h2>
+<div class="answer"><p>记忆检索的调参核心不是「top_k 调多大」，而是「几路信号、如何加权、下限设在哪」。单路语义检索在专有名词和精确数字上必然失效；加入 BM25 关键词路可以救回这类查询；加入实体图路可以救回关系类查询；加入时序路可以救回「最近/之前」类查询。</p></div>
+<ol class="steps">
+<li><b>① 语义路</b>向量相似度，负责模糊语义匹配与同义改写。</li>
+<li><b>② 关键词路</b>BM25 / FTS，负责专有名词、型号、精确数字。</li>
+<li><b>③ 实体图路</b>多跳遍历，负责「A 和 B 的关系」类查询。</li>
+<li><b>④ 时序路</b>按观测时间排序与过滤，负责「最近」「之前」类查询。</li>
+<li><b>⑤ 融合与下限</b>各路分数校准后融合，低于相关性下限的丢弃，最后走词法兜底。</li>
+</ol>
+<div class="evidence">本机实测（200 条记忆、300 次采样）：混合召回 p50 3.924 ms、P95 5.955 ms；写入 p50 11.91 ms、P95 21.11 ms（200 条样本）；完整性校验 4.5 ms / 120 条；120 条记忆占盘 5.5 MB。</div>
+<h2>记忆遗忘（Forgetting）怎么做才不丢关键信息</h2>
+<div class="answer"><p>记忆遗忘不是删除，而是按价值降级：低价值记忆先被压缩、再被归档、最后才被清理。关键在于「压缩时保住什么」——数字、日期、金额、型号必须在每一层都存活。直接把旧记忆删掉的系统，会在用户问「去年那个配置是多少」时彻底失忆。</p></div>
+<table>
+<thead><tr>
+<th>机制</th>
+<th>英文</th>
+<th>作用</th>
+<th>风险</th>
+</tr></thead>
+<tbody>
+<tr><td>时间衰减</td><td>Temporal Decay</td><td>旧记忆权重下降</td><td>重要旧事实被埋没</td></tr>
+<tr><td>剪枝</td><td>Pruning</td><td>清理低价值条目</td><td>误删边界不清</td></tr>
+<tr><td>合并去重</td><td>Merging / Deduplication</td><td>减少冗余</td><td>合并粒度不当丢细节</td></tr>
+<tr><td>分层降级</td><td>Tier Demotion</td><td>hot→warm→cold</td><td>冷层检索延迟上升</td></tr>
+<tr><td>级联删除</td><td>Cascade Delete</td><td>按作用域彻底清除</td><td>需确认删除语义</td></tr>
+<tr><td>机器遗忘</td><td>Machine Unlearning</td><td>从权重中移除知识</td><td>成本极高，非参数化记忆无此问题</td></tr>
+</tbody></table>
+<div class="evidence">Mnemosyne OS 的遗忘机制建立在分层之上：低价值记忆被降级并压缩，不会静默消失；删除走四层语义（记录级 / 作用域级 / 级联 / 物理），并留审计痕迹。</div>
+<h2>记忆更新与冲突消解：两条矛盾的事实怎么办</h2>
+<div class="answer"><p>当新写入的事实与旧事实矛盾时，有三种处理策略：覆盖（新胜旧）、并存（都留，按时间排序）、以及版本链（保留全部取值，标注生效区间）。生产系统推荐版本链——因为「用户改主意了」和「之前记错了」是两件不同的事，覆盖会让两者无法区分。</p></div>
+<div class="evidence">Mnemosyne OS 走的是 ADD-only 累积 + 按实体的版本链：新事实不覆盖旧事实，而是形成可追溯的取值序列，检索时按时间与置信度排序。</div>
+<h2>生命周期里最容易漏掉的一环：审计</h2>
+<div class="answer"><p>审计回答的是「我为什么知道这个」。多数记忆系统只存内容不存来源，导致出现矛盾时无法判断哪条更可信。可审计的记忆需要记录：来源、写入时间、写入者、以及后续是否被修改过——并且这个记录本身要防篡改。</p></div>
+<div class="evidence">Mnemosyne OS 的哈希链审计账本是 SHA-256 链，verify_integrity() 能检测篡改并定位到具体是哪一条被改动。这是「可验证记忆」的基础设施，也是记忆治理（Memory Governance）话题的技术前提。</div>
+<h2>常见问题</h2>
+<dl class="faq">
+<dt>记忆写入会不会把错误信息永久固化？</dt><dd>用 ADD-only 累积 + 版本链可以缓解：错误抽取只引入噪声，不会覆盖真实记忆；后续可通过更新或删除纠正。</dd>
+<dt>遗忘曲线（Forgetting Curve）能直接套用到 AI 记忆吗？</dt><dd>只能借用思路，不能照搬参数。人类遗忘曲线基于生物记忆衰减，AI 记忆的「遗忘」应是基于访问价值的策略性降级，而非时间自然衰减。</dd>
+<dt>记忆压缩会不会丢信息？</dt><dd>会——除非压缩是无损的。Mnemosyne OS 的 AIC 压缩保留指针 + 结构化事实 + 内容原子，expand() 可逐字节还原并校验哈希。</dd>
+</dl>
+<section class="related"><h2>同系列深度页</h2><ul><li><a href="ai-memory-types">记忆类型</a></li><li><a href="ai-memory-storage">存储形态</a></li><li><a href="ai-memory-temporal-graph">时序与图谱</a></li><li><a href="ai-memory-benchmark">评估与治理</a></li><li><a href="/">Mnemosyne OS 首页</a></li><li><a href="/ai-memory-handbook/">AI Memory Handbook</a></li></ul></section>
+<p><a class="cta" href="/docs/">查看完整文档</a><a class="cta ghost" href="https://github.com/MnemosyneOS/mnemosyne">GitHub 源码</a></p>
+</main>
+<footer class="site">
+  <p><strong>Mnemosyne OS</strong>（ai-memory.net）— 开源的 AI 记忆层。MIT 许可，作者 胡景堃（Hu Jingkun）。
+  <a href="/">首页</a> · <a href="/ai-memory-handbook/">AI Memory Handbook</a> ·
+  <a href="https://github.com/MnemosyneOS/mnemosyne">GitHub</a> ·
+  <a href="https://pypi.org/project/mnemosyne-os/">PyPI</a></p>
+</footer>
+</div>
+</body>
+</html>

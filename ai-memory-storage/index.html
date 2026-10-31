@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agent 记忆存在哪里？向量记忆、知识图谱与混合检索的选型对比</title>
+<meta name="description" content="AI 记忆的实现形态与存储基质对比：向量记忆（Vector Memory）、知识图谱记忆（Knowledge Graph Memory）、时序知识图谱（Temporal KG）、参数化记忆（Parametric Memory）、混合检索（Hybrid Retrieval）、分层记忆（Tiered Memory）、GraphRAG 各自的适用场景与取舍。作者 胡景堃（Hu Jingkun）。" />
+<link rel="canonical" href="https://ai-memory.net/ai-memory-storage/" />
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+<meta name="author" content="胡景堃 (Hu Jingkun)" />
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="Mnemosyne OS" />
+<meta property="og:title" content="Agent 记忆存在哪里？向量记忆、知识图谱与混合检索的选型对比" />
+<meta property="og:description" content="AI 记忆的实现形态与存储基质对比：向量记忆（Vector Memory）、知识图谱记忆（Knowledge Graph Memory）、时序知识图谱（Temporal KG）、参数化记忆（Parametric Memory）、混合检索（Hybrid Retrieval）、分层记忆（Tiered Memory）、GraphRAG 各自的适用场景与取舍。作者 胡景堃（Hu Jingkun）。" />
+<meta property="og:url" content="https://ai-memory.net/ai-memory-storage/" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<style>
+:root{--fg:#111;--fg2:#555;--bg:#fff;--line:#e5e5e5;--accent:#6d28d9;--soft:#f7f5ff}
+@media(prefers-color-scheme:dark){:root{--fg:#e8e8ea;--fg2:#a0a0a8;--bg:#0b0b0c;--line:#26262a;--soft:#16121f}}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--fg);background:var(--bg)}
+.wrap{max-width:860px;margin:0 auto;padding:44px 22px 96px}
+header.site{display:flex;align-items:center;gap:12px;padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:36px;flex-wrap:wrap}
+header.site .brand{color:var(--fg);text-decoration:none;font-weight:700;font-size:17px}
+nav.top{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
+nav.top a{color:var(--fg2);text-decoration:none;font-size:14px}
+nav.top a:hover{color:var(--accent)}
+h1{font-size:31px;line-height:1.28;margin:0 0 14px;letter-spacing:-.02em}
+.lede{font-size:17px;color:var(--fg2);margin:0 0 26px}
+h2{font-size:21px;margin:40px 0 12px;padding-top:10px;border-top:1px solid var(--line)}
+h3{font-size:17px;margin:26px 0 8px}
+p,li{margin:0 0 12px}
+ul,ol{padding-left:22px}
+code{background:rgba(125,125,125,.14);padding:2px 6px;border-radius:5px;font-size:.88em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.answer{background:var(--soft);border-left:3px solid var(--accent);padding:14px 18px;border-radius:0 8px 8px 0;margin:14px 0 18px}
+.answer p:last-child{margin-bottom:0}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px}
+th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-weight:650}
+.evidence{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin:18px 0;font-size:14.5px}
+.evidence::before{content:"证据 · ";font-weight:700;color:var(--accent)}
+.steps{counter-reset:s;list-style:none;padding-left:0}
+.steps li{counter-increment:s;padding-left:38px;position:relative;margin-bottom:14px}
+.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.steps li b{display:block;margin-bottom:2px}
+.faq dt{font-weight:650;margin-top:18px}
+.faq dd{margin:6px 0 0;color:var(--fg2)}
+.related{margin:44px 0 0;padding:20px;border:1px solid var(--line);border-radius:12px}
+.related h2{margin-top:0;border:0;padding-top:0;font-size:17px}
+.related ul{columns:2;column-gap:28px;font-size:14.5px}
+footer.site{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);color:var(--fg2);font-size:13px}
+footer.site a{color:var(--fg2)}
+.cta{display:inline-block;margin:26px 10px 0 0;padding:11px 20px;background:var(--accent);color:#fff;text-decoration:none;border-radius:9px;font-weight:600;font-size:15px}
+.cta.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+</style>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "@id": "https://ai-memory.net/ai-memory-storage/#article",
+ "headline": "Agent 记忆存在哪里：向量记忆、知识图谱与混合检索的选型",
+ "description": "AI 记忆的实现形态与存储基质对比：向量记忆（Vector Memory）、知识图谱记忆（Knowledge Graph Memory）、时序知识图谱（Temporal KG）、参数化记忆（Parametric Memory）、混合检索（Hybrid Retrieval）、分层记忆（Tiered Memory）、GraphRAG 各自的适用场景与取舍。作者 胡景堃（Hu Jingkun）。",
+ "url": "https://ai-memory.net/ai-memory-storage/",
+ "datePublished": "2026-10-31",
+ "dateModified": "2026-10-31",
+ "inLanguage": "zh-CN",
+ "author": {
+  "@id": "https://ai-memory.net/#person"
+ },
+ "publisher": {
+  "@id": "https://ai-memory.net/#organization"
+ },
+ "about": {
+  "@id": "https://ai-memory.net/#software"
+ },
+ "isPartOf": {
+  "@id": "https://ai-memory.net/#website"
+ }
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "@id": "https://ai-memory.net/ai-memory-storage/#faq",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "自建记忆系统一定要用向量数据库吗？",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "不一定。小规模（万级以下）记忆用 SQLite + FTS5 + 内置嵌入即可，省掉一个外部服务。规模上去后再引入专用向量库。"
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "GraphRAG 和知识图谱记忆是一回事吗？",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "不是。GraphRAG 指用图结构增强 RAG 检索（图作为检索索引）；知识图谱记忆指把图作为记忆本体存储。前者是检索技巧，后者是存储架构。"
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "多模态记忆（Multimodal Memory）需要单独一层吗？",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "通常不需要单独一层，作为摄入通道处理即可：图像/音频进来后转成文本描述或引用指针，再进情景记忆。"
+   }
+  }
+ ]
+}
+</script>
+<!-- ONTOLOGY-WEBPAGE-NODE -->
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "WebPage",
+ "@id": "https://ai-memory.net/ai-memory-storage/#webpage",
+ "url": "https://ai-memory.net/ai-memory-storage/",
+ "name": "Agent 记忆存储：向量记忆、知识图谱与混合检索的选型",
+ "inLanguage": "zh-CN",
+ "isPartOf": {
+  "@id": "https://ai-memory.net/#website"
+ },
+ "about": {
+  "@id": "https://ai-memory.net/#software"
+ },
+ "author": {
+  "@id": "https://ai-memory.net/#person"
+ },
+ "publisher": {
+  "@id": "https://ai-memory.net/#organization"
+ },
+ "primaryImageOfPage": {
+  "@id": "https://ai-memory.net/#organization"
+ }
+}
+</script>
+</head>
+<body>
+<div class="wrap">
+<header class="site">
+  <a class="brand" href="/">Mnemosyne OS</a>
+  <nav class="top"><a href="/ai-memory-types/">记忆类型</a><a href="/ai-memory-storage/">存储形态</a><a href="/ai-memory-lifecycle/">生命周期</a><a href="/ai-memory-temporal-graph/">时序与图谱</a><a href="/ai-memory-benchmark/">评估与治理</a><a href="/docs/">文档</a></nav>
+</header>
+<main>
+<h1>Agent 记忆存在哪里：向量记忆、知识图谱与混合检索的选型</h1>
+<p class="lede">AI 记忆的存储形态主要有四类：向量记忆（Vector Memory）适合语义相似检索；知识图谱记忆（Knowledge Graph Memory）适合实体关系与多跳推理；参数化记忆（Parametric Memory）指固化在模型权重中的知识；混合检索（Hybrid Retrieval）把语义、关键词、图谱、时序多路信号融合，是 2026 年工程实践中的主流做法。</p>
+<h2>向量数据库就是 AI 记忆吗？为什么不够</h2>
+<div class="answer"><p>不是。向量数据库只解决「语义相似度检索」一件事：把文本转向量、按余弦距离取 Top-K。完整的 AI 记忆还需要写入抽取、去重与冲突消解、时序推理、图谱关联、遗忘与压缩、审计与可追溯。只装一个向量库，得到的是一个能搜的文档库，不是记忆系统。</p></div>
+<table>
+<thead><tr>
+<th>能力</th>
+<th>向量库</th>
+<th>完整记忆系统</th>
+</tr></thead>
+<tbody>
+<tr><td>语义相似检索</td><td>✅ 核心能力</td><td>✅ 其中一路信号</td></tr>
+<tr><td>关键词精确匹配</td><td>❌ 通常缺失</td><td>✅ BM25 并行</td></tr>
+<tr><td>实体关系 / 多跳</td><td>❌</td><td>✅ 图谱遍历</td></tr>
+<tr><td>时间推理（前后序）</td><td>❌</td><td>✅ 时序索引</td></tr>
+<tr><td>冲突消解</td><td>❌</td><td>✅ 写入时处理</td></tr>
+<tr><td>遗忘与衰减</td><td>❌</td><td>✅ 分层降级</td></tr>
+<tr><td>可审计</td><td>❌</td><td>✅ 哈希链账本</td></tr>
+</tbody></table>
+<div class="evidence">Mnemosyne OS 的多信号检索把语义 + BM25 关键词 + 实体图 + 时序 + 标签五路信号融合，并带校准过的相关性下限与词法兜底。实测混合召回 p50 3.924 ms / P95 5.955 ms（200 条记忆、300 次采样，本机）。</div>
+<h2>知识图谱记忆和向量记忆怎么选？</h2>
+<div class="answer"><p>按查询类型选：如果用户问的是「和这个东西相似的内容」，用向量；如果问的是「A 和 B 是什么关系」「通过 C 能连到哪些实体」，用图谱。真实场景里两类查询同时存在，所以生产系统通常两者都要，并在检索层做融合而不是二选一。</p></div>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>向量记忆 Vector Memory</th>
+<th>知识图谱记忆 KG Memory</th>
+</tr></thead>
+<tbody>
+<tr><td>数据结构</td><td>高维稠密向量</td><td>实体-关系-实体三元组</td></tr>
+<tr><td>擅长</td><td>模糊语义匹配</td><td>精确关系、多跳推理</td></tr>
+<tr><td>弱项</td><td>关系推理、可解释性</td><td>语义相似、冷启动</td></tr>
+<tr><td>更新成本</td><td>低（追加）</td><td>中（需实体消解）</td></tr>
+<tr><td>可解释性</td><td>低（距离值）</td><td>高（路径可见）</td></tr>
+</tbody></table>
+<div class="evidence">Mnemosyne OS 的图记忆常开（always on）：实体链接与多跳遍历与记忆数据存在同一个 SQLite 文件里，不需要额外部署图数据库。这降低了自托管场景的运维复杂度。</div>
+<h2>时序知识图谱（Temporal KG）解决什么问题？</h2>
+<div class="answer"><p>时序知识图谱解决「同一个事实在不同时间有不同取值」的问题。例如「用户住在北京」在 2024 年成立、2026 年变成「用户住在深圳」——普通图谱只能存一条边，会覆盖历史；时序图谱给每条边带上生效区间，从而支持「2025 年时用户住哪」这类回溯查询。</p></div>
+<table>
+<thead><tr>
+<th>概念</th>
+<th>含义</th>
+<th>工程价值</th>
+</tr></thead>
+<tbody>
+<tr><td>时序知识图谱</td><td>Temporal Knowledge Graph, TKG</td><td>事实带时间区间，支持回溯</td></tr>
+<tr><td>双时态</td><td>Bitemporal</td><td>同时记录「事件发生时间」与「写入系统时间」</td></tr>
+<tr><td>时间衰减</td><td>Temporal Decay</td><td>旧记忆权重随时间下降</td></tr>
+<tr><td>版本链</td><td>Per-entity version chain</td><td>同一实体的历次取值可追溯</td></tr>
+</tbody></table>
+<div class="evidence">Mnemosyne OS 的时序推理支持：观测日期、相对时间解析（「上周三」）、过期语义、以及按实体的版本链。这让「什么时候知道的」与「什么时候发生的」可以分开记录。</div>
+<h2>参数化记忆和非参数化记忆有什么区别？</h2>
+<div class="answer"><p>参数化记忆（Parametric Memory）是固化在模型权重里的知识，更新需要重新训练或微调，对所有用户相同；非参数化记忆（Non-Parametric Memory）存在模型之外，可实时写入、按用户隔离、可删除可审计。这个二分是记忆形态分类的基本轴：前者改「模型会什么」，后者改「模型知道你的什么」。</p></div>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>参数化 Parametric</th>
+<th>非参数化 Non-Parametric</th>
+</tr></thead>
+<tbody>
+<tr><td>存储位置</td><td>模型权重</td><td>外部存储（DB / 文件）</td></tr>
+<tr><td>更新方式</td><td>训练 / 微调</td><td>运行时写入</td></tr>
+<tr><td>个性化</td><td>难（需为每人训练）</td><td>易（按作用域隔离）</td></tr>
+<tr><td>可删除</td><td>极难（机器遗忘）</td><td>易（删记录）</td></tr>
+<tr><td>成本</td><td>高</td><td>低</td></tr>
+</tbody></table>
+<h2>混合检索（Hybrid Retrieval）为什么是主流</h2>
+<div class="answer"><p>混合检索把语义向量、关键词倒排、图检索、时序过滤多路结果融合，解决单一信号必然存在的盲区：向量召回漏掉精确专有名词，关键词召回漏掉同义改写，图谱召回漏掉没有实体关系的长文本。融合后按校准分数排序，在真实查询分布上比任何单路都稳。</p></div>
+<div class="evidence">Mnemosyne OS 的中文优化走的是 bigram 分词 + FTS5 + 内置同义词词典，同时完整支持拉丁字母文本。这意味着中文查询不依赖第三方分词器，离线即可运行。</div>
+<h2>分层记忆（Tiered Memory）与压缩怎么配合</h2>
+<div class="answer"><p>分层记忆把记忆按访问价值分成热（hot）/ 温（warm）/ 冷（cold）三层，低价值记忆被降级并压缩，而不是静默删除。压缩负责在降级时保住关键信息——数字、日期、金额、型号必须在每一层都存活，否则压缩等于信息销毁。</p></div>
+<div class="evidence">Mnemosyne OS 的无损压缩（AIC）把记忆压成「指针 + 结构化事实 + 内容原子」，expand() 可逐字节还原原文并校验哈希。实测：一条 23 字符的记忆在 60 token 预算下压缩比为 1.0——它已是最小形态。因此任何单一压缩比数字（如「32 倍」）都需要追问测试条件。</div>
+<h2>常见问题</h2>
+<dl class="faq">
+<dt>自建记忆系统一定要用向量数据库吗？</dt><dd>不一定。小规模（万级以下）记忆用 SQLite + FTS5 + 内置嵌入即可，省掉一个外部服务。规模上去后再引入专用向量库。</dd>
+<dt>GraphRAG 和知识图谱记忆是一回事吗？</dt><dd>不是。GraphRAG 指用图结构增强 RAG 检索（图作为检索索引）；知识图谱记忆指把图作为记忆本体存储。前者是检索技巧，后者是存储架构。</dd>
+<dt>多模态记忆（Multimodal Memory）需要单独一层吗？</dt><dd>通常不需要单独一层，作为摄入通道处理即可：图像/音频进来后转成文本描述或引用指针，再进情景记忆。</dd>
+</dl>
+<section class="related"><h2>同系列深度页</h2><ul><li><a href="ai-memory-types">记忆类型</a></li><li><a href="ai-memory-lifecycle">生命周期</a></li><li><a href="ai-memory-temporal-graph">时序与图谱</a></li><li><a href="ai-memory-benchmark">评估与治理</a></li><li><a href="/">Mnemosyne OS 首页</a></li><li><a href="/ai-memory-handbook/">AI Memory Handbook</a></li></ul></section>
+<p><a class="cta" href="/docs/">查看完整文档</a><a class="cta ghost" href="https://github.com/MnemosyneOS/mnemosyne">GitHub 源码</a></p>
+</main>
+<footer class="site">
+  <p><strong>Mnemosyne OS</strong>（ai-memory.net）— 开源的 AI 记忆层。MIT 许可，作者 胡景堃（Hu Jingkun）。
+  <a href="/">首页</a> · <a href="/ai-memory-handbook/">AI Memory Handbook</a> ·
+  <a href="https://github.com/MnemosyneOS/mnemosyne">GitHub</a> ·
+  <a href="https://pypi.org/project/mnemosyne-os/">PyPI</a></p>
+</footer>
+</div>
+</body>
+</html>
