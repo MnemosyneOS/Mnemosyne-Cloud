@@ -3,54 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Mem0 替代方案：迁移成本与实测对比（2026）· Mnemosyne OS</title>
-<meta name="description" content="客观对比 Mnemosyne OS 与 Mem0：核心依赖、11 个同名 MCP 工具、迁移清单、基准分数怎么读、默认零配置下的延迟实测。含不该迁移的场景说明。" />
-<link rel="canonical" href="https://ai-memory.net/mem0-alternative/" />
-<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
-<meta property="og:type" content="article" />
-<meta property="og:site_name" content="Mnemosyne OS" />
-<meta property="og:title" content="Mem0 替代方案：迁移成本与实测对比（2026）· Mnemosyne OS" />
-<meta property="og:description" content="客观对比 Mnemosyne OS 与 Mem0：核心依赖、11 个同名 MCP 工具、迁移清单、基准分数怎么读、默认零配置下的延迟实测。含不该迁移的场景说明。" />
-<meta property="og:url" content="https://ai-memory.net/mem0-alternative/" />
-<meta name="twitter:card" content="summary_large_image" />
-<link rel="alternate" type="text/markdown" href="/llms.txt" title="llms.txt" />
-<link rel="icon" href="/favicon.ico" sizes="any" />
-<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-<style>
-:root{--fg:#111;--fg2:#555;--bg:#fff;--line:#e5e5e5;--accent:#6d28d9;--soft:#f7f5ff}
-@media(prefers-color-scheme:dark){:root{--fg:#e8e8ea;--fg2:#a0a0a8;--bg:#0b0b0c;--line:#26262a;--soft:#16121f}}
-*{box-sizing:border-box}
-body{margin:0;font:16px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--fg);background:var(--bg)}
-.wrap{max-width:820px;margin:0 auto;padding:44px 22px 96px}
-header{display:flex;align-items:center;gap:12px;padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:36px;flex-wrap:wrap}
-header .brand{color:var(--fg);text-decoration:none;font-weight:700;font-size:17px}
-nav{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
-nav a{color:var(--fg2);text-decoration:none;font-size:14px}
-nav a:hover{color:var(--accent)}
-h1{font-size:31px;line-height:1.25;margin:0 0 14px;letter-spacing:-.02em}
-.lede{font-size:17px;color:var(--fg2);margin:0 0 26px}
-h2{font-size:21px;margin:38px 0 12px;padding-top:8px;border-top:1px solid var(--line)}
-h3{font-size:17px;margin:26px 0 8px}
-p,li{margin:0 0 12px}
-ul,ol{padding-left:22px}
-code{background:rgba(125,125,125,.14);padding:2px 6px;border-radius:5px;font-size:.88em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-pre{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:16px;overflow-x:auto;font-size:13.5px;line-height:1.6}
-pre code{background:none;padding:0}
-table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px}
-th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
-th{background:var(--soft);font-weight:650}
-.cta{display:inline-block;margin:26px 10px 0 0;padding:11px 20px;background:var(--accent);color:#fff;text-decoration:none;border-radius:9px;font-weight:600;font-size:15px}
-.cta.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
-.note{background:var(--soft);border-left:3px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0;margin:18px 0}
-.note p:last-child{margin-bottom:0}
-.related{margin:44px 0 0;padding:20px;border:1px solid var(--line);border-radius:12px}
-.related h2{margin-top:0;border:0;padding-top:0;font-size:17px}
-.related ul{columns:2;column-gap:28px;font-size:14.5px}
-footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);color:var(--fg2);font-size:13px}
-footer a{color:var(--fg2)}
-</style>
-<script type="application/ld+json">
+<title>Mem0 替代方案：迁移成本与实测对比 2026 · ai-memory.net</title>
+<meta name="description" content="客观对比 Mnemosyne OS 与 Mem0 / Zep / Letta：核心依赖、11 个同名 MCP 工具、迁移清单、基准分数怎么读、默认零配置下的延迟实测。含不该迁移的场景说明。开源 AI 记忆系统选型参考。作者 胡景堃（Hu Jingkun）。">
 {"@context":"https://schema.org","@type":"TechArticle",
 "headline":"Mem0 替代方案对比：依赖、工具名、迁移成本与实测数据",
 "description":"客观对比 Mnemosyne OS 与 Mem0：核心依赖、MCP 工具命名、数据存储形态、迁移步骤、基准分数与延迟实测。含可直接执行的迁移清单。",
@@ -462,6 +416,19 @@ python -c "import importlib.metadata as m; print([r for r in m.requires('mnemosy
 <p><a class="cta" href="/ai-agent-memory/">看完整接入指南 →</a><a class="cta ghost" href="https://github.com/MnemosyneOS/mnemosyne">对比源码</a></p>
 
 <section class="related"><h2>继续阅读</h2><ul><li><a href="/ai-memory/">什么是 AI 记忆</a><br><span style="color:var(--fg2);font-size:13px">概念、分层与遗忘经济学</span></li><li><a href="/ai-agent-memory/">给 AI Agent 加记忆</a><br><span style="color:var(--fg2);font-size:13px">从零接入的可执行路径</span></li><li><a href="/mcp-memory-server/">MCP 记忆服务器</a><br><span style="color:var(--fg2);font-size:13px">52 个工具与协议细节</span></li><li><a href="/self-hosted-ai-memory/">自托管 AI 记忆</a><br><span style="color:var(--fg2);font-size:13px">数据主权与部署形态</span></li></ul></section>
+
+<!-- START: SEO-KEYWORD-BLOCK -->
+<!-- 🔴 2026-10-31：静态关键词落地段。
+     背景：全站正文里 "ai-memory" 出现 0 次，用户搜域名/品类词搜不到本站。
+     本段是纯静态 HTML，每句陈述事实（不是关键词堆砌），
+     把产品名 / 域名 / 作者 / 品类词 / 相邻概念写进同一段文本。 -->
+<section class="seo-keywords" style="margin-top:44px;padding-top:22px;border-top:1px solid var(--line)">
+<h2>Mem0 替代方案：相关搜索词与延伸</h2>
+<p>搜替代方案时常见的词：<strong>Mem0 alternative</strong>、<strong>Mem0 替代</strong>、<strong>Mem0 对比</strong>、<strong>AI 记忆系统对比</strong>、<strong>agent memory comparison</strong>、<strong>Zep alternative</strong>、<strong>Letta alternative</strong>、<strong>开源记忆系统</strong>、<strong>self-hosted memory</strong>。选型的真正分水岭通常不是功能表，而是「迁移成本」与「数据在哪」。</p>
+<p>几个值得逐项核对的维度：<strong>核心依赖数量</strong>（是否需要向量库 / LLM 运行时）、<strong>工具命名是否兼容</strong>（换实现要不要改提示词）、<strong>数据落盘位置</strong>（本地 SQLite vs 托管）、<strong>审计能力</strong>（能否证明某条记忆何时被谁写入）、<strong>删除语义</strong>（级联删除是否彻底）。</p>
+<p>本页对比对象 <a href="https://github.com/MnemosyneOS/mnemosyne">Mnemosyne OS</a>（<strong>ai-memory.net</strong>）由 <strong>胡景堃（Hu Jingkun）</strong> 维护，核心零三方依赖、纯 SQLite、11 个 Mem0 同名工具。评测方法与陷阱见 <a href="/ai-memory-handbook/"><strong>AI Memory Handbook</strong></a> 第 16–17 章。</p>
+</section>
+<!-- END: SEO-KEYWORD-BLOCK -->
 </main>
 
 <footer>

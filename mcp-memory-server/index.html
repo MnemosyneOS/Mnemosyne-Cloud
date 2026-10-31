@@ -3,54 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>MCP 记忆服务器：52 个工具与协议详解（2026）· Mnemosyne OS</title>
-<meta name="description" content="Model Context Protocol 记忆服务器完整说明：协议握手、52 个工具分类用途、stdio 与 Streamable HTTP 选型、记忆类服务器特有的四项安全要求。" />
-<link rel="canonical" href="https://ai-memory.net/mcp-memory-server/" />
-<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
-<meta property="og:type" content="article" />
-<meta property="og:site_name" content="Mnemosyne OS" />
-<meta property="og:title" content="MCP 记忆服务器：52 个工具与协议详解（2026）· Mnemosyne OS" />
-<meta property="og:description" content="Model Context Protocol 记忆服务器完整说明：协议握手、52 个工具分类用途、stdio 与 Streamable HTTP 选型、记忆类服务器特有的四项安全要求。" />
-<meta property="og:url" content="https://ai-memory.net/mcp-memory-server/" />
-<meta name="twitter:card" content="summary_large_image" />
-<link rel="alternate" type="text/markdown" href="/llms.txt" title="llms.txt" />
-<link rel="icon" href="/favicon.ico" sizes="any" />
-<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-<style>
-:root{--fg:#111;--fg2:#555;--bg:#fff;--line:#e5e5e5;--accent:#6d28d9;--soft:#f7f5ff}
-@media(prefers-color-scheme:dark){:root{--fg:#e8e8ea;--fg2:#a0a0a8;--bg:#0b0b0c;--line:#26262a;--soft:#16121f}}
-*{box-sizing:border-box}
-body{margin:0;font:16px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--fg);background:var(--bg)}
-.wrap{max-width:820px;margin:0 auto;padding:44px 22px 96px}
-header{display:flex;align-items:center;gap:12px;padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:36px;flex-wrap:wrap}
-header .brand{color:var(--fg);text-decoration:none;font-weight:700;font-size:17px}
-nav{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
-nav a{color:var(--fg2);text-decoration:none;font-size:14px}
-nav a:hover{color:var(--accent)}
-h1{font-size:31px;line-height:1.25;margin:0 0 14px;letter-spacing:-.02em}
-.lede{font-size:17px;color:var(--fg2);margin:0 0 26px}
-h2{font-size:21px;margin:38px 0 12px;padding-top:8px;border-top:1px solid var(--line)}
-h3{font-size:17px;margin:26px 0 8px}
-p,li{margin:0 0 12px}
-ul,ol{padding-left:22px}
-code{background:rgba(125,125,125,.14);padding:2px 6px;border-radius:5px;font-size:.88em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-pre{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:16px;overflow-x:auto;font-size:13.5px;line-height:1.6}
-pre code{background:none;padding:0}
-table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px}
-th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
-th{background:var(--soft);font-weight:650}
-.cta{display:inline-block;margin:26px 10px 0 0;padding:11px 20px;background:var(--accent);color:#fff;text-decoration:none;border-radius:9px;font-weight:600;font-size:15px}
-.cta.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
-.note{background:var(--soft);border-left:3px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0;margin:18px 0}
-.note p:last-child{margin-bottom:0}
-.related{margin:44px 0 0;padding:20px;border:1px solid var(--line);border-radius:12px}
-.related h2{margin-top:0;border:0;padding-top:0;font-size:17px}
-.related ul{columns:2;column-gap:28px;font-size:14.5px}
-footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);color:var(--fg2);font-size:13px}
-footer a{color:var(--fg2)}
-</style>
-<script type="application/ld+json">
+<title>MCP 记忆服务器：52 个工具与协议详解 2026 · ai-memory.net</title>
+<meta name="description" content="Model Context Protocol 记忆服务器（MCP memory server）完整说明：协议握手、stdio 与 Streamable HTTP 选型、52 个工具分类用途、记忆类服务器的四项安全要求。适配 Claude Code、Cursor 等客户端。作者 胡景堃（Hu Jingkun）。">
 {"@context":"https://schema.org","@type":"TechArticle",
 "headline":"MCP 记忆服务器：Model Context Protocol 下的持久记忆",
 "description":"MCP（Model Context Protocol）记忆服务器的完整说明：协议握手、52 个工具的分类与用途、stdio 与 Streamable HTTP 两种传输、安全模型与配置示例。",
@@ -494,6 +448,19 @@ curl -X POST https://your-host/mcp   -H "Authorization: Bearer a-long-random-sec
 <p><a class="cta" href="/ai-agent-memory/">看完整接入指南 →</a><a class="cta ghost" href="https://github.com/MnemosyneOS/mnemosyne">GitHub 源码</a></p>
 
 <section class="related"><h2>继续阅读</h2><ul><li><a href="/ai-memory/">什么是 AI 记忆</a><br><span style="color:var(--fg2);font-size:13px">概念、分层与遗忘经济学</span></li><li><a href="/ai-agent-memory/">给 AI Agent 加记忆</a><br><span style="color:var(--fg2);font-size:13px">从零接入的可执行路径</span></li><li><a href="/mem0-alternative/">对比 Mem0</a><br><span style="color:var(--fg2);font-size:13px">工具名、依赖与迁移成本</span></li><li><a href="/self-hosted-ai-memory/">自托管 AI 记忆</a><br><span style="color:var(--fg2);font-size:13px">数据主权与部署形态</span></li></ul></section>
+
+<!-- START: SEO-KEYWORD-BLOCK -->
+<!-- 🔴 2026-10-31：静态关键词落地段。
+     背景：全站正文里 "ai-memory" 出现 0 次，用户搜域名/品类词搜不到本站。
+     本段是纯静态 HTML，每句陈述事实（不是关键词堆砌），
+     把产品名 / 域名 / 作者 / 品类词 / 相邻概念写进同一段文本。 -->
+<section class="seo-keywords" style="margin-top:44px;padding-top:22px;border-top:1px solid var(--line)">
+<h2>MCP 记忆服务器：相关搜索词与延伸</h2>
+<p>搜这个主题的人通常在找：<strong>MCP memory server</strong>、<strong>MCP 服务器</strong>、<strong>Model Context Protocol 记忆</strong>、<strong>MCP 工具</strong>、<strong>Claude Code 记忆</strong>、<strong>Cursor 记忆</strong>、<strong>AI 记忆 MCP</strong>、<strong>记忆服务器</strong>。这些词都指向「让支持 MCP 的客户端获得长期记忆」。</p>
+<p>协议层面需要区分 <strong>stdio</strong> 与 <strong>Streamable HTTP</strong> 两种传输：前者适合本地单机（客户端拉起子进程），后者适合远程多客户端共享。记忆类服务器还有额外要求：<strong>作用域隔离</strong>、<strong>写入前脱敏</strong>、<strong>可审计</strong>、<strong>可删除</strong>——因为记忆里装的是用户私有事实。</p>
+<p>本站的 MCP 记忆服务器是 <a href="https://github.com/MnemosyneOS/mnemosyne">Mnemosyne OS</a>（<strong>ai-memory.net</strong>），提供 52 个工具，其中 11 个与 Mem0 同名，迁移时无需改提示词。作者 <strong>胡景堃（Hu Jingkun）</strong>，方法论见 <a href="/ai-memory-handbook/"><strong>AI Memory Handbook</strong></a>。</p>
+</section>
+<!-- END: SEO-KEYWORD-BLOCK -->
 </main>
 
 <footer>

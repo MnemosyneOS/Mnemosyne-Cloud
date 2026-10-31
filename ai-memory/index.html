@@ -3,54 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>什么是 AI 记忆？AI Memory 完整解释（2026）· Mnemosyne OS</title>
-<meta name="description" content="AI 记忆是什么、为什么大模型会忘记、记忆系统的七个组成部分、评测基准与工程取舍。含 Mnemosyne OS 8.1.0 的本机实测延迟数据与复现方法。" />
-<link rel="canonical" href="https://ai-memory.net/ai-memory/" />
-<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
-<meta property="og:type" content="article" />
-<meta property="og:site_name" content="Mnemosyne OS" />
-<meta property="og:title" content="什么是 AI 记忆？AI Memory 完整解释（2026）· Mnemosyne OS" />
-<meta property="og:description" content="AI 记忆是什么、为什么大模型会忘记、记忆系统的七个组成部分、评测基准与工程取舍。含 Mnemosyne OS 8.1.0 的本机实测延迟数据与复现方法。" />
-<meta property="og:url" content="https://ai-memory.net/ai-memory/" />
-<meta name="twitter:card" content="summary_large_image" />
-<link rel="alternate" type="text/markdown" href="/llms.txt" title="llms.txt" />
-<link rel="icon" href="/favicon.ico" sizes="any" />
-<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-<style>
-:root{--fg:#111;--fg2:#555;--bg:#fff;--line:#e5e5e5;--accent:#6d28d9;--soft:#f7f5ff}
-@media(prefers-color-scheme:dark){:root{--fg:#e8e8ea;--fg2:#a0a0a8;--bg:#0b0b0c;--line:#26262a;--soft:#16121f}}
-*{box-sizing:border-box}
-body{margin:0;font:16px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--fg);background:var(--bg)}
-.wrap{max-width:820px;margin:0 auto;padding:44px 22px 96px}
-header{display:flex;align-items:center;gap:12px;padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:36px;flex-wrap:wrap}
-header .brand{color:var(--fg);text-decoration:none;font-weight:700;font-size:17px}
-nav{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
-nav a{color:var(--fg2);text-decoration:none;font-size:14px}
-nav a:hover{color:var(--accent)}
-h1{font-size:31px;line-height:1.25;margin:0 0 14px;letter-spacing:-.02em}
-.lede{font-size:17px;color:var(--fg2);margin:0 0 26px}
-h2{font-size:21px;margin:38px 0 12px;padding-top:8px;border-top:1px solid var(--line)}
-h3{font-size:17px;margin:26px 0 8px}
-p,li{margin:0 0 12px}
-ul,ol{padding-left:22px}
-code{background:rgba(125,125,125,.14);padding:2px 6px;border-radius:5px;font-size:.88em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-pre{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:16px;overflow-x:auto;font-size:13.5px;line-height:1.6}
-pre code{background:none;padding:0}
-table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px}
-th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
-th{background:var(--soft);font-weight:650}
-.cta{display:inline-block;margin:26px 10px 0 0;padding:11px 20px;background:var(--accent);color:#fff;text-decoration:none;border-radius:9px;font-weight:600;font-size:15px}
-.cta.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
-.note{background:var(--soft);border-left:3px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0;margin:18px 0}
-.note p:last-child{margin-bottom:0}
-.related{margin:44px 0 0;padding:20px;border:1px solid var(--line);border-radius:12px}
-.related h2{margin-top:0;border:0;padding-top:0;font-size:17px}
-.related ul{columns:2;column-gap:28px;font-size:14.5px}
-footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);color:var(--fg2);font-size:13px}
-footer a{color:var(--fg2)}
-</style>
-<script type="application/ld+json">
+<title>什么是 AI 记忆（AI Memory）？完整解释 2026 · ai-memory.net</title>
+<meta name="description" content="AI 记忆是什么、为什么大模型会忘记、记忆系统七个组成部分、语义记忆与情景记忆的区别、RAG 与向量数据库为何不够、评测基准与工程取舍。含 Mnemosyne OS 8.1.0 实测延迟与复现方法。作者 胡景堃（Hu Jingkun）。">
 {"@context":"https://schema.org","@type":"TechArticle",
 "headline":"什么是 AI 记忆：从上下文窗口到持久记忆层的完整解释",
 "description":"AI 记忆（AI memory）是什么、为什么大模型会忘记、记忆系统的五种分层、评测基准与工程取舍。以 Mnemosyne OS 8.1.0 的实测数据为例。",
@@ -390,6 +344,19 @@ footer a{color:var(--fg2)}
 <p><a class="cta" href="/ai-agent-memory/">给 AI Agent 加记忆 →</a><a class="cta ghost" href="https://github.com/MnemosyneOS/mnemosyne">查看源码</a></p>
 
 <section class="related"><h2>继续阅读</h2><ul><li><a href="/ai-agent-memory/">给 AI Agent 加记忆</a><br><span style="color:var(--fg2);font-size:13px">从零接入的可执行路径</span></li><li><a href="/mcp-memory-server/">MCP 记忆服务器</a><br><span style="color:var(--fg2);font-size:13px">52 个工具与协议细节</span></li><li><a href="/mem0-alternative/">对比 Mem0</a><br><span style="color:var(--fg2);font-size:13px">工具名、依赖与迁移成本</span></li><li><a href="/self-hosted-ai-memory/">自托管 AI 记忆</a><br><span style="color:var(--fg2);font-size:13px">数据主权与部署形态</span></li></ul></section>
+
+<!-- START: SEO-KEYWORD-BLOCK -->
+<!-- 🔴 2026-10-31：静态关键词落地段。
+     背景：全站正文里 "ai-memory" 出现 0 次，用户搜域名/品类词搜不到本站。
+     本段是纯静态 HTML，每句陈述事实（不是关键词堆砌），
+     把产品名 / 域名 / 作者 / 品类词 / 相邻概念写进同一段文本。 -->
+<section class="seo-keywords" style="margin-top:44px;padding-top:22px;border-top:1px solid var(--line)">
+<h2>AI 记忆（ai-memory）常见搜索与延伸</h2>
+<p>本站域名 <strong>ai-memory.net</strong> 就是「AI 记忆」的英文拼写。围绕这个主题，读者最常搜索的词包括：<strong>AI 记忆</strong>、<strong>AI memory</strong>、<strong>大模型记忆</strong>、<strong>LLM 长期记忆</strong>、<strong>long-term memory</strong>、<strong>persistent memory</strong>、<strong>agent memory</strong>、<strong>memory layer</strong>、<strong>记忆层</strong>、<strong>上下文工程</strong>、<strong>context engineering</strong>。这些词指向的是同一件事：让模型在多轮、多会话之间保留信息。</p>
+<p>与之相邻但<strong>不等价</strong>的概念还有：<strong>RAG</strong>（检索静态文档）、<strong>向量数据库</strong>（vector database，只做相似度检索）、<strong>知识图谱</strong>（knowledge graph，承载实体关系）、<strong>语义记忆</strong>（semantic memory，事实类）与<strong>情景记忆</strong>（episodic memory，经历类）。一个完整的记忆系统需要把它们组织起来，而不是只装一个向量库。</p>
+<p>本站由 <strong>胡景堃（Hu Jingkun）</strong> 维护，配套开源实现是 <a href="https://github.com/MnemosyneOS/mnemosyne">Mnemosyne OS</a>（PyPI 包名 <code>mnemosyne-os</code>），配套技术书是 <a href="/ai-memory-handbook/"><strong>AI Memory Handbook</strong></a>。</p>
+</section>
+<!-- END: SEO-KEYWORD-BLOCK -->
 </main>
 
 <footer>

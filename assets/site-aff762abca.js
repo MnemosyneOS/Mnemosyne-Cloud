@@ -141,10 +141,10 @@
     'ann.cta': 'Read the changelog',
 
     'hero.badge': 'Mnemosyne OS 8.1.0',
-    'hero.badge2': 'Zero-cloud memory layer',
-    'hero.l1': 'From remembering conversations',
-    'hero.l2': 'to maintaining an evolving world model',
-    'hero.lede': 'The <b>unified memory infrastructure</b> built for multi-agent systems and cross-session context. Eight memory classes carry facts and experience, consolidation paths distill repeated episodes into semantic knowledge, and a decay policy lets stale state retire on its own. <b>Pinpoint recall in milliseconds</b>, with your data <b>under your own control</b>.',
+    'hero.badge2': 'AI memory layer · ai-memory.net',
+    'hero.l1': 'AI memory layer',
+    'hero.l2': 'for AI agents',
+    'hero.lede': 'Mnemosyne OS is an open-source <b>AI memory layer</b> that gives AI agents <b>long-term memory</b> across sessions. Eight memory classes carry facts and experience, consolidation distills repeated episodes into semantic knowledge, and a decay policy lets stale state retire on its own. <b>Pinpoint recall in milliseconds</b>, with your data <b>under your own control</b>. Official site: <b>ai-memory.net</b>.',
     'hero.start': 'Get started',
     'hero.setup': 'Agent setup',
     'hero.seg1': 'SDK',
@@ -207,7 +207,7 @@
     'cta.read': 'Read the source',
     'cta.meta': 'python 3.8+ · windows / macOS / linux · offline capable · no telemetry',
 
-    'foot.copy': '© 2026 Guangdong Xinshiming Industrial Co., Ltd. · Mnemosyne OS · MIT License · Built by 胡景堃 (Jingkun Hu)',
+    'foot.copy': '© 2026 Guangdong Xinshiming Industrial Co., Ltd. · Mnemosyne OS · MIT License · Built by 胡景堃 (Hu Jingkun) · ai-memory.net',
     'foot.tag': 'local-first since day one',
 
     nav: [
@@ -450,7 +450,7 @@
         ['PyPI package', 'https://pypi.org/project/mnemosyne-os/']] }
     ],
 
-    'foot.blurb': 'A zero-dependency, local-first memory layer for AI agents. Recall in 0.21 ms, on a store you own.',
+    'foot.blurb': 'Mnemosyne OS — an open-source AI memory layer for AI agents. Long-term memory that persists across sessions, on a store you own. Official site: ai-memory.net',
     'foot.privacy': 'Privacy',
     'foot.terms': 'Terms',
     'foot.releases': 'Release notes'
@@ -487,9 +487,9 @@
        维护一个随使用持续演化、可回溯、可遗忘的世界模型才是目的。
        这跟 MINT/BM25 类"更好的检索框"划清界限，也解释了为什么需要
        八类记忆、巩固路径、遗忘机制这一整套东西。 */
-    'hero.l1': '从「记住对话」到',
-    'hero.l2': '维护一个会演化的世界模型',
-    'hero.lede': '<b>专为多 Agent 与跨会话打造的统一记忆基础设施</b>：八类记忆分层承载事实与经验，巩固路径把重复出现的情景提炼为语义，遗忘机制让过期状态自然退场。<b>短上下文毫秒级精准召回</b>，让数据隐私<b>重归你的掌控</b>。',
+    'hero.l1': 'AI 记忆层',
+    'hero.l2': '为 AI Agent 而生',
+    'hero.lede': 'Mnemosyne OS（ai-memory.net）是一套开源的 <b>AI 记忆层</b>，为 AI Agent 提供跨会话的<b>长期记忆</b>。八类记忆分层承载事实与经验，巩固路径把重复出现的情景提炼为语义，遗忘机制让过期状态自然退场。<b>毫秒级精准召回</b>，数据<b>重归你的掌控</b>。官方网站：<b>ai-memory.net</b>。',
     'hero.start': '开始使用',
     'hero.setup': '代理设置',
     'hero.seg1': 'SDK 集成',
@@ -552,7 +552,7 @@
     'cta.read': '阅读源码',
     'cta.meta': 'python 3.8+ · Windows / macOS / Linux · 可离线运行 · 无遥测',
 
-    'foot.copy': '© 2026 广东鑫室铭实业有限公司 · Mnemosyne OS · MIT 许可 · 作者 胡景堃 (Jingkun Hu)',
+    'foot.copy': '© 2026 广东鑫室铭实业有限公司 · Mnemosyne OS · MIT 许可 · 作者 胡景堃 (Hu Jingkun) · ai-memory.net',
     'foot.tag': 'local-first since day one',
 
     nav: [
@@ -790,7 +790,7 @@
         ['PyPI 包', 'https://pypi.org/project/mnemosyne-os/']] }
     ],
 
-    'foot.blurb': '一套零依赖、本地优先的 AI 智能体记忆层。0.21 ms 召回，存储属于你自己。',
+    'foot.blurb': 'Mnemosyne OS —— 开源的 AI 智能体记忆层。跨会话长期记忆，存储属于你自己。官方网站：ai-memory.net',
     'foot.privacy': '隐私政策',
     'foot.terms': '服务条款',
     'foot.releases': '发行说明'
